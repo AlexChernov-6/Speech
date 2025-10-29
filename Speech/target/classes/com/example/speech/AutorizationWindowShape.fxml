@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.*?>
+<?import javafx.geometry.Insets?>
+
+<AnchorPane xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.example.speech.AuthorizationWindow"
+            style="-fx-background-color: rgba(0,0,0,0.01);">
+
+    <padding>
+        <Insets top="13" bottom="13" left="13" right="13"/>
+    </padding>
+    <AnchorPane stylesheets="@styles.css" styleClass="authorization-background"
+                AnchorPane.topAnchor="0" AnchorPane.bottomAnchor="0"
+                AnchorPane.leftAnchor="0" AnchorPane.rightAnchor="0">
+
+        <!-- WindowControls - фиксированная высота 40px -->
+        <fx:include source="WindowControls.fxml"
+                    AnchorPane.topAnchor="0"
+                    AnchorPane.leftAnchor="0"
+                    AnchorPane.rightAnchor="0"
+                    prefHeight="40"/>
+
+        <!-- Форма авторизации - занимает всё оставшееся пространство -->
+        <GridPane fx:id="autorizationGridPane" alignment="CENTER"
+                  AnchorPane.topAnchor="40" AnchorPane.bottomAnchor="0"
+                  AnchorPane.leftAnchor="0" AnchorPane.rightAnchor="0">
+
+            <!-- остальное содержимое без изменений -->
+            <columnConstraints>
+                <ColumnConstraints percentWidth="15"/>
+                <ColumnConstraints percentWidth="30"/>
+            </columnConstraints>
+            <rowConstraints>
+                <RowConstraints percentHeight="5"/>
+                <RowConstraints percentHeight="5"/>
+                <RowConstraints percentHeight="5"/>
+                <RowConstraints percentHeight="5"/>
+                <RowConstraints percentHeight="5"/>
+                <RowConstraints percentHeight="5"/>
+                <RowConstraints percentHeight="5"/>
+                <RowConstraints percentHeight="5"/>
+                <RowConstraints percentHeight="5"/>
+            </rowConstraints>
+
+            <Pane style="-fx-background-color: rgba(255,255,255,0.8); -fx-background-radius: 10;"
+                  GridPane.columnSpan="2" GridPane.rowSpan="9"/>
+
+            <Label alignment="CENTER" text="С возвращением!" GridPane.columnSpan="2"/>
+            <Label alignment="CENTER" text="Мы так рады видеть вас снова!" GridPane.columnSpan="2"
+                   GridPane.rowIndex="1"/>
+            <Label text="ЭЛЕКТРОННЫЙ АДРЕС" GridPane.columnSpan="2" GridPane.rowIndex="2">
+                <font>
+                    <Font name="System Bold" size="12.0"/>
+                </font>
+            </Label>
+            <TextField fx:id="mailTF" alignment="CENTER" GridPane.columnSpan="2" GridPane.rowIndex="3"/>
+            <Label text="ПАРОЛЬ" GridPane.columnSpan="2" GridPane.rowIndex="4">
+                <font>
+                    <Font name="System Bold" size="12.0"/>
+                </font>
+            </Label>
+            <TextField fx:id="passwordTF" alignment="CENTER" GridPane.columnSpan="2" GridPane.rowIndex="5"/>
+            <Button fx:id="lostPasswordBtn" onAction="#onLostPasswordBtn" text="Забыли пароль?"
+                    alignment="TOP_LEFT" GridPane.rowIndex="6"/>
+            <Button fx:id="entranceBtn" onAction="#onEntranceBtn" text="Вход" alignment="CENTER"
+                    GridPane.rowIndex="7" GridPane.columnSpan="2"/>
+            <Label text="Нужна учётная запись?" GridPane.rowIndex="8" alignment="TOP_LEFT"/>
+            <Button fx:id="registerBtn" onAction="#onRegisterBtn" text="Зарегистрироваться"
+                    GridPane.rowIndex="8" GridPane.columnIndex="1" alignment="TOP_LEFT"/>
+        </GridPane>
+
+    </AnchorPane>
+
+</AnchorPane>
