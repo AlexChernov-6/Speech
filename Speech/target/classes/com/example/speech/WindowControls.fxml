@@ -22,8 +22,12 @@
     "/>
 
     <HBox GridPane.columnIndex="1" alignment="TOP_RIGHT">
-        <Button fx:id="wrapBtn" onAction="#onWrapBtn" prefWidth="10" prefHeight="10" text="свернуть" AnchorPane.rightAnchor="48"/>
-        <Button fx:id="expandBtn" onAction="#onExpandBtn" prefWidth="10" prefHeight="10" text="развернуть" AnchorPane.rightAnchor="24"/>
-        <Button fx:id="closeBtn" onAction="#onCloseBtn" prefWidth="10" prefHeight="10" text="закрыть" AnchorPane.rightAnchor="0"/>
+
+        <Button fx:id="wrapBtn" onAction="#onWrapBtn" prefWidth="40" prefHeight="15"
+                styleClass="window-control-button, wrap-button"/>
+        <Button fx:id="expandBtn" onAction="#onExpandBtn" prefWidth="40" prefHeight="15"
+                styleClass="window-control-button"/>
+        <Button fx:id="closeBtn" onAction="#onCloseBtn" prefWidth="40" prefHeight="15"
+                styleClass="window-control-button, close-button"/>
     </HBox>
 </GridPane>

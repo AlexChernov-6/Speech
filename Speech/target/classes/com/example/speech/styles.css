@@ -4,3 +4,103 @@
     -fx-background-repeat: no-repeat;
     -fx-background-position: top;
 }
+
+.main-pane {
+    -fx-background-color: #FFFFFF;
+    -fx-background-radius: 12;
+    -fx-effect: dropshadow(gaussian, rgba(0, 59, 20, 0.3), 15, 0, 0, 4);
+    -fx-border-radius: 12;
+}
+
+.basic-information {
+    -fx-text-fill: #2D3748;
+    -fx-font-size: 24px;
+    -fx-font-weight: bold;
+}
+
+.secondary-information {
+    -fx-text-fill: #2D3748;
+    -fx-font-size: 14px;
+}
+
+.other-information {
+    -fx-text-fill: #718096;
+    -fx-font-size: 12px;
+}
+
+.text-field {
+    -fx-background-color: #FFFFFF;
+    -fx-border-color: #E2E8F0;
+    -fx-border-radius: 8;
+    -fx-background-radius: 8;
+    -fx-text-fill: #2D3748;
+    -fx-font-size: 14px;
+}
+
+.text-field:focused {
+    -fx-border-color: #003B14;
+    -fx-effect: dropshadow(gaussian, rgba(0, 59, 20, 0.2), 5, 0, 0, 1);
+}
+
+/* Основная кнопка "Вход" */
+.login-button {
+    -fx-background-color: #003B14;
+    -fx-text-fill: #FFFFFF;
+    -fx-background-radius: 8;
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+    -fx-padding: 9 18;
+}
+
+.login-button:hover {
+    -fx-background-color: #00290E;
+}
+
+/* Второстепенные кнопки */
+.link-button {
+    -fx-background-color: transparent;
+    -fx-text-fill: #003B14;
+    -fx-border-color: transparent;
+    -fx-underline: true;
+    -fx-cursor: hand;
+}
+
+.link-button:hover {
+    -fx-text-fill: #00290E;
+    -fx-background-color: #F0FFF4;
+}
+
+.window-control-button {
+    -fx-background-size: 35% 70%;
+    -fx-background-repeat: no-repeat;
+    -fx-background-color: rgba(255,255,255);
+    -fx-border-color: transparent;
+    -fx-padding: 0;
+    -fx-background-position: center;
+    -fx-background-radius: 0;
+}
+
+.wrap-button {
+     -fx-background-image: url('images/imageWrapBtn.png');
+     -fx-background-size: 35% 60%;
+}
+
+.expand-button-fullscreen {
+    -fx-background-image: url('images/imageStandardScreen.png');
+}
+
+.expand-button-windowed {
+    -fx-background-image: url('images/imageFullScreen.png');
+}
+
+.close-button {
+     -fx-background-image: url('images/imageCloseBtn.png');
+}
+
+.window-control-button:hover {
+    -fx-background-color: rgba(240, 255, 244, 0.8);
+}
+
+.close-button:hover {
+    -fx-background-color: rgba(250, 80, 80, 0.8);
+}

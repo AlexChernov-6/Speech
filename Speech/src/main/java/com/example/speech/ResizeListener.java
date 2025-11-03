@@ -27,8 +27,8 @@ public class ResizeListener implements EventHandler<MouseEvent> {
     //Задаём отступы, где будет доступно изменение размеров(13px окна приложения)
     private static final double BORDER = 13;
     //Задаём минимальные и максимальные размеры окна размеры окна
-    private static final double MIN_WIDTH = 400;
-    private static final double MIN_HEIGHT = 400;
+    private static final double MIN_WIDTH = 600;
+    private static final double MIN_HEIGHT = 600;
     private static final double MAX_WIDTH = initializeMaxWidth();
     private static final double MAX_HEIGHT = initializeMaxHeight();
 
@@ -56,6 +56,7 @@ public class ResizeListener implements EventHandler<MouseEvent> {
         IN_STAGE
     }
 
+    //Конструктор класса в качестве аргумента принимает Stage с которым будет работать
     public ResizeListener(Stage stage) {
         this.stage = stage;
     }
