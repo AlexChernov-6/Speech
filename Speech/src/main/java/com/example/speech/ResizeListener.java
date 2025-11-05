@@ -2,9 +2,17 @@ package com.example.speech;
 
 import javafx.event.EventHandler;
 import javafx.scene.Cursor;
+import javafx.scene.Node;
+import javafx.scene.control.Button;
+import javafx.scene.control.PasswordField;
+import javafx.scene.control.TextField;
+import javafx.scene.control.TextInputControl;
 import javafx.scene.input.MouseEvent;
 import javafx.stage.Screen;
 import javafx.stage.Stage;
+
+import java.util.ArrayList;
+import java.util.List;
 
 //Данный класс предназначен для изменения размеров окна, реализовывает интерфейс EventHandler
 //Обработчик событий, события мыши, так-как изменения окна производятся именно ей
@@ -53,8 +61,16 @@ public class ResizeListener implements EventHandler<MouseEvent> {
         LOWER_SIDE,
         LEFT_SIDE,
         RIGHT_SIDE,
-        IN_STAGE
+        IN_STAGE,
+        IN_CONTROLLER
     }
+
+    //Добавляем список классов, которые блокируют перетаскивание
+    //Список может хранить любой класс, это указано с помощью Wildcard
+    private final List<Class<?>> blockingControls = List.of(
+            Button.class,
+            TextInputControl.class
+    );
 
     //Конструктор класса в качестве аргумента принимает Stage с которым будет работать
     public ResizeListener(Stage stage) {
@@ -84,6 +100,12 @@ public class ResizeListener implements EventHandler<MouseEvent> {
 
     //Метод для определения позиции курсора и изменения его внешнего вида
     private void updateCursor(MouseEvent event) {
+        // ПРОВЕРКА: Если курсор над контролером - блокируем изменение размеров/перетаскивание
+        if (isCursorOverBlockingControl(event)) {
+            stage.getScene().setCursor(Cursor.DEFAULT);
+            cursorPosition = ScreenFrame.IN_CONTROLLER;
+            return;
+        }
         //Метод getX и getY у экземпляра MouseEvent
         //Возвращает горизонтальное положение события относительно источника MouseEvent.
         //Источником события MouseEvent будет выступать Stage
@@ -210,5 +232,37 @@ public class ResizeListener implements EventHandler<MouseEvent> {
             stage.setX(newX);
             stage.setY(newY);
         }
+    }
+
+    //Метод проверки, находится ли курсор над блокирующим контролером
+    private boolean isCursorOverBlockingControl(MouseEvent event) {
+        //Метод getTarget возвращает object, над которым происходит событие мыши, явно приведём его к классу Node
+        Node target = (Node) event.getTarget();
+        return isBlockingControlOrParent(target);
+    }
+
+    //Рекурсивная проверка самого элемента и всех его родителей
+    private boolean isBlockingControlOrParent(Node node) {
+        //Проверяем что объект, переданный в качестве аргумента не пустой
+        if (node == null) {
+            return false;
+        }
+
+        //Проверяем текущий узел, с помощью stream() преобразовываем список в поток
+        boolean isBlocking = blockingControls.stream()
+                //Метод anyMatch проверяет, соответствует ли хотя бы один элемент потока условию.
+                //В лямбда-функции проверяется, объект, переданный в качестве параметра
+                //Является классом или его наследником из списка blockingControls
+                .anyMatch(controlClass -> controlClass.isInstance(node));
+
+        if (isBlocking) {
+            return true; //Нашли блокирующий контролер
+        }
+
+        //Рекурсивно проверяем родителя, то есть метод вызывает сам себя, пока не найдёт true или пустоту
+        //Это важно, потому что в TextInputControl и некоторых стилизованных кнопках и т.д.
+        //Сам элемент кнопка или TextInputControl может перекрываться текстом, иконкой и т.д.
+        //Это приведёт к неправильной работе метода, потому что обработчик события будет к примеру на тексте
+        return isBlockingControlOrParent(node.getParent());
     }
 }

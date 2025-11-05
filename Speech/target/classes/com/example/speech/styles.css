@@ -1,3 +1,10 @@
+/*Класс для корневого контейнера*/
+.root-pane {
+    -fx-background-color: rgba(0,0,0,0.01);
+}
+
+/*Класс для основного(не путать с корневым) AnchoPane
+Устанавливает в качестве фона изображение*/
 .authorization-background {
     -fx-background-image: url('images/background.jpg');
     -fx-background-size: cover;
@@ -5,6 +12,8 @@
     -fx-background-position: top;
 }
 
+/*Класс для Pane устанавливает белый фон с закругление и тенью для Pane
+находящийся в GridPane*/
 .main-pane {
     -fx-background-color: #FFFFFF;
     -fx-background-radius: 12;
@@ -12,22 +21,26 @@
     -fx-border-radius: 12;
 }
 
+/*Стиль основной информации, применяется в основном для label*/
 .basic-information {
     -fx-text-fill: #2D3748;
     -fx-font-size: 24px;
     -fx-font-weight: bold;
 }
 
+/*Стиль второстепенной информации,применяется в основном для label*/
 .secondary-information {
     -fx-text-fill: #2D3748;
     -fx-font-size: 14px;
 }
 
+/*Стиль остальной информации,применяется в основном для label*/
 .other-information {
     -fx-text-fill: #718096;
     -fx-font-size: 12px;
 }
 
+/*Стиль для большинства объектов класса-наследника TextInputControl*/
 .text-field {
     -fx-background-color: #FFFFFF;
     -fx-border-color: #E2E8F0;
@@ -37,12 +50,13 @@
     -fx-font-size: 14px;
 }
 
+/*При получении фокуса все объекты с классом text-field меняют border и получают тень*/
 .text-field:focused {
     -fx-border-color: #003B14;
     -fx-effect: dropshadow(gaussian, rgba(0, 59, 20, 0.2), 5, 0, 0, 1);
 }
 
-/* Основная кнопка "Вход" */
+/*Стиль для кнопок "Вход" и "Зарегистрироваться"*/
 .login-button {
     -fx-background-color: #003B14;
     -fx-text-fill: #FFFFFF;
@@ -52,11 +66,12 @@
     -fx-padding: 9 18;
 }
 
+/*При наведении на кнопку, меняем цвет фона на более тёмный*/
 .login-button:hover {
     -fx-background-color: #00290E;
 }
 
-/* Второстепенные кнопки */
+/*Стиль для второстепенных кнопок(кнопка-текст)*/
 .link-button {
     -fx-background-color: transparent;
     -fx-text-fill: #003B14;
@@ -65,11 +80,13 @@
     -fx-cursor: hand;
 }
 
+/*При наведении мыши меняет цвет текста на более тёмный и добавляем еле заметный фон*/
 .link-button:hover {
     -fx-text-fill: #00290E;
     -fx-background-color: #F0FFF4;
 }
 
+/*Основные аспекты стиля, для кнопок управления окном*/
 .window-control-button {
     -fx-background-size: 35% 70%;
     -fx-background-repeat: no-repeat;
@@ -80,27 +97,33 @@
     -fx-background-radius: 0;
 }
 
+/*Изображение для кнопки свернуть*/
 .wrap-button {
      -fx-background-image: url('images/imageWrapBtn.png');
      -fx-background-size: 35% 60%;
 }
 
+/*Изображение для кнопки expandBtn, когда окно раскрыто в полный экран*/
 .expand-button-fullscreen {
     -fx-background-image: url('images/imageStandardScreen.png');
 }
 
+/*Изображение для кнопки expandBtn, когда окно находиться в стандартном состоянии*/
 .expand-button-windowed {
     -fx-background-image: url('images/imageFullScreen.png');
 }
 
+/*Изображение для кнопки закрыть окно*/
 .close-button {
      -fx-background-image: url('images/imageCloseBtn.png');
 }
 
+/*Меняем фон при наведении курсора на кнопку*/
 .window-control-button:hover {
     -fx-background-color: rgba(240, 255, 244, 0.8);
 }
 
+/*Меняем фон при наведении курсора на кнопку закрытия окна, фон отличается от других кнопок*/
 .close-button:hover {
     -fx-background-color: rgba(250, 80, 80, 0.8);
 }

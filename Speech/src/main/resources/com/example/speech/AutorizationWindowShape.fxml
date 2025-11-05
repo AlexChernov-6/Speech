@@ -8,12 +8,12 @@
 что бы компилятор принимал его во внимание, внутри него создадим отступы для содержимого в 13px
 что будет равно толщине, где можно изменять размеры окна. Визуально будет казаться, что мы изменяем
 размеры окна за самим окном, хотя по факту мы будем находиться в нём-->
-<AnchorPane fx:id="rootAnchorPane" style="-fx-background-color: rgba(0,0,0,0.01);" xmlns:fx="http://javafx.com/fxml/1"
+<AnchorPane fx:id="rootAnchorPane" stylesheets="@styles.css" styleClass="root-pane" xmlns:fx="http://javafx.com/fxml/1"
             xmlns="http://javafx.com/javafx/17.0.12" fx:controller="com.example.speech.AuthorizationWindow">
 
     <!--Создадим основной AnchorPane, которому дадим фон-изображение и в котором будут находиться
      шапка окна и панель входа-->
-    <AnchorPane styleClass="authorization-background" stylesheets="@styles.css" AnchorPane.bottomAnchor="0"
+    <AnchorPane styleClass="authorization-background" AnchorPane.bottomAnchor="0"
                 AnchorPane.leftAnchor="0" AnchorPane.rightAnchor="0" AnchorPane.topAnchor="0">
 
         <!--Вставим разметку из файла WindowControls.fxml и привяжем её к верху основного AnchorPane

@@ -1,8 +1,15 @@
 package com.example.speech;
 
-import javafx.scene.control.PasswordField;
-import javafx.scene.control.TextField;
-import javafx.scene.control.TextInputControl;
+import javafx.fxml.FXMLLoader;
+import javafx.geometry.Insets;
+import javafx.scene.Node;
+import javafx.scene.Parent;
+import javafx.scene.control.*;
+import javafx.scene.layout.Pane;
+import javafx.stage.Stage;
+
+import java.io.IOException;
+import java.util.*;
 import java.util.regex.Pattern;
 
 public class UsefulClass {
@@ -21,19 +28,18 @@ public class UsefulClass {
     private static final Pattern PASSWORD_MIN_NUM_PATTERN = Pattern.compile("^.*[0-9].*$");
     private static final Pattern PASSWORD_MIN_LETTER_PATTERN = Pattern.compile(".*[a-zA-Z].*$");
 
-    //Статичный метод, который имеет дженерик, в качестве возвращаемого типа будет тип String(сообщение о валидации)
+    //Статичный метод, в качестве возвращаемого типа будет тип String(сообщение о валидации)
     //В качестве аргумента может принимать любой объект, который наследуется от TextInputControl(TextField, PasswordField и т.д.)
-    public static <T extends TextInputControl> String validationField(T inputField) {
-        //Получает значение в экземпляре-наследнике TextInputControl
+    public static String validationField(TextInputControl inputField) {
         String text = inputField.getText().trim();
 
-        //Проверяем соответствие inputField классу PasswordField и TextField, для класса TextField
-        //Так же делаем проверки по id, для раздачи нужных правил валидации в зависимости от назначения объекта TextField
-        if (inputField.getClass() == TextField.class &&
-                inputField.getId() != null && inputField.getId().equals("mailTF")) {
-            return validateEmail(text);
-        } else if (inputField.getClass() == PasswordField.class) {
-            return validatePassword(text);
+        // Определяем логику только по ID
+        if (inputField.getId() != null) {
+            switch (inputField.getId()) {
+                case "mailTF": return validateEmail(text);
+                case "passwordF": return validatePassword(text);
+                //case "usernameTF": return validateUsername(text);
+            }
         }
         return null;
     }
@@ -127,5 +133,96 @@ public class UsefulClass {
 
         //Если все ошибки валидации прошли мимо, выводим null
         return null;
+    }
+
+    //Метод, который следит за изменениями состояний окна, а конкретно за FullScreen
+    public static void setupFullScreenListener(Stage stage, Pane rootPane) {
+        //Добавляем обработчика, то что следит за изменениями для fullScreenProperty
+        //Вместо создания отдельного класса, который реализовывает интерфейс InvalidationListener
+        //Используем лямбда-функцию, в которой переопределим необходимый метод invalidated
+        stage.fullScreenProperty().addListener(observable -> {
+            //Если у нас окно открыто в полный экран-то есть имеет state FullScreen, то мы убираем отступы у корневого
+            //Pane в обратном случае, мы возвращаем ему отступы для его содержимого
+            if (stage.isFullScreen()) {
+                rootPane.setPadding(new Insets(0));
+            } else {
+                rootPane.setPadding(new Insets(13));
+            }
+        });
+
+        // Устанавливаем начальное значение
+        if (stage.isFullScreen()) {
+            rootPane.setPadding(new Insets(0));
+        } else {
+            rootPane.setPadding(new Insets(13));
+        }
+    }
+
+    //Сам метод подгружает файл, откуда будут использоваться стили для контроллеров, переданных в качестве аргумента
+    //Метод в качестве аргумента может принимать любое количество экземпляров-наследников класса Control.
+    private static void setStyleSheets(Control... controls) {
+        String cssUrl = UsefulClass.class.getResource("/com/example/speech/styles.css").toExternalForm();
+        for (Control control : controls) {
+            control.getStylesheets().add(cssUrl);
+        }
+    }
+
+    //Метод, в котором проверяется валидация полей ввода текста и меняются стили в зависимости от корректности значения
+    public static void updateStyleValidation(Map<TextInputControl, Label> map) {
+
+        //Пробегаемся по строкам таблице, которую передали нам в качестве аргумента
+        for (Map.Entry<TextInputControl, Label> entry : map.entrySet()) {
+            //Подгружаем файл, откуда можно взять стили css
+            setStyleSheets(entry.getKey(), entry.getValue());
+            //Создаём временные переменный для упрощения читаемости кода
+            TextInputControl inputControl = entry.getKey();
+            Label label = entry.getValue();
+
+            // Получаем оригинальный текст из userData Label
+            //userData-некое хранилище объекта-наследника класса Node, может хранить в себе любой объект.
+            //Получаем объект из кармана, если в кармане пусто, то записываем туда текущий текс Label
+            String originalText = (String) label.getUserData();
+            if (originalText == null) {
+                // Сохраняем оригинальный текст при первом вызове
+                originalText = label.getText();
+                label.setUserData(originalText);
+            }
+
+            //Проверяем валидность введённых пользователем значений в наследника TextInputControl
+            String validationResult = validationField(inputControl);
+
+
+            if (validationResult != null) {
+                // Валидация не пройдена - показываем ошибку, меняем стили, делаем их в тёмно-красных тонах
+                label.setText(validationResult);
+                label.setStyle("-fx-text-fill: rgba(115,0,0); -fx-font-weight: bold;");
+                inputControl.setStyle("-fx-border-color: rgba(115,0,0);");
+            } else {
+                // Валидация пройдена - восстанавливаем оригинальный текст и стиль
+                label.setText(originalText);
+                // Очищаем inline стили
+                label.setStyle("");
+                inputControl.setStyle("");
+
+                // Добавляем жирный шрифт
+                label.setStyle("-fx-font-weight: bold;");
+            }
+        }
+    }
+
+    //
+    public static <T> Parent loadFXML(Stage stage, String fxmlPath, Class<T> controllerClass) throws IOException {
+        //Загрузчик интерфейса, который собирает внешний вид окна из указанного файла
+        FXMLLoader fxmlLoader = new FXMLLoader(controllerClass.getResource(fxmlPath));
+        //Создаёт интерфейс из FXMLLoader, является корневым элементом интерфейса, содержащий все визуальные компоненты
+        Parent parent = fxmlLoader.load();
+
+        //Получаем объект контроллера, который управляет действиями в fxml, то есть различные обработчики событий
+        //Данный метод автоматически связывает Java-код контроллера с FXML-разметкой
+        T controller = fxmlLoader.getController();
+        if (controller instanceof Window)
+            //Передаём в контроллер экземпляр окна, таким образом контроллер знает в каком окне он работает
+            ((Window) controller).setStage(stage);
+        return parent;
     }
 }
