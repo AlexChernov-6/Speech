@@ -1,10 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import java.lang.*?>
-<?import java.util.*?>
-<?import javafx.scene.*?>
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
+<?import javafx.geometry.Insets?>
 
 <!--Создадим корневой AnchorPane, который будет с почти прозрачным фоном, но не полностью
 что бы компилятор принимал его во внимание, внутри него создадим отступы для содержимого в 13px
@@ -18,69 +16,149 @@
     <AnchorPane styleClass="authorization-background" AnchorPane.bottomAnchor="0"
                 AnchorPane.leftAnchor="0" AnchorPane.rightAnchor="0" AnchorPane.topAnchor="0">
 
-        <!--Вставим разметку из файла WindowControls.fxml и привяжем её к верху основного AnchorPane
+        <!--Вставим разметку из файла WindowControlsShape.fxml и привяжем её к верху основного AnchorPane
         задав высоту 40px-->
-        <fx:include prefHeight="40" source="WindowControls.fxml" AnchorPane.leftAnchor="0" AnchorPane.rightAnchor="0"
+        <fx:include prefHeight="40" source="WindowControlsShape.fxml" AnchorPane.leftAnchor="0" AnchorPane.rightAnchor="0"
                     AnchorPane.topAnchor="0"/>
 
         <GridPane alignment="CENTER" AnchorPane.bottomAnchor="0" AnchorPane.leftAnchor="0" AnchorPane.rightAnchor="0"
                   AnchorPane.topAnchor="40">
             <columnConstraints>
-                <ColumnConstraints percentWidth="5"/>
-                <ColumnConstraints percentWidth="17"/>
-                <ColumnConstraints percentWidth="22"/>
-                <ColumnConstraints percentWidth="22"/>
+                <ColumnConstraints percentWidth="18"/>
+                <ColumnConstraints percentWidth="18"/>
+                <ColumnConstraints percentWidth="18"/>
             </columnConstraints>
             <rowConstraints>
+                <RowConstraints percentHeight="10"/>
+                <RowConstraints percentHeight="3"/>
                 <RowConstraints percentHeight="7"/>
-                <RowConstraints percentHeight="4"/>
-                <RowConstraints percentHeight="4"/>
-                <RowConstraints percentHeight="4"/>
-                <RowConstraints percentHeight="4"/>
-                <RowConstraints percentHeight="4"/>
-                <RowConstraints percentHeight="4"/>
-                <RowConstraints percentHeight="4"/>
-                <RowConstraints percentHeight="4"/>
-                <RowConstraints percentHeight="4"/>
-                <RowConstraints percentHeight="4"/>
-                <RowConstraints percentHeight="4"/>
-                <RowConstraints percentHeight="4"/>
-                <RowConstraints percentHeight="4"/>
+                <RowConstraints percentHeight="3"/>
                 <RowConstraints percentHeight="7"/>
+                <RowConstraints percentHeight="3"/>
+                <RowConstraints percentHeight="7"/>
+                <RowConstraints percentHeight="3"/>
+                <RowConstraints percentHeight="7"/>
+                <RowConstraints percentHeight="3"/>
+                <RowConstraints percentHeight="7"/>
+                <RowConstraints percentHeight="10"/>
+                <RowConstraints percentHeight="5"/>
+                <RowConstraints percentHeight="10"/>
             </rowConstraints>
-            <Pane styleClass="main-pane" GridPane.columnSpan="4" GridPane.rowSpan="15"/>
+            <Pane styleClass="main-pane" GridPane.columnSpan="3" GridPane.rowSpan="15"/>
 
-            <Label GridPane.columnSpan="4" text="Создать учётную запись"/>
-            <Label GridPane.columnSpan="2" text="E-MAIL *" GridPane.rowIndex="1"/>
-            <TextField GridPane.columnSpan="4" GridPane.rowIndex="2" fx:id="mailTF"/>
-
-            <Label GridPane.columnSpan="2" text="ОТОБРАЖАЕМОЕ ИМЯ" GridPane.rowIndex="3"/>
-            <TextField GridPane.columnSpan="4" GridPane.rowIndex="4" fx:id="nickNameTF"/>
-
-            <Label GridPane.columnSpan="2" text="ИМЯ ПОЛЬЗОВАТЕЛЯ *" GridPane.rowIndex="5"/>
-            <TextField GridPane.columnSpan="4" GridPane.rowIndex="6" fx:id="userNameTF"/>
-
-            <Label GridPane.columnSpan="2" text="ПАРОЛЬ *" GridPane.rowIndex="7"/>
-            <TextField GridPane.columnSpan="4" GridPane.rowIndex="8" fx:id="passwordTF"/>
-
-            <Label GridPane.columnSpan="2" text="ДАТА РОЖДЕНИЯ *" GridPane.rowIndex="9"/>
-            <ComboBox fx:id="dayBirthdayCB" GridPane.columnSpan="2" GridPane.rowIndex="10"/>
-            <ComboBox fx:id="monthBirthdayCB" GridPane.columnIndex="2" GridPane.rowIndex="10"/>
-            <ComboBox fx:id="yearBirthdayCB" GridPane.columnIndex="3" GridPane.rowIndex="10"/>
-
-            <Button fx:id="getMailingList" GridPane.rowIndex="11" text="..."/>
-            <Label GridPane.columnIndex="1" GridPane.columnSpan="3" text="(Необязательно) Я не против получать электронные письма с новостями
-        Speech. советами и специальными предложениями. От рассылки можно отписаться в любое время." GridPane.rowIndex="11" maxHeight="Infinity"/>
-
-            <Button fx:id="continueBtn" GridPane.rowIndex="12" GridPane.columnSpan="4" text="Продолжить"/>
-
-            <Button fx:id="сonfirmationConditionsBtn" GridPane.rowIndex="13" text="..."/>
-            <Label GridPane.columnIndex="1" GridPane.columnSpan="3" GridPane.rowIndex="13" maxHeight="Infinity">
-                Подтверждаю ознакомление и согласие с Speech.
+            <Label styleClass="basic-information" GridPane.halignment="CENTER" GridPane.columnSpan="3"
+                   text="Создать учётную запись">
+                <GridPane.margin>
+                    <Insets top="10"/>
+                </GridPane.margin>
             </Label>
-            <!--<childrenUnmodifiable><Button  text="Условиями использования"/></childrenUnmodifiable>
-                    и <childrenUnmodifiable><Button  text="Политикой конфиденциальности"/></childrenUnmodifiable>-->
-            <Button GridPane.rowIndex="14" GridPane.columnSpan="3" text="Уже зарегистрированы?"/>
+
+            <Label fx:id="mailLb" GridPane.columnSpan="3" text="E-MAIL *" styleClass="other-information"
+                   GridPane.rowIndex="1"  GridPane.valignment="BOTTOM">
+                <GridPane.margin>
+                    <Insets left="20"/>
+                </GridPane.margin>
+            </Label>
+
+            <TextField GridPane.columnSpan="3" GridPane.rowIndex="2" fx:id="mailTF" styleClass="text-field"
+                       GridPane.valignment="TOP">
+                <GridPane.margin>
+                    <Insets left="20" right="20"/>
+                </GridPane.margin>
+            </TextField>
+
+            <Label fx:id="visibleNameLb" GridPane.columnSpan="3" text="ОТОБРАЖАЕМОЕ ИМЯ" GridPane.rowIndex="3"
+                   GridPane.valignment="BOTTOM" styleClass="other-information">
+                <GridPane.margin>
+                    <Insets left="20"/>
+                </GridPane.margin>
+            </Label>
+
+            <TextField GridPane.columnSpan="3" GridPane.rowIndex="4" fx:id="visibleNameTF" styleClass="text-field"
+                       GridPane.valignment="TOP">
+                <GridPane.margin>
+                    <Insets left="20" right="20"/>
+                </GridPane.margin>
+            </TextField>
+
+            <Label fx:id="userNameLb" GridPane.columnSpan="3" GridPane.rowIndex="5" GridPane.valignment="BOTTOM"
+                   text="ИМЯ ПОЛЬЗОВАТЕЛЯ *" styleClass="other-information">
+                <GridPane.margin>
+                    <Insets left="20"/>
+                </GridPane.margin>
+            </Label>
+
+            <TextField GridPane.columnSpan="3" GridPane.rowIndex="6" fx:id="userNameTF" styleClass="text-field"
+                       GridPane.valignment="TOP">
+                <GridPane.margin>
+                    <Insets left="20" right="20"/>
+                </GridPane.margin>
+            </TextField>
+
+            <Label fx:id="passwordLb" GridPane.columnSpan="3" text="ПАРОЛЬ *" GridPane.rowIndex="7"
+                   GridPane.valignment="BOTTOM" styleClass="other-information">
+                <GridPane.margin>
+                    <Insets left="20"/>
+                </GridPane.margin>
+            </Label>
+
+            <TextField GridPane.columnSpan="3" GridPane.rowIndex="8" fx:id="passwordF" styleClass="text-field"
+                       GridPane.valignment="TOP">
+                <GridPane.margin>
+                    <Insets left="20" right="20"/>
+                </GridPane.margin>
+            </TextField>
+
+            <Label fx:id="birthdayLb" GridPane.columnSpan="3" text="ДАТА РОЖДЕНИЯ *" GridPane.rowIndex="9"
+                   GridPane.valignment="BOTTOM" styleClass="other-information">
+                <GridPane.margin>
+                    <Insets left="20"/>
+                </GridPane.margin>
+            </Label>
+
+            <HBox fx:id="birthdayHBox" GridPane.columnSpan="3" GridPane.rowIndex="10" GridPane.valignment="TOP">
+
+                <GridPane.margin>
+                    <Insets left="20" right="20"/>
+                </GridPane.margin>
+
+                <ComboBox fx:id="dayBirthdayCB"  promptText="День" styleClass="text-field"/>
+                <ComboBox fx:id="monthBirthdayCB" promptText="Месяц" styleClass="text-field">
+                    <HBox.margin>
+                        <Insets left="15" right="15"/>
+                    </HBox.margin>
+                </ComboBox>
+                <ComboBox fx:id="yearBirthdayCB" promptText="Год" styleClass="text-field"/>
+            </HBox>
+
+            <Button fx:id="continueBtn" GridPane.rowIndex="11" GridPane.columnSpan="3" text="Продолжить"
+                    styleClass="login-button" maxWidth="Infinity">
+                <GridPane.margin>
+                    <Insets left="20" right="20"/>
+                </GridPane.margin>
+            </Button>
+
+            <Button fx:id="authorizationBtn" GridPane.rowIndex="12" GridPane.columnSpan="3" text="Уже зарегистрированы?"
+                    styleClass="link-button" onAction="#onAuthorizationBtn">
+                <GridPane.margin>
+                    <Insets left="20"/>
+                </GridPane.margin>
+            </Button>
+
+            <FlowPane GridPane.columnSpan="3" GridPane.rowIndex="13">
+
+                <GridPane.margin>
+                    <Insets top="10" bottom="5" left="20" right="20"/>
+                </GridPane.margin>
+
+                <Label styleClass="other-information" text="Регистрируясь, Вы соглашайтесь с "/>
+                <Button text="Условиями использования " styleClass="link-button"/>
+                <Label styleClass="other-information" text="и "/>
+                <Button text="Политикой конфиденциальности" styleClass="link-button"/>
+                <Label styleClass="other-information" text="Speech"/>
+
+            </FlowPane>
+
         </GridPane>
 
     </AnchorPane>

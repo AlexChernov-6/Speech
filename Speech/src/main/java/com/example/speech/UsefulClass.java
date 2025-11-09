@@ -5,10 +5,11 @@ import javafx.geometry.Insets;
 import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.control.*;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.stage.Stage;
-
 import java.io.IOException;
+import java.time.LocalDate;
 import java.util.*;
 import java.util.regex.Pattern;
 
@@ -160,7 +161,7 @@ public class UsefulClass {
 
     //Сам метод подгружает файл, откуда будут использоваться стили для контроллеров, переданных в качестве аргумента
     //Метод в качестве аргумента может принимать любое количество экземпляров-наследников класса Control.
-    private static void setStyleSheets(Control... controls) {
+    public static void setStyleSheets(Control... controls) {
         String cssUrl = UsefulClass.class.getResource("/com/example/speech/styles.css").toExternalForm();
         for (Control control : controls) {
             control.getStylesheets().add(cssUrl);
@@ -195,7 +196,7 @@ public class UsefulClass {
             if (validationResult != null) {
                 // Валидация не пройдена - показываем ошибку, меняем стили, делаем их в тёмно-красных тонах
                 label.setText(validationResult);
-                label.setStyle("-fx-text-fill: rgba(115,0,0); -fx-font-weight: bold;");
+                label.setStyle("-fx-text-fill: rgba(115,0,0);");
                 inputControl.setStyle("-fx-border-color: rgba(115,0,0);");
             } else {
                 // Валидация пройдена - восстанавливаем оригинальный текст и стиль
@@ -203,14 +204,11 @@ public class UsefulClass {
                 // Очищаем inline стили
                 label.setStyle("");
                 inputControl.setStyle("");
-
-                // Добавляем жирный шрифт
-                label.setStyle("-fx-font-weight: bold;");
             }
         }
     }
 
-    //
+    //Метод, который подгружает fxml, и передаёт окно в контроллер, если это нужно(указ. при помощи интерфейса)
     public static <T> Parent loadFXML(Stage stage, String fxmlPath, Class<T> controllerClass) throws IOException {
         //Загрузчик интерфейса, который собирает внешний вид окна из указанного файла
         FXMLLoader fxmlLoader = new FXMLLoader(controllerClass.getResource(fxmlPath));
@@ -220,9 +218,60 @@ public class UsefulClass {
         //Получаем объект контроллера, который управляет действиями в fxml, то есть различные обработчики событий
         //Данный метод автоматически связывает Java-код контроллера с FXML-разметкой
         T controller = fxmlLoader.getController();
+        //Если класс должен получать окно, то мы его передаём, если нет, то просто подгружаем fxml
         if (controller instanceof Window)
             //Передаём в контроллер экземпляр окна, таким образом контроллер знает в каком окне он работает
             ((Window) controller).setStage(stage);
         return parent;
+    }
+
+    //Метод, который в качестве аргумента принимает множество объектов класса Label.
+    //Метод находит последний элемент и закрашивает его в красный цвет(нужно где есть *,
+    //которая показывает обязательное поле)
+    public static void setRedEndChar(Label... labels) {
+        for(Label label : labels) {
+            String text = label.getText();
+            if (text == null || text.isEmpty()) return;
+
+            int labelLength = text.length();
+            //Вычисляем процент всех символом без * относительно всего текста в Label
+            double percent = ((double) (labelLength - 1) / labelLength) * 100;
+            //Рисуем градиент, который весь текст закрасит в один цвет, а последний символ в красный
+            label.setStyle("-fx-text-fill: linear-gradient(from 0% 0% to 100% 0%, " +
+                    //Первый цвет у нас будет от 0% до того значения, которое мы вычислили,
+                    //А второй цвет(красный) будет от вычисленного процента до 100% текста
+                    "#718096 0%, #718096 " + percent + "%, red " + percent + "%, red 100%);");
+        }
+    }
+
+    //Метод, который будет устанавливать значения в ComboBox, в качестве аргумента принимает множество ComboBox
+    //С неопределённым типом данных, обрабатывается проверка какие значение раздавать по id
+    public static void setValuesComboBox(ComboBox<?>... comboBoxes) {
+        for(ComboBox<?> comboBox : comboBoxes) {
+            String comboId = comboBox.getId();
+
+            switch (comboId) {
+                case "dayBirthdayCB":
+                    for (int i = 1; i <= 31; i++) {
+                        //Максимум в месяце 31 день
+                        ((ComboBox<Integer>) comboBox).getItems().add(i);
+                    }
+                    break;
+                case "monthBirthdayCB":
+                    //Список месяцев
+                    String[] months = {"Январь", "Февраль", "Март", "Апрель", "Май", "Июнь",
+                            "Июль", "Август", "Сентябрь", "Октябрь", "Ноябрь", "Декабрь"};
+                    ((ComboBox<String>) comboBox).getItems().addAll(months);
+                    break;
+
+                case "yearBirthdayCB":
+                    //Берём последние 100 лет цикл будет не инкрементировать, а дикрементировать
+                    int currentYear = LocalDate.now().getYear();
+                    for (int i = currentYear; i >= currentYear - 100; i--) {
+                        ((ComboBox<Integer>) comboBox).getItems().add(i);
+                    }
+                    break;
+            }
+        }
     }
 }

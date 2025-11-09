@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<!--Создаём корневой GridPane в котором будет два столбца-->
+<GridPane xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1"
+          fx:controller="com.example.speech.WindowControlsController">
+    <columnConstraints>
+        <ColumnConstraints percentWidth="50"/>
+        <ColumnConstraints percentWidth="50"/>
+    </columnConstraints>
+
+    <!--Создадим метку, в которой будет стилизованная надпись SPEECH, название нашего проекта-->
+    <Label prefHeight="50" alignment="TOP_LEFT" text="SPEECH" style="
+    -fx-text-fill: #003B14;
+    -fx-font-weight: bold;
+    -fx-font-size: 20;
+    -fx-font-family: 'Arial';
+    -fx-effect: dropshadow(gaussian, rgba(88, 101, 242, 0.3), 4, 0.5, 1, 1);
+    "/>
+
+    <!--Во втором столбце создадим HBox, элементы внутри которого будут располагаться сверху-справа
+    в этом HBox будут кнопки управления окном-->
+    <HBox GridPane.columnIndex="1" alignment="TOP_RIGHT">
+        <!--Создаём кнопку свернуть окно, применяя соответствующие стили и обработчики-->
+        <Button fx:id="wrapBtn" onAction="#onWrapBtn" prefWidth="40" prefHeight="15"
+                styleClass="window-control-button, wrap-button"/>
+        <!--Создаём кнопку развёртывая окна, применяя соответствующие стили и обработчики-->
+        <Button fx:id="expandBtn" onAction="#onExpandBtn" prefWidth="40" prefHeight="15"
+                styleClass="window-control-button"/>
+        <!--Создаём кнопку закрытия окна, применяя соответствующие стили и обработчики-->
+        <Button fx:id="closeBtn" onAction="#onCloseBtn" prefWidth="40" prefHeight="15"
+                styleClass="window-control-button, close-button"/>
+    </HBox>
+</GridPane>

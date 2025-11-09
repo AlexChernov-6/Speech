@@ -37,7 +37,9 @@
 /*Стиль остальной информации,применяется в основном для label*/
 .other-information {
     -fx-text-fill: #718096;
-    -fx-font-size: 12px;
+    -fx-font-size: 10px;
+    -fx-font-weight: bold;
+    -fx-padding: 0px 0px 0px 2px;
 }
 
 /*Стиль для большинства объектов класса-наследника TextInputControl*/
@@ -47,7 +49,7 @@
     -fx-border-radius: 8;
     -fx-background-radius: 8;
     -fx-text-fill: #2D3748;
-    -fx-font-size: 14px;
+    -fx-font-size: 12px;
 }
 
 /*При получении фокуса все объекты с классом text-field меняют border и получают тень*/
@@ -76,8 +78,8 @@
     -fx-background-color: transparent;
     -fx-text-fill: #003B14;
     -fx-border-color: transparent;
-    -fx-underline: true;
     -fx-cursor: hand;
+    -fx-padding: 0px 0px 0px 2px;
 }
 
 /*При наведении мыши меняет цвет текста на более тёмный и добавляем еле заметный фон*/

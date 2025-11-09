@@ -8,9 +8,9 @@
 
 <AnchorPane xmlns="http://javafx.com/javafx"
             xmlns:fx="http://javafx.com/fxml"
-            fx:controller="com.example.speech.SpeechBase"
+            fx:controller="com.example.speech.SpeechBaseController"
             stylesheets="@styles.css">
 
-    <fx:include source="WindowControls.fxml"/>
+    <fx:include source="WindowControlsShape.fxml"/>
 
 </AnchorPane>

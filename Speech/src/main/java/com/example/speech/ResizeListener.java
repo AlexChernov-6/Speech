@@ -3,10 +3,7 @@ package com.example.speech;
 import javafx.event.EventHandler;
 import javafx.scene.Cursor;
 import javafx.scene.Node;
-import javafx.scene.control.Button;
-import javafx.scene.control.PasswordField;
-import javafx.scene.control.TextField;
-import javafx.scene.control.TextInputControl;
+import javafx.scene.control.*;
 import javafx.scene.input.MouseEvent;
 import javafx.stage.Screen;
 import javafx.stage.Stage;
@@ -69,7 +66,8 @@ public class ResizeListener implements EventHandler<MouseEvent> {
     //Список может хранить любой класс, это указано с помощью Wildcard
     private final List<Class<?>> blockingControls = List.of(
             Button.class,
-            TextInputControl.class
+            TextInputControl.class,
+            ComboBox.class
     );
 
     //Конструктор класса в качестве аргумента принимает Stage с которым будет работать
