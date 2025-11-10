@@ -21,6 +21,8 @@
         <fx:include prefHeight="40" source="WindowControlsShape.fxml" AnchorPane.leftAnchor="0" AnchorPane.rightAnchor="0"
                     AnchorPane.topAnchor="0"/>
 
+        <!--Форма регистрации - занимает всё оставшееся пространство, содержимое находиться в центре.
+        Имеет 3 столбца и 14 строк-->
         <GridPane alignment="CENTER" AnchorPane.bottomAnchor="0" AnchorPane.leftAnchor="0" AnchorPane.rightAnchor="0"
                   AnchorPane.topAnchor="40">
             <columnConstraints>
@@ -44,7 +46,9 @@
                 <RowConstraints percentHeight="5"/>
                 <RowConstraints percentHeight="10"/>
             </rowConstraints>
-            <Pane styleClass="main-pane" GridPane.columnSpan="3" GridPane.rowSpan="15"/>
+
+            <!--Создадим Pane, что бы закрашивать не весь Grid, а только зону внутри столбцов и строк-->
+            <Pane styleClass="main-pane" GridPane.columnSpan="3" GridPane.rowSpan="14"/>
 
             <Label styleClass="basic-information" GridPane.halignment="CENTER" GridPane.columnSpan="3"
                    text="Создать учётную запись">
@@ -116,6 +120,7 @@
                 </GridPane.margin>
             </Label>
 
+            <!--Создадим HBox, для трёх ComboBox и растягиваем на все столбцы GridPane-->
             <HBox fx:id="birthdayHBox" GridPane.columnSpan="3" GridPane.rowIndex="10" GridPane.valignment="TOP">
 
                 <GridPane.margin>
@@ -131,20 +136,24 @@
                 <ComboBox fx:id="yearBirthdayCB" promptText="Год" styleClass="text-field"/>
             </HBox>
 
-            <Button fx:id="continueBtn" GridPane.rowIndex="11" GridPane.columnSpan="3" text="Продолжить"
+            <!--Кнопка регистрации аккаунта-->
+            <Button fx:id="continueBtn" GridPane.rowIndex="11" GridPane.columnSpan="3" text="Зарегистрироваться"
                     styleClass="login-button" maxWidth="Infinity">
                 <GridPane.margin>
                     <Insets left="20" right="20"/>
                 </GridPane.margin>
             </Button>
 
+            <!--Кнопка для перехода в окно входа-->
             <Button fx:id="authorizationBtn" GridPane.rowIndex="12" GridPane.columnSpan="3" text="Уже зарегистрированы?"
-                    styleClass="link-button" onAction="#onAuthorizationBtn">
+                    styleClass="link-button" onAction="#onEntranceBtn">
                 <GridPane.margin>
                     <Insets left="20"/>
                 </GridPane.margin>
             </Button>
 
+            <!--Контейнер, в котором элементы добавляются в одну строку по порядку, если места не хватает
+            элементы переносятся на новую строку-->
             <FlowPane GridPane.columnSpan="3" GridPane.rowIndex="13">
 
                 <GridPane.margin>
@@ -152,9 +161,9 @@
                 </GridPane.margin>
 
                 <Label styleClass="other-information" text="Регистрируясь, Вы соглашайтесь с "/>
-                <Button text="Условиями использования " styleClass="link-button"/>
+                <Button text="Условиями использования " styleClass="link-button" onAction="#onTermsOfUse"/>
                 <Label styleClass="other-information" text="и "/>
-                <Button text="Политикой конфиденциальности" styleClass="link-button"/>
+                <Button text="Политикой конфиденциальности" styleClass="link-button" onAction="#onSecurityPolicy"/>
                 <Label styleClass="other-information" text="Speech"/>
 
             </FlowPane>

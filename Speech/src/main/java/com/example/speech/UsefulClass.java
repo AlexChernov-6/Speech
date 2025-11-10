@@ -2,13 +2,15 @@ package com.example.speech;
 
 import javafx.fxml.FXMLLoader;
 import javafx.geometry.Insets;
-import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.control.*;
-import javafx.scene.layout.HBox;
+import javafx.scene.control.Label;
 import javafx.scene.layout.Pane;
 import javafx.stage.Stage;
+
+import java.awt.*;
 import java.io.IOException;
+import java.net.URI;
 import java.time.LocalDate;
 import java.util.*;
 import java.util.regex.Pattern;
@@ -218,6 +220,7 @@ public class UsefulClass {
         //Получаем объект контроллера, который управляет действиями в fxml, то есть различные обработчики событий
         //Данный метод автоматически связывает Java-код контроллера с FXML-разметкой
         T controller = fxmlLoader.getController();
+
         //Если класс должен получать окно, то мы его передаём, если нет, то просто подгружаем fxml
         if (controller instanceof Window)
             //Передаём в контроллер экземпляр окна, таким образом контроллер знает в каком окне он работает
@@ -272,6 +275,22 @@ public class UsefulClass {
                     }
                     break;
             }
+        }
+    }
+
+    //Метод для открытия веб страницы по переданному адресу
+    public static void openWebPage(String urlAddress) {
+        try {
+            //Создаётся экземпляр рабочего стола
+            Desktop desktop = Desktop.getDesktop();
+            //Проверяем, поддерживает ли ОС пользователя открытие браузера
+            if (desktop.isSupported(Desktop.Action.BROWSE)) {
+                //Открывает URI в браузере по переданному адресу
+                desktop.browse(new URI(urlAddress));
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            //showError("Не удалось открыть браузер");
         }
     }
 }

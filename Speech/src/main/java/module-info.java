@@ -6,6 +6,7 @@ module com.example.speech {
     requires com.dlsc.formsfx;
     requires org.kordamp.bootstrapfx.core;
     requires javafx.graphics;
+    requires java.desktop;
 
     opens com.example.speech to javafx.fxml;
     exports com.example.speech;

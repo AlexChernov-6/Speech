@@ -1,5 +1,6 @@
 package com.example.speech;
 
+import javafx.application.HostServices;
 import javafx.fxml.FXML;
 import javafx.scene.Parent;
 import javafx.scene.control.Button;
@@ -42,7 +43,8 @@ public class RegistrationController implements Window {
     //Метод initialize гарантированно вызывается после инициализации всех полей FXML, поэтому в нём можно работать
     //С различными полями разметки
     @FXML
-    public void initialize() {
+    private void initialize() {
+        //После инициализации контроллеров меняем стили, символ * делаем красной, и заполняем ComboBox значениями
         UsefulClass.setRedEndChar(mailLb, userNameLb, passwordLb, birthdayLb);
         UsefulClass.setValuesComboBox(dayBirthdayCB, monthBirthdayCB, yearBirthdayCB);
     }
@@ -55,11 +57,23 @@ public class RegistrationController implements Window {
     }
 
     @FXML
-    public void onAuthorizationBtn() throws IOException {
-        Parent authorisationRoot = UsefulClass.loadFXML(
+    private void onEntranceBtn() throws IOException {
+        //Подгружаем разметку окна входа
+        Parent entranceWindowRoot = UsefulClass.loadFXML(
                 stage, "EntranceShape.fxml", EntranceController.class);
-        stage.getScene().setRoot(authorisationRoot);
+        //И меняем разметку на разметку EntranceShape.fxml
+        stage.getScene().setRoot(entranceWindowRoot);
     }
 
+    @FXML
+    private void onTermsOfUse() {
+        //Открываем страницу с документацией на тему условия использования
+        UsefulClass.openWebPage("https://metanit.com/java/javafx/3.2.php");
+    }
 
+    @FXML
+    private void onSecurityPolicy() {
+        //Открываем страницу с документацией на тему политика безопасности
+        UsefulClass.openWebPage("https://metanit.com/java/javafx/3.2.php");
+    }
 }

@@ -73,8 +73,12 @@ public class EntranceController extends Application implements Window{
 
     //Обработчик кнопки, будет применяться для кнопки lostPasswordBtn
     @FXML
-    public void onLostPasswordBtn() {
-
+    public void onLostPasswordBtn() throws IOException {
+        //Проводим валидацию поля email, оно не должно быть пустым
+        UsefulClass.updateStyleValidation(Map.of(mailTF, mailLb));
+        if(mailLb.getText().equals("E-MAIL"))
+            //Если всё нормально показываем окно с информацией по смене пароля
+            LostPasswordController.showLostPasswordModal(mailTF.getText(), stage);
     }
 
     //Метод-обработчик нажатия на кнопку "Вход", меняет содержимое текущей сцены
