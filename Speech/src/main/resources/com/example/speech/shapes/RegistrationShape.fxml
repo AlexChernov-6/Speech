@@ -1,0 +1,175 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.geometry.Insets?>
+
+<!--Создадим корневой AnchorPane, который будет с почти прозрачным фоном, но не полностью
+что бы компилятор принимал его во внимание, внутри него создадим отступы для содержимого в 13px
+что будет равно толщине, где можно изменять размеры окна. Визуально будет казаться, что мы изменяем
+размеры окна за самим окном, хотя по факту мы будем находиться в нём-->
+<AnchorPane fx:id="rootAnchorPane" stylesheets="@../styles.css" styleClass="root-pane" xmlns:fx="http://javafx.com/fxml/1"
+            xmlns="http://javafx.com/javafx/17.0.12" fx:controller="com.example.speech.controls.RegistrationController">
+
+    <!--Создадим основной AnchorPane, которому дадим фон-изображение и в котором будут находиться
+     шапка окна и панель входа-->
+    <AnchorPane styleClass="authorization-background" AnchorPane.bottomAnchor="0"
+                AnchorPane.leftAnchor="0" AnchorPane.rightAnchor="0" AnchorPane.topAnchor="0">
+
+        <!--Вставим разметку из файла WindowControlsShape.fxml и привяжем её к верху основного AnchorPane
+        задав высоту 40px-->
+        <fx:include prefHeight="40" source="WindowControlsShape.fxml" AnchorPane.leftAnchor="0" AnchorPane.rightAnchor="0"
+                    AnchorPane.topAnchor="0"/>
+
+        <!--Форма регистрации - занимает всё оставшееся пространство, содержимое находиться в центре.
+        Имеет 3 столбца и 14 строк-->
+        <GridPane alignment="CENTER" AnchorPane.bottomAnchor="0" AnchorPane.leftAnchor="0" AnchorPane.rightAnchor="0"
+                  AnchorPane.topAnchor="40">
+            <columnConstraints>
+                <ColumnConstraints percentWidth="18"/>
+                <ColumnConstraints percentWidth="18"/>
+                <ColumnConstraints percentWidth="18"/>
+            </columnConstraints>
+            <rowConstraints>
+                <RowConstraints percentHeight="10"/>
+                <RowConstraints percentHeight="3"/>
+                <RowConstraints percentHeight="7"/>
+                <RowConstraints percentHeight="3"/>
+                <RowConstraints percentHeight="7"/>
+                <RowConstraints percentHeight="3"/>
+                <RowConstraints percentHeight="7"/>
+                <RowConstraints percentHeight="3"/>
+                <RowConstraints percentHeight="7"/>
+                <RowConstraints percentHeight="3"/>
+                <RowConstraints percentHeight="7"/>
+                <RowConstraints percentHeight="10"/>
+                <RowConstraints percentHeight="5"/>
+                <RowConstraints percentHeight="10"/>
+            </rowConstraints>
+
+            <!--Создадим Pane, что бы закрашивать не весь Grid, а только зону внутри столбцов и строк-->
+            <Pane styleClass="main-pane" GridPane.columnSpan="3" GridPane.rowSpan="14"/>
+
+            <Label styleClass="basic-information" GridPane.halignment="CENTER" GridPane.columnSpan="3"
+                   text="Создать учётную запись">
+                <GridPane.margin>
+                    <Insets top="10"/>
+                </GridPane.margin>
+            </Label>
+
+            <Label fx:id="mailLb" GridPane.columnSpan="3" text="E-MAIL *" styleClass="other-information"
+                   GridPane.rowIndex="1"  GridPane.valignment="BOTTOM">
+                <GridPane.margin>
+                    <Insets left="20"/>
+                </GridPane.margin>
+            </Label>
+
+            <TextField GridPane.columnSpan="3" GridPane.rowIndex="2" fx:id="mailTF" styleClass="text-field"
+                       GridPane.valignment="TOP">
+                <GridPane.margin>
+                    <Insets left="20" right="20"/>
+                </GridPane.margin>
+            </TextField>
+
+            <Label fx:id="visibleNameLb" GridPane.columnSpan="3" text="ОТОБРАЖАЕМОЕ ИМЯ" GridPane.rowIndex="3"
+                   GridPane.valignment="BOTTOM" styleClass="other-information">
+                <GridPane.margin>
+                    <Insets left="20"/>
+                </GridPane.margin>
+            </Label>
+
+            <TextField GridPane.columnSpan="3" GridPane.rowIndex="4" fx:id="visibleNameTF" styleClass="text-field"
+                       GridPane.valignment="TOP">
+                <GridPane.margin>
+                    <Insets left="20" right="20"/>
+                </GridPane.margin>
+            </TextField>
+
+            <Label fx:id="userNameLb" GridPane.columnSpan="3" GridPane.rowIndex="5" GridPane.valignment="BOTTOM"
+                   text="ИМЯ ПОЛЬЗОВАТЕЛЯ *" styleClass="other-information">
+                <GridPane.margin>
+                    <Insets left="20"/>
+                </GridPane.margin>
+            </Label>
+
+            <TextField GridPane.columnSpan="3" GridPane.rowIndex="6" fx:id="userNameTF" styleClass="text-field"
+                       GridPane.valignment="TOP">
+                <GridPane.margin>
+                    <Insets left="20" right="20"/>
+                </GridPane.margin>
+            </TextField>
+
+            <Label fx:id="passwordLb" GridPane.columnSpan="3" text="ПАРОЛЬ *" GridPane.rowIndex="7"
+                   GridPane.valignment="BOTTOM" styleClass="other-information">
+                <GridPane.margin>
+                    <Insets left="20"/>
+                </GridPane.margin>
+            </Label>
+
+            <PasswordField GridPane.columnSpan="3" GridPane.rowIndex="8" fx:id="passwordF" styleClass="text-field"
+                       GridPane.valignment="TOP">
+                <GridPane.margin>
+                    <Insets left="20" right="20"/>
+                </GridPane.margin>
+            </PasswordField>
+
+            <Label fx:id="birthdayLb" GridPane.columnSpan="3" text="ДАТА РОЖДЕНИЯ *" GridPane.rowIndex="9"
+                   GridPane.valignment="BOTTOM" styleClass="other-information">
+                <GridPane.margin>
+                    <Insets left="20"/>
+                </GridPane.margin>
+            </Label>
+
+            <!--Создадим HBox, для трёх ComboBox и растягиваем на все столбцы GridPane-->
+            <HBox fx:id="birthdayHBox" GridPane.columnSpan="3" GridPane.rowIndex="10" GridPane.valignment="TOP">
+
+                <GridPane.margin>
+                    <Insets left="20" right="20"/>
+                </GridPane.margin>
+
+                <ComboBox fx:id="dayBirthdayCB"  promptText="День" styleClass="text-field"/>
+                <ComboBox fx:id="monthBirthdayCB" promptText="Месяц" styleClass="text-field">
+                    <HBox.margin>
+                        <Insets left="15" right="15"/>
+                    </HBox.margin>
+                </ComboBox>
+                <ComboBox fx:id="yearBirthdayCB" promptText="Год" styleClass="text-field"/>
+            </HBox>
+
+            <!--Кнопка регистрации аккаунта-->
+            <Button GridPane.rowIndex="11" GridPane.columnSpan="3" text="Зарегистрироваться" styleClass="login-button"
+                    maxWidth="Infinity" onAction="#onRegistrationBtn">
+                <GridPane.margin>
+                    <Insets left="20" right="20"/>
+                </GridPane.margin>
+            </Button>
+
+            <!--Кнопка для перехода в окно входа-->
+            <Button GridPane.rowIndex="12" GridPane.columnSpan="3" text="Уже зарегистрированы?"
+                    styleClass="link-button" onAction="#onEntranceBtn">
+                <GridPane.margin>
+                    <Insets left="20"/>
+                </GridPane.margin>
+            </Button>
+
+            <!--Контейнер, в котором элементы добавляются в одну строку по порядку, если места не хватает
+            элементы переносятся на новую строку-->
+            <FlowPane GridPane.columnSpan="3" GridPane.rowIndex="13">
+
+                <GridPane.margin>
+                    <Insets top="10" bottom="5" left="20" right="20"/>
+                </GridPane.margin>
+
+                <Label styleClass="other-information" text="Регистрируясь, Вы соглашайтесь с "/>
+                <Button text="Условиями использования " styleClass="link-button" onAction="#onTermsOfUse"/>
+                <Label styleClass="other-information" text="и "/>
+                <Button text="Политикой конфиденциальности" styleClass="link-button" onAction="#onSecurityPolicy"/>
+                <Label styleClass="other-information" text="Speech"/>
+
+            </FlowPane>
+
+        </GridPane>
+
+    </AnchorPane>
+
+</AnchorPane>

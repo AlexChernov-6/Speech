@@ -10,4 +10,8 @@ module com.example.speech {
 
     opens com.example.speech to javafx.fxml;
     exports com.example.speech;
+    exports com.example.speech.controls;
+    opens com.example.speech.controls to javafx.fxml;
+    exports com.example.speech.util;
+    opens com.example.speech.util to javafx.fxml;
 }
