@@ -7,6 +7,8 @@ module com.example.speech {
     requires org.kordamp.bootstrapfx.core;
     requires javafx.graphics;
     requires java.desktop;
+    requires java.sql;
+    requires com.zaxxer.hikari;
 
     opens com.example.speech to javafx.fxml;
     exports com.example.speech;

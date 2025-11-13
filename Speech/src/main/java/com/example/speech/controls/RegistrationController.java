@@ -1,5 +1,7 @@
 package com.example.speech.controls;
 
+import com.example.speech.models.User;
+import com.example.speech.models.UserService;
 import com.example.speech.util.UsefulClass;
 import com.example.speech.Window;
 import javafx.fxml.FXML;
@@ -83,9 +85,13 @@ public class RegistrationController implements Window {
 
         //Если данные заполнены корректно
         if(mailLb.getText().equals(startValueEmail) && visibleNameLb.getText().equals(startValueVisibleName)
-                && userNameLb.getText().equals(startValueUserName) && passwordLb.getText().equals(startValuePassword))
+                && userNameLb.getText().equals(startValueUserName) && passwordLb.getText().equals(startValuePassword)) {
+            User newUser = new User(mailTF.getText(), visibleNameTF.getText(), userNameTF.getText(), passwordF.getText(),
+                    UsefulClass.getLocalDate(dayBirthdayCB.getValue(), monthBirthdayCB.getValue(), yearBirthdayCB.getValue()));
+            UserService.registerUser(newUser);
             //Меняем разметку окна авторизации на разметку основного окна
             stage.getScene().setRoot(speechBaseRoot);
+        }
     }
 
     @FXML

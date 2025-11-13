@@ -1,6 +1,7 @@
 package com.example.speech.util;
 
 import com.example.speech.Window;
+import com.example.speech.models.UserService;
 import javafx.fxml.FXMLLoader;
 import javafx.geometry.Insets;
 import javafx.scene.Node;
@@ -10,7 +11,6 @@ import javafx.scene.control.Label;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.stage.Stage;
-
 import java.awt.*;
 import java.io.IOException;
 import java.net.URI;
@@ -67,6 +67,10 @@ public class UsefulClass {
             return "Email не может быть пустым";
         }
 
+        if (UserService.getUserByEmail(email) != null) {
+            return "Пользователь с таким Email уже существует";
+        }
+
         //Быстрая проверка полного формата, если ответ удовлетворяет полному регулярному выражению
         //Прекращаем выполнение метод без ошибок
         if (EMAIL_PATTERN.matcher(email).matches()) {
@@ -77,6 +81,10 @@ public class UsefulClass {
         if (!email.contains("@")) {
             return "Адрес электронной почты должен содержать символ @";
         }
+
+        //Проверка длинны электронного адреса
+        if (email.length() > 50)
+            return "Адрес электронной почты не может быть длиннее 50-ти символов.";
 
         //Проверяем что мы имеем две части, как слева от @, так и справа
         String[] parts = email.split("@", 2);
@@ -164,6 +172,9 @@ public class UsefulClass {
     private static String validateUserName(String userName) {
         if (userName.isEmpty())
             return "Имя пользователя не может быть пустым";
+
+        if (UserService.getUserByUserName(userName) != null)
+            return "Пользователь с таким именем уже существует";
 
         if (userName.length() < 4)
             return "Имя пользователя не должно быть короче 4-ых символов";
@@ -394,5 +405,14 @@ public class UsefulClass {
             e.printStackTrace();
             //showError("Не удалось открыть браузер");
         }
+    }
+
+    public static LocalDate getLocalDate(int day, String month, int year) {
+        try {
+            return LocalDate.of(year, MONTHS.indexOf(month) + 1, day);
+        } catch (DateTimeException e) {
+            System.err.println(e.getMessage());
+        }
+        return null;
     }
 }
