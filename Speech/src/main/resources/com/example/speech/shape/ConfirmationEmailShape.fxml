@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.layout.*?>
+<?import javafx.geometry.Insets?>
+
+<AnchorPane xmlns="http://javafx.com/javafx" xmlns:fx="http://javafx.com/fxml" stylesheets="@../styles.css"
+            fx:controller="com.example.speech.control.ConfirmationEmailController" styleClass="main-pane">
+
+    <!--Зададим отступы для содержимого-->
+    <padding>
+        <Insets left="15" right="15" top="10" bottom="10"/>
+    </padding>
+
+
+
+</AnchorPane>

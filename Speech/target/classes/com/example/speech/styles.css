@@ -6,7 +6,7 @@
 /*Класс для основного(не путать с корневым) AnchoPane
 Устанавливает в качестве фона изображение*/
 .authorization-background {
-    -fx-background-image: url('images/background.jpg');
+    -fx-background-image: url('image/background.jpg');
     -fx-background-size: cover;
     -fx-background-repeat: no-repeat;
     -fx-background-position: top;
@@ -101,23 +101,23 @@
 
 /*Изображение для кнопки свернуть*/
 .wrap-button {
-     -fx-background-image: url('images/imageWrapBtn.png');
+     -fx-background-image: url('image/imageWrapBtn.png');
      -fx-background-size: 35% 60%;
 }
 
 /*Изображение для кнопки expandBtn, когда окно раскрыто в полный экран*/
 .expand-button-fullscreen {
-    -fx-background-image: url('images/imageStandardScreen.png');
+    -fx-background-image: url('image/imageStandardScreen.png');
 }
 
 /*Изображение для кнопки expandBtn, когда окно находиться в стандартном состоянии*/
 .expand-button-windowed {
-    -fx-background-image: url('images/imageFullScreen.png');
+    -fx-background-image: url('image/imageFullScreen.png');
 }
 
 /*Изображение для кнопки закрыть окно*/
 .close-button {
-     -fx-background-image: url('images/imageCloseBtn.png');
+     -fx-background-image: url('image/imageCloseBtn.png');
 }
 
 /*Меняем фон при наведении курсора на кнопку*/
