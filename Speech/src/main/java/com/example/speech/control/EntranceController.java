@@ -89,7 +89,7 @@ public class EntranceController extends Application {
         updateStyleValidation(Map.of(mailTF, mailLb));
         if(mailLb.getText().equals("E-MAIL"))
             //Если всё нормально показываем окно с информацией по смене пароля
-            LostPasswordController.showLostPasswordStage(stage, mailTF.getText());
+            new LostPasswordController().showModalStage(stage, mailTF.getText());
     }
 
     //Метод-обработчик нажатия на кнопку "Вход", меняет содержимое текущей сцены

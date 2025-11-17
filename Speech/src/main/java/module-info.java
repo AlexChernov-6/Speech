@@ -9,6 +9,7 @@ module com.example.speech {
     requires java.desktop;
     requires java.sql;
     requires com.zaxxer.hikari;
+    requires java.mail;
 
     opens com.example.speech to javafx.fxml;
     exports com.example.speech.control;

@@ -96,7 +96,8 @@ public class RegistrationController {
                     UsefulClass.getLocalDate(dayBirthdayCB.getValue(), monthBirthdayCB.getValue(), yearBirthdayCB.getValue()));
             UserService.registerUser(newUser);*/
             //Меняем разметку окна авторизации на разметку основного окна
-            stage.getScene().setRoot(speechBaseRoot);
+            new ConfirmationEmailController().showModalStage(stage, mailTF.getText());
+            //stage.getScene().setRoot(speechBaseRoot);
         }
     }
 

@@ -1,24 +1,19 @@
 package com.example.speech.control;
 
+import com.example.speech.otherClass.AbstractModalStage;
+import com.example.speech.util.HelpfulInitializationClass;
 import javafx.fxml.FXML;
 import javafx.scene.Parent;
-import javafx.scene.Scene;
 import javafx.scene.control.Label;
-import javafx.scene.layout.AnchorPane;
-import javafx.scene.layout.Region;
-import javafx.scene.paint.Color;
 import javafx.scene.text.Text;
 import javafx.scene.text.TextFlow;
-import javafx.stage.Modality;
 import javafx.stage.Stage;
-import javafx.stage.StageStyle;
 import javafx.fxml.FXMLLoader;
 import java.io.IOException;
 
 import static com.example.speech.util.HelpfulInitializationClass.applyDimmingEffect;
-import static com.example.speech.util.HelpfulInitializationClass.showModalStage;
 
-public class LostPasswordController {
+public class LostPasswordController extends AbstractModalStage {
 
     @FXML
     private Label contentLb;
@@ -26,17 +21,18 @@ public class LostPasswordController {
     private Stage mainStage;
     private Stage modalStage;
 
-    public static void showLostPasswordStage(Stage mainStage, String email) throws IOException {
+    @Override
+    public void showModalStage(Stage mainStage, String otherParam) throws IOException {
         // Загружаем FXML и получаем контроллер
         FXMLLoader loader = new FXMLLoader(EntranceController.class.getResource(
                 "/com/example/speech/shape/LostPasswordShape.fxml"
         ));
         Parent root = loader.load();
         LostPasswordController controller = loader.getController();
-        controller.updateContentLabel(email);
+        controller.updateContentLabel(otherParam);
         controller.mainStage = mainStage;
 
-        controller.modalStage = showModalStage(mainStage, root);
+        controller.modalStage = HelpfulInitializationClass.showModalStage(mainStage, root);
     }
 
     //События для кнопки OK
