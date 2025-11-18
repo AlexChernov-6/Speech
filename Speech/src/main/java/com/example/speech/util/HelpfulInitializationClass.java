@@ -49,19 +49,18 @@ public class HelpfulInitializationClass {
         modalStage.initModality(Modality.WINDOW_MODAL);
         modalStage.initOwner(mainStage);
         modalStage.initStyle(StageStyle.TRANSPARENT);
-        //Задаём стартовое положение окна
-        modalStage.setX(mainStage.getX() + mainStage.getWidth() / 6);
-        modalStage.setY(mainStage.getY() + mainStage.getHeight() / 3);
-
-        /**/
 
         // Затемнение
         applyDimmingEffect(true, mainStage);
 
-        //Создаём сцену, которая будет прозрачной и задаём размеры 2/3 длинны окна-владельца и 1/3 его высоты
-        Scene scene = new Scene(modalStageParent, mainStage.getWidth() * 2 / 3 , mainStage.getHeight() / 3);
+        //Создаём сцену, которая будет прозрачной и задаём размеры 1/2 длинны окна-владельца и 1/2 его высоты
+        Scene scene = new Scene(modalStageParent, 400 , 250);
         scene.setFill(Color.TRANSPARENT);
         modalStage.setScene(scene);
+
+        //Задаём стартовое положение окна
+        modalStage.setX(mainStage.getX() + (mainStage.getWidth() - 400) / 2);
+        modalStage.setY(mainStage.getY() + (mainStage.getHeight() - 250) / 2);
 
         // Слушатель закрытия для убирания затемнения
         modalStage.setOnHidden(e -> applyDimmingEffect(false, mainStage));

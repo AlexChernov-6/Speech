@@ -2,8 +2,12 @@ package com.example.speech.util;
 
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
+
+import java.io.FileInputStream;
+import java.io.IOException;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.Properties;
 
 public class DatabaseConnection {
     //Единственный экземпляр пула на всё приложение
@@ -16,12 +20,19 @@ public class DatabaseConnection {
     //Статичный блок инициализации, создаётся один раз, при первом использовании класса, что исключает создание лишних
     //И ненужных подключений и пулов в том числе.
     static {
+        Properties properties = new Properties();
+        try (FileInputStream fileInputStream = new FileInputStream("config.properties")) {
+            properties.load(fileInputStream);
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to load email configuration", e);
+        }
+
         //Создаётся экземпляр конфигурация для пула
         HikariConfig config = new HikariConfig();
         //Передаём url БД, к которой хотим подключить пул, и необходимо передать параметры для соединения
-        config.setJdbcUrl("jdbc:postgresql://localhost:5432/speechdb");
-        config.setUsername("userspeech");
-        config.setPassword("0QjWJ?3KXIzA");
+        config.setJdbcUrl(properties.getProperty("database.URL"));
+        config.setUsername(properties.getProperty("database.userName"));
+        config.setPassword(properties.getProperty("database.userPassword"));
 
         //Настройки пула
 

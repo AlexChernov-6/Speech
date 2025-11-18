@@ -22,6 +22,10 @@ public class SendingClass {
     //Потокобезопасная реализация Map, нужна что бы данные корректно записывались при единовременном обращении
     private static ConcurrentHashMap<String, String> verificationCodes = new ConcurrentHashMap<>();
 
+    // Глобальное хранилище времени последней отправки для каждого email
+    private static final ConcurrentHashMap<String, Long> lastSentTime = new ConcurrentHashMap<>();
+    private static final long COOLDOWN_MS = 60000;
+
     public enum ContextDelivery {
         SEND_CONFIRMATION_CODE,
         SEND_LOST_PASSWORD
@@ -58,20 +62,27 @@ public class SendingClass {
         });
     }
 
-    public static void sendPostalDelivery(String recipientEmail, ContextDelivery context) {
+    public static boolean sendPostalDelivery(String recipientEmail, ContextDelivery context) {
+        // Проверяем можно ли отправлять
+        if (!canSendEmail(recipientEmail)) {
+            return false;
+        }
+
         switch (context) {
             case SEND_CONFIRMATION_CODE:
-                ConfirmationEmail(recipientEmail);
-                break;
+                boolean sent = ConfirmationEmail(recipientEmail);
+                if (sent) {
+                    lastSentTime.put(recipientEmail, System.currentTimeMillis());
+                }
+                return sent;
             case SEND_LOST_PASSWORD:
-
-                break;
+                return false;
             default:
                 throw new IllegalArgumentException("Неизвестный контекст: " + context);
         }
     }
 
-    private static void ConfirmationEmail(String recipientEmail) {
+    private static boolean ConfirmationEmail(String recipientEmail) {
         try {
             // Создаем сообщение
             Message message = new MimeMessage(SESSION);
@@ -90,9 +101,10 @@ public class SendingClass {
             Transport.send(message);
 
             verificationCodes.put(recipientEmail, code);
-
+            return true;
         } catch (MessagingException | UnsupportedEncodingException e) {
             System.err.println(e.getMessage());
+            return false;
         }
     }
 
@@ -101,5 +113,33 @@ public class SendingClass {
         Random random = new Random();
         int code = 100000 + random.nextInt(900000);
         return String.valueOf(code);
+    }
+
+    // Очистка устаревших записей
+    public static void cleanupExpiredEntries() {
+        long currentTime = System.currentTimeMillis();
+        lastSentTime.entrySet().removeIf(entry ->
+                currentTime - entry.getValue() > COOLDOWN_MS
+        );
+    }
+
+    // Проверяем можно ли отправлять email
+    public static boolean canSendEmail(String email) {
+        Long lastTime = lastSentTime.get(email);
+        if (lastTime == null) return true;
+
+        long timeSinceLastSend = System.currentTimeMillis() - lastTime;
+        return timeSinceLastSend >= COOLDOWN_MS;
+    }
+
+    // Получаем оставшееся время в секундах
+    public static int getRemainingTime(String email) {
+        Long lastTime = lastSentTime.get(email);
+        if (lastTime == null) return 0;
+
+        long timeSinceLastSend = System.currentTimeMillis() - lastTime;
+        long remainingMs = COOLDOWN_MS - timeSinceLastSend;
+
+        return remainingMs > 0 ? (int)(remainingMs / 1000) : 0;
     }
 }

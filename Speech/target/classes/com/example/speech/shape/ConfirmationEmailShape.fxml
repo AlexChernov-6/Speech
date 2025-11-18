@@ -11,12 +11,12 @@
 
     <GridPane AnchorPane.topAnchor="0" AnchorPane.bottomAnchor="0" AnchorPane.leftAnchor="0" AnchorPane.rightAnchor="0">
         <rowConstraints>
-            <RowConstraints prefHeight="25" vgrow="NEVER" maxHeight="25" valignment="TOP"/>
-            <RowConstraints vgrow="ALWAYS" minHeight="10" valignment="CENTER"/>
-            <RowConstraints vgrow="NEVER" prefHeight="15" maxHeight="15" valignment="BOTTOM"/>
-            <RowConstraints vgrow="ALWAYS" minHeight="10"/>
-            <RowConstraints vgrow="NEVER" prefHeight="15" maxHeight="15" valignment="TOP"/>
-            <RowConstraints vgrow="ALWAYS" minHeight="10" valignment="CENTER"/>
+            <RowConstraints percentHeight="20"/>
+            <RowConstraints percentHeight="20"/>
+            <RowConstraints percentHeight="10"/>
+            <RowConstraints vgrow="NEVER" prefHeight="45" maxHeight="45"/>
+            <RowConstraints percentHeight="10"/>
+            <RowConstraints vgrow="ALWAYS" prefHeight="45" minHeight="45"/>
         </rowConstraints>
 
         <columnConstraints>
@@ -26,18 +26,18 @@
 
 
         <Button fx:id="closeBtn" onAction="#onCloseBtn" prefWidth="40" prefHeight="15" style="-fx-border-radius: 12;
-        -fx-background-radius: 12;"
-                styleClass="window-control-button, close-button" GridPane.columnIndex="1">
+        -fx-background-radius: 12;" styleClass="window-control-button, close-button" GridPane.columnIndex="1"
+                GridPane.valignment="TOP">
         </Button>
 
-        <Label styleClass="basic-information" text="Подтверждение Email" prefHeight="30">
+        <Label styleClass="basic-information" text="Подтверждение Email" prefHeight="30" GridPane.valignment="BOTTOM">
             <GridPane.margin>
                 <Insets left="15"/>
             </GridPane.margin>
         </Label>
 
         <Label fx:id="contentLb" styleClass="secondary-information" wrapText="true" GridPane.columnSpan="2"
-               GridPane.rowIndex="1">
+               GridPane.rowIndex="1" GridPane.valignment="TOP">
             <GridPane.margin>
                 <Insets left="15" top="7" bottom="7" right="15"/>
             </GridPane.margin>
@@ -50,33 +50,33 @@
             </GridPane.margin>
         </Label>
 
-        <HBox GridPane.columnSpan="2" GridPane.rowIndex="3">
+        <HBox GridPane.columnSpan="2" GridPane.rowIndex="3" alignment="CENTER_LEFT">
             <GridPane.margin>
                 <Insets left="15" right="15"/>
             </GridPane.margin>
 
-            <TextField fx:id="num1" styleClass="text-field" prefWidth="25" prefHeight="40"/>
-            <TextField fx:id="num2" styleClass="text-field" prefWidth="25" prefHeight="40">
+            <TextField fx:id="num1" styleClass="text-field" prefWidth="30" prefHeight="40"/>
+            <TextField fx:id="num2" styleClass="text-field" prefWidth="30" prefHeight="40">
                 <HBox.margin>
                     <Insets left="10"/>
                 </HBox.margin>
             </TextField>
-            <TextField fx:id="num3" styleClass="text-field" prefWidth="25" prefHeight="40">
+            <TextField fx:id="num3" styleClass="text-field" prefWidth="30" prefHeight="40">
                 <HBox.margin>
                     <Insets left="10"/>
                 </HBox.margin>
             </TextField>
-            <TextField fx:id="num4" styleClass="text-field" prefWidth="25" prefHeight="40">
+            <TextField fx:id="num4" styleClass="text-field" prefWidth="30" prefHeight="40">
                 <HBox.margin>
                     <Insets left="10"/>
                 </HBox.margin>
             </TextField>
-            <TextField fx:id="num5" styleClass="text-field" prefWidth="25" prefHeight="40">
+            <TextField fx:id="num5" styleClass="text-field" prefWidth="30" prefHeight="40">
                 <HBox.margin>
                     <Insets left="10"/>
                 </HBox.margin>
             </TextField>
-            <TextField fx:id="num6" styleClass="text-field" prefWidth="25" prefHeight="40">
+            <TextField fx:id="num6" styleClass="text-field" prefWidth="30" prefHeight="40">
                 <HBox.margin>
                     <Insets left="10"/>
                 </HBox.margin>
@@ -84,15 +84,15 @@
         </HBox>
 
         <Button fx:id="getCodeBtn" GridPane.rowIndex="4" GridPane.columnSpan="2" text="Получить код"
-                styleClass="link-button">
+                styleClass="link-button" onAction="#onGetCodeBtn">
             <GridPane.margin>
                 <Insets left="15" right="15"/>
             </GridPane.margin>
         </Button>
 
-        <Button GridPane.rowIndex="5" GridPane.columnSpan="2" text="Подтвердить" styleClass="login-button">
+        <Button GridPane.rowIndex="5" GridPane.columnSpan="2" styleClass="login-button" text="Подтвердить">
             <GridPane.margin>
-                <Insets left="15" top="5" bottom="5" right="15"/>
+                <Insets left="15" right="15"/>
             </GridPane.margin>
         </Button>
     </GridPane>

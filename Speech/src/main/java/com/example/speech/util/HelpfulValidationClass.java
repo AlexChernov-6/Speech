@@ -160,7 +160,7 @@ public class HelpfulValidationClass {
             return "Пароль не может быть пустым";
 
         //Пароль не может быть меньше 8 и больше 50-ти символов
-        if (password.length() <= 8 || password.length() >= 50)
+        if (password.length() < 8 || password.length() > 50)
             return "Пароль должен быть не менее 8 и не более 50 символов";
 
         //Пароль должен содержать хотя бы одну цифру

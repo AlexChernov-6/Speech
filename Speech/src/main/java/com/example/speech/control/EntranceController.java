@@ -3,6 +3,7 @@ package com.example.speech.control;
 import com.example.speech.util.DatabaseConnection;
 import com.example.speech.util.ResizeListener;
 
+import com.example.speech.util.SendingClass;
 import javafx.application.Application;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -80,6 +81,8 @@ public class EntranceController extends Application {
         stage.show();
         //При запуске приложения создаём пул с подключениями(если не создан), что бы у первого запроса был короткий отклик
         DatabaseConnection.getConnection();
+        //При запуске приложение так же создаём соединение для отправки писем
+        new SendingClass();
     }
 
     //Обработчик кнопки, будет применяться для кнопки lostPasswordBtn

@@ -2,6 +2,8 @@ package com.example.speech.control;
 
 import com.example.speech.otherClass.AbstractModalStage;
 import com.example.speech.util.HelpfulInitializationClass;
+import com.example.speech.util.SendingClass;
+import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
@@ -13,21 +15,28 @@ import javafx.scene.text.TextFlow;
 import javafx.stage.Stage;
 
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.Timer;
+import java.util.TimerTask;
 
 import static com.example.speech.util.SendingClass.*;
 
 public class ConfirmationEmailController extends AbstractModalStage {
     @FXML
-    private Button closeBtn;
+    private Button closeBtn, getCodeBtn;
 
     @FXML
-    private Label contentLb;
+    private Label contentLb, informationLb;
 
     @FXML
     private TextField num1, num2, num3, num4, num5, num6;
 
     private Stage mainStage;
     private Stage modalStage;
+
+    private String mail;
+
+    private Timer countdownTimer;
 
     @FXML
     private void onCloseBtn() {
@@ -50,6 +59,7 @@ public class ConfirmationEmailController extends AbstractModalStage {
     }
 
     private void updateContentLabel(String mail) {
+        this.mail = mail;
         if (contentLb != null && mail != null) {
             TextFlow textFlow = new TextFlow();
 
@@ -69,6 +79,58 @@ public class ConfirmationEmailController extends AbstractModalStage {
 
             contentLb.setGraphic(textFlow);
         }
-        sendPostalDelivery(mail, ContextDelivery.SEND_CONFIRMATION_CODE);
+        onGetCodeBtn();
+    }
+
+    @FXML
+    private void onGetCodeBtn() {
+        if (getCodeBtn.getText().equals("Получить код")) {
+            // ПРОВЕРЯЕМ можно ли отправлять ДО отправки
+            if (!SendingClass.canSendEmail(mail)) {
+                int remaining = SendingClass.getRemainingTime(mail);
+                startCountdown(remaining);
+                return;
+            }
+
+            // ОТПРАВЛЯЕМ email
+            boolean sent = SendingClass.sendPostalDelivery(mail, ContextDelivery.SEND_CONFIRMATION_CODE);
+
+            if (sent) {
+                informationLb.setText("Код отправлен на вашу почту");
+                informationLb.setStyle("-fx-text-fill: green");
+                startCountdown(60); // Запускаем таймер на 60 секунд
+            } else {
+                informationLb.setText("Ошибка отправки кода");
+                informationLb.setStyle("-fx-text-fill: red");
+            }
+        }
+    }
+
+    private void startCountdown(int startSeconds) {
+        // Отменяем предыдущий таймер
+        if (countdownTimer != null) {
+            countdownTimer.cancel();
+        }
+
+        getCodeBtn.setDisable(true);
+        final int[] secondsRemaining = {startSeconds};
+
+        countdownTimer = new Timer();
+        countdownTimer.scheduleAtFixedRate(new TimerTask() {
+            @Override
+            public void run() {
+                Platform.runLater(() -> {
+                    secondsRemaining[0]--;
+                    if (secondsRemaining[0] > 0) {
+                        getCodeBtn.setText("Повторно через " + secondsRemaining[0]);
+                    } else {
+                        getCodeBtn.setText("Получить код");
+                        getCodeBtn.setDisable(false);
+                        countdownTimer.cancel();
+                        countdownTimer = null;
+                    }
+                });
+            }
+        }, 1000, 1000);
     }
 }
