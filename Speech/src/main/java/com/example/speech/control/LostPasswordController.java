@@ -1,9 +1,9 @@
 package com.example.speech.control;
 
-import com.example.speech.otherClass.AbstractModalStage;
 import com.example.speech.util.HelpfulInitializationClass;
 import javafx.fxml.FXML;
 import javafx.scene.Parent;
+import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.text.Text;
 import javafx.scene.text.TextFlow;
@@ -13,16 +13,15 @@ import java.io.IOException;
 
 import static com.example.speech.util.HelpfulInitializationClass.applyDimmingEffect;
 
-public class LostPasswordController extends AbstractModalStage {
+public class LostPasswordController {
 
     @FXML
     private Label contentLb;
 
-    private Stage mainStage;
-    private Stage modalStage;
+    @FXML
+    private Button closeBtn;
 
-    @Override
-    public void showModalStage(Stage mainStage, String otherParam) throws IOException {
+    public void showModalLostPasswordStage(Stage mainStage, String otherParam) throws IOException {
         // Загружаем FXML и получаем контроллер
         FXMLLoader loader = new FXMLLoader(EntranceController.class.getResource(
                 "/com/example/speech/shape/LostPasswordShape.fxml"
@@ -30,18 +29,14 @@ public class LostPasswordController extends AbstractModalStage {
         Parent root = loader.load();
         LostPasswordController controller = loader.getController();
         controller.updateContentLabel(otherParam);
-        controller.mainStage = mainStage;
-
-        controller.modalStage = HelpfulInitializationClass.showModalStage(mainStage, root);
+        HelpfulInitializationClass.showModalStage(mainStage, root);
     }
 
     //События для кнопки OK
     @FXML
     private void onOkBtn() {
-        applyDimmingEffect(false, mainStage);
-        if (modalStage != null) {
-            modalStage.close();
-        }
+        Stage stage = (Stage) closeBtn.getScene().getWindow();
+        stage.close();
     }
 
     //Метод, который обновляет текст у Label contentLb

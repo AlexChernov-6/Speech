@@ -36,6 +36,8 @@ public class HelpfulValidationClass {
 
     private static final Pattern USER_NAME = Pattern.compile("^[A-Za-z]+[\\.-_]?[A-Za-z0-9]+$");
 
+    private static final Pattern CONFIRM_CODE = Pattern.compile("^[0-9]$");
+
     protected static final List<String> MONTHS = List.of("Январь", "Февраль", "Март", "Апрель", "Май", "Июнь",
             "Июль", "Август", "Сентябрь", "Октябрь", "Ноябрь", "Декабрь");
 
@@ -312,5 +314,22 @@ public class HelpfulValidationClass {
                 parent.setStyle(originalInputStyle);
             }
         }
+    }
+
+    public static boolean validConfirmCode(Label label, TextInputControl... textInputControls) {
+        for(TextInputControl tIC : textInputControls) {
+            String text = tIC.getText();
+            if (text.isEmpty()) {
+                label.setText("Все поля должны быть заполнены");
+                label.setStyle("-fx-text-fill: rgba(115,0,0);");
+                return false;
+            }
+            if (text.length() > 1 || !CONFIRM_CODE.matcher(text).matches()) {
+                label.setText("В каждом поле допускается только 1 цифра");
+                label.setStyle("-fx-text-fill: rgba(115,0,0);");
+                return false;
+            }
+        }
+        return true;
     }
 }

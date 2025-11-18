@@ -90,7 +90,8 @@
             </GridPane.margin>
         </Button>
 
-        <Button GridPane.rowIndex="5" GridPane.columnSpan="2" styleClass="login-button" text="Подтвердить">
+        <Button onAction="#onConfirmBtn" GridPane.rowIndex="5" GridPane.columnSpan="2" styleClass="login-button"
+                text="Подтвердить">
             <GridPane.margin>
                 <Insets left="15" right="15"/>
             </GridPane.margin>

@@ -1,6 +1,6 @@
 package com.example.speech.control;
 
-import com.example.speech.otherClass.AbstractModalStage;
+import com.example.speech.model.User;
 import com.example.speech.util.HelpfulInitializationClass;
 import com.example.speech.util.SendingClass;
 import javafx.application.Platform;
@@ -15,13 +15,14 @@ import javafx.scene.text.TextFlow;
 import javafx.stage.Stage;
 
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.Timer;
 import java.util.TimerTask;
 
+import static com.example.speech.service.UserService.registerUser;
+import static com.example.speech.util.HelpfulValidationClass.validConfirmCode;
 import static com.example.speech.util.SendingClass.*;
 
-public class ConfirmationEmailController extends AbstractModalStage {
+public class ConfirmationEmailController {
     @FXML
     private Button closeBtn, getCodeBtn;
 
@@ -31,31 +32,31 @@ public class ConfirmationEmailController extends AbstractModalStage {
     @FXML
     private TextField num1, num2, num3, num4, num5, num6;
 
-    private Stage mainStage;
-    private Stage modalStage;
+    private User newUser;
 
     private String mail;
 
     private Timer countdownTimer;
 
+    private Stage mainStage;
+
     @FXML
     private void onCloseBtn() {
         Stage stage = (Stage) closeBtn.getScene().getWindow();
-        //Закрываем окно
         stage.close();
     }
 
-    @Override
-    public void showModalStage(Stage mainStage, String otherParam) throws IOException {
+    public void showModalConfirmationEmailStage(Stage mainStage, User newUser) throws IOException {
         FXMLLoader loader = new FXMLLoader(EntranceController.class.getResource(
                 "/com/example/speech/shape/ConfirmationEmailShape.fxml"));
         Parent parent = loader.load();
 
         ConfirmationEmailController controller = loader.getController();
-        controller.updateContentLabel(otherParam);
-
+        controller.updateContentLabel(newUser.getEmail());
+        controller.newUser = newUser;
         controller.mainStage = mainStage;
-        controller.modalStage = HelpfulInitializationClass.showModalStage(mainStage, parent);
+
+        HelpfulInitializationClass.showModalStage(mainStage, parent);
     }
 
     private void updateContentLabel(String mail) {
@@ -132,5 +133,31 @@ public class ConfirmationEmailController extends AbstractModalStage {
                 });
             }
         }, 1000, 1000);
+    }
+
+    @FXML
+    private void onConfirmBtn() throws IOException {
+        if (validConfirmCode(informationLb, num1, num2, num3, num4, num5, num6)
+                && getVerificationCode(mail).equals(getEnteredCode(num1, num2, num3, num4, num5, num6))) {
+            registerUser(newUser);
+            FXMLLoader fxmlLoader = new FXMLLoader(EntranceController.class.getResource(
+                    "/com/example/speech/shape/SpeechBaseShape.fxml"
+            ));
+            Parent speechBaseRoot = fxmlLoader.load();
+
+            SpeechBaseController controller = fxmlLoader.getController();
+            controller.setStage(mainStage);
+            //Меняем разметку окна авторизации на разметку основного окна
+            mainStage.getScene().setRoot(speechBaseRoot);
+            onCloseBtn();
+        }
+    }
+
+    public static String getEnteredCode(TextField... textFields) {
+        StringBuilder sB = new StringBuilder();
+        for (TextField tF : textFields) {
+            sB.append(tF.getText());
+        }
+        return sB.toString();
     }
 }

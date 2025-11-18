@@ -142,4 +142,8 @@ public class SendingClass {
 
         return remainingMs > 0 ? (int)(remainingMs / 1000) : 0;
     }
+
+    public static String getVerificationCode(String emil) {
+        return verificationCodes.get(emil);
+    }
 }

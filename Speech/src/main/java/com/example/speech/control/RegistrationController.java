@@ -1,5 +1,6 @@
 package com.example.speech.control;
 
+import com.example.speech.model.User;
 import com.example.speech.util.HelpfulClass;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -75,29 +76,16 @@ public class RegistrationController {
         if (startValuePassword == null)
             startValuePassword = passwordLb.getText();
 
-        FXMLLoader fxmlLoader = new FXMLLoader(EntranceController.class.getResource(
-                "/com/example/speech/shape/SpeechBaseShape.fxml"
-        ));
-        Parent speechBaseRoot = fxmlLoader.load();
-
-        SpeechBaseController controller = fxmlLoader.getController();
-        controller.setStage(stage);
-
         //При нажатии на кнопку проводим валидацию данных в TextField
         updateStyleValidation(Map.of(mailTF, mailLb, visibleNameTF, visibleNameLb,
                 userNameTF, userNameLb, passwordF, passwordLb, birthdayHBox, birthdayLb));
 
-        //Валидация даты рождения
-
         //Если данные заполнены корректно
         if(mailLb.getText().equals(startValueEmail) && visibleNameLb.getText().equals(startValueVisibleName)
                 && userNameLb.getText().equals(startValueUserName) && passwordLb.getText().equals(startValuePassword)) {
-            /*User newUser = new User(mailTF.getText(), visibleNameTF.getText(), userNameTF.getText(), passwordF.getText(),
-                    UsefulClass.getLocalDate(dayBirthdayCB.getValue(), monthBirthdayCB.getValue(), yearBirthdayCB.getValue()));
-            UserService.registerUser(newUser);*/
-            //Меняем разметку окна авторизации на разметку основного окна
-            new ConfirmationEmailController().showModalStage(stage, mailTF.getText());
-            //stage.getScene().setRoot(speechBaseRoot);
+            User newUser = new User(mailTF.getText(), visibleNameTF.getText(), userNameTF.getText(), passwordF.getText(),
+                    HelpfulClass.getLocalDate(dayBirthdayCB.getValue(), monthBirthdayCB.getValue(), yearBirthdayCB.getValue()));
+            new ConfirmationEmailController().showModalConfirmationEmailStage(stage, newUser);
         }
     }
 
