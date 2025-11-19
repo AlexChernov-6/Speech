@@ -15,16 +15,19 @@ import javafx.scene.text.TextFlow;
 import javafx.stage.Stage;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
 
 import static com.example.speech.service.UserService.registerUser;
 import static com.example.speech.util.HelpfulValidationClass.validConfirmCode;
+import static com.example.speech.util.NavigateListener.setEnterPressed;
+import static com.example.speech.util.NavigateListener.setLinkListener;
 import static com.example.speech.util.SendingClass.*;
 
 public class ConfirmationEmailController {
     @FXML
-    private Button closeBtn, getCodeBtn;
+    private Button closeBtn, getCodeBtn, confirmBtn;
 
     @FXML
     private Label contentLb, informationLb;
@@ -52,15 +55,21 @@ public class ConfirmationEmailController {
         Parent parent = loader.load();
 
         ConfirmationEmailController controller = loader.getController();
-        controller.updateContentLabel(newUser.getEmail());
-        controller.newUser = newUser;
-        controller.mainStage = mainStage;
+        controller.initializeData(newUser, mainStage);
 
         HelpfulInitializationClass.showModalStage(mainStage, parent);
     }
 
-    private void updateContentLabel(String mail) {
-        this.mail = mail;
+    private void initializeData(User newUser, Stage mainStage) {
+        this.mail = newUser.getEmail();
+        this.mainStage = mainStage;
+        initializeContentLb();
+        setLinkListener(List.of(num1, num2, num3, num4, num5, num6));
+        Platform.runLater(() -> num1.requestFocus());
+        setEnterPressed(confirmBtn);
+    }
+
+    private void initializeContentLb() {
         if (contentLb != null && mail != null) {
             TextFlow textFlow = new TextFlow();
 
@@ -80,7 +89,6 @@ public class ConfirmationEmailController {
 
             contentLb.setGraphic(textFlow);
         }
-        onGetCodeBtn();
     }
 
     @FXML
@@ -137,19 +145,25 @@ public class ConfirmationEmailController {
 
     @FXML
     private void onConfirmBtn() throws IOException {
-        if (validConfirmCode(informationLb, num1, num2, num3, num4, num5, num6)
-                && getVerificationCode(mail).equals(getEnteredCode(num1, num2, num3, num4, num5, num6))) {
-            registerUser(newUser);
-            FXMLLoader fxmlLoader = new FXMLLoader(EntranceController.class.getResource(
-                    "/com/example/speech/shape/SpeechBaseShape.fxml"
-            ));
-            Parent speechBaseRoot = fxmlLoader.load();
+        if (validConfirmCode(informationLb, num1, num2, num3, num4, num5, num6)) {
+            if (getVerificationCode(mail) != null &&
+                    getVerificationCode(mail).equals(getEnteredCode(num1, num2, num3, num4, num5, num6))) {
 
-            SpeechBaseController controller = fxmlLoader.getController();
-            controller.setStage(mainStage);
-            //Меняем разметку окна авторизации на разметку основного окна
-            mainStage.getScene().setRoot(speechBaseRoot);
-            onCloseBtn();
+                registerUser(newUser);
+                FXMLLoader fxmlLoader = new FXMLLoader(EntranceController.class.getResource(
+                        "/com/example/speech/shape/SpeechBaseShape.fxml"
+                ));
+                Parent speechBaseRoot = fxmlLoader.load();
+
+                SpeechBaseController controller = fxmlLoader.getController();
+                controller.initializeData(mainStage);
+                //Меняем разметку окна авторизации на разметку основного окна
+                mainStage.getScene().setRoot(speechBaseRoot);
+                onCloseBtn();
+            } else {
+                informationLb.setText("Неверный код");
+                informationLb.setStyle("-fx-text-fill: rgba(115,0,0);");
+            }
         }
     }
 

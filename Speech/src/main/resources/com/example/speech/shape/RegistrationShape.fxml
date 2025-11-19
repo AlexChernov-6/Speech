@@ -138,7 +138,7 @@
 
             <!--Кнопка регистрации аккаунта-->
             <Button GridPane.rowIndex="11" GridPane.columnSpan="3" text="Зарегистрироваться" styleClass="login-button"
-                    maxWidth="Infinity" onAction="#onRegistrationBtn">
+                    maxWidth="Infinity" onAction="#onRegistrationBtn" fx:id="registrationBtn">
                 <GridPane.margin>
                     <Insets left="20" right="20"/>
                 </GridPane.margin>

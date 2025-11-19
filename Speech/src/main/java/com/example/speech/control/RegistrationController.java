@@ -2,6 +2,7 @@ package com.example.speech.control;
 
 import com.example.speech.model.User;
 import com.example.speech.util.HelpfulClass;
+import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
@@ -17,6 +18,7 @@ import static com.example.speech.util.HelpfulInitializationClass.setValuesComboB
 import static com.example.speech.util.HelpfulStylingClass.setRedEndChar;
 import static com.example.speech.util.HelpfulStylingClass.setupFullScreenListener;
 import static com.example.speech.util.HelpfulValidationClass.updateStyleValidation;
+import static com.example.speech.util.NavigateListener.setEnterPressed;
 
 //Класс будет реализовывать интерфейс Window и переопределять метод setStage
 //Потому что нам важно получить окно, в котором будем работать
@@ -45,21 +47,19 @@ public class RegistrationController {
     @FXML
     private HBox birthdayHBox;
 
+    @FXML
+    private Button registrationBtn;
+
     private String startValueEmail, startValueVisibleName, startValueUserName, startValuePassword;
 
-    //Метод initialize гарантированно вызывается после инициализации всех полей FXML, поэтому в нём можно работать
-    //С различными полями разметки
-    @FXML
-    private void initialize() {
-        //После инициализации контроллеров меняем стили, символ * делаем красной, и заполняем ComboBox значениями
-        setRedEndChar(mailLb, userNameLb, passwordLb, birthdayLb);
-        setValuesComboBox(dayBirthdayCB, monthBirthdayCB, yearBirthdayCB);
-    }
-
-    public void setStage(Stage stage) {
+    public void initializeData(Stage stage) {
         this.stage = stage;
         //Добавляем обработчик состояния окна(fullScreen или нет)
         setupFullScreenListener(stage, rootAnchorPane);
+        setRedEndChar(mailLb, userNameLb, passwordLb, birthdayLb);
+        setValuesComboBox(dayBirthdayCB, monthBirthdayCB, yearBirthdayCB);
+        setEnterPressed(registrationBtn);
+        Platform.runLater(() -> mailTF.requestFocus());
     }
 
     @FXML
@@ -97,7 +97,7 @@ public class RegistrationController {
         Parent entranceWindowRoot = fxmlLoader.load();
 
         EntranceController controller = fxmlLoader.getController();
-        controller.setStage(stage);
+        controller.initializeData(stage);
         //И меняем разметку на разметку EntranceShape.fxml
         stage.getScene().setRoot(entranceWindowRoot);
     }

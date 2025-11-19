@@ -12,6 +12,7 @@ import javafx.fxml.FXMLLoader;
 import java.io.IOException;
 
 import static com.example.speech.util.HelpfulInitializationClass.applyDimmingEffect;
+import static com.example.speech.util.NavigateListener.setEnterPressed;
 
 public class LostPasswordController {
 
@@ -21,14 +22,14 @@ public class LostPasswordController {
     @FXML
     private Button closeBtn;
 
-    public void showModalLostPasswordStage(Stage mainStage, String otherParam) throws IOException {
+    public void showModalLostPasswordStage(Stage mainStage, String email) throws IOException {
         // Загружаем FXML и получаем контроллер
         FXMLLoader loader = new FXMLLoader(EntranceController.class.getResource(
                 "/com/example/speech/shape/LostPasswordShape.fxml"
         ));
         Parent root = loader.load();
         LostPasswordController controller = loader.getController();
-        controller.updateContentLabel(otherParam);
+        controller.initializeData(email);
         HelpfulInitializationClass.showModalStage(mainStage, root);
     }
 
@@ -37,6 +38,11 @@ public class LostPasswordController {
     private void onOkBtn() {
         Stage stage = (Stage) closeBtn.getScene().getWindow();
         stage.close();
+    }
+
+    private void initializeData(String email) {
+        updateContentLabel(email);
+        setEnterPressed(closeBtn);
     }
 
     //Метод, который обновляет текст у Label contentLb

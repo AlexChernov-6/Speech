@@ -58,6 +58,12 @@
     -fx-effect: dropshadow(gaussian, rgba(0, 59, 20, 0.2), 5, 0, 0, 1);
 }
 
+.input-code {
+    -fx-border-color: #a0a0a0;
+    -fx-font-size: 16px;
+    -fx-font-weight: bold;
+}
+
 /*Стиль для кнопок "Вход" и "Зарегистрироваться"*/
 .login-button {
     -fx-background-color: #003B14;

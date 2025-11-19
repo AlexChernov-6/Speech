@@ -5,6 +5,7 @@ import com.example.speech.util.ResizeListener;
 
 import com.example.speech.util.SendingClass;
 import javafx.application.Application;
+import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
@@ -21,6 +22,7 @@ import java.util.Map;
 
 import static com.example.speech.util.HelpfulStylingClass.setupFullScreenListener;
 import static com.example.speech.util.HelpfulValidationClass.updateStyleValidation;
+import static com.example.speech.util.NavigateListener.setEnterPressed;
 
 public class EntranceController extends Application {
     //Корневой контейнер самого высокого уровня, то что пользователь видит как окно приложения(окно ОС)
@@ -39,12 +41,17 @@ public class EntranceController extends Application {
     @FXML
     private Label mailLb, passwordLb;
 
+    @FXML
+    private Button entranceBtn;
+
     private String startValueEmail, startValuePassword;
 
-    public void setStage(Stage stage) {
+    public void initializeData(Stage stage) {
         this.stage = stage;
         //Добавляем обработчик состояния окна(fullScreen или нет)
         setupFullScreenListener(stage, rootAnchorPane);
+        setEnterPressed(entranceBtn);
+        Platform.runLater(() -> mailTF.requestFocus());
     }
 
     //Переопределённый метод абстрактного класса Application, который вызывается при запуске программы
@@ -58,7 +65,7 @@ public class EntranceController extends Application {
         Parent authorizationRoot = fxmlLoader.load();
 
         EntranceController controller = fxmlLoader.getController();
-        controller.setStage(stage);
+        controller.initializeData(stage);
 
         //Создаём сцену-контейнер для всего содержимого окна(Stage может иметь только одну активную сцену)
         //В качестве аргумента принимает Parent(разметку) и размеры сцены
@@ -111,7 +118,7 @@ public class EntranceController extends Application {
         Parent speechBaseRoot = fxmlLoader.load();
 
         SpeechBaseController controller = fxmlLoader.getController();
-        controller.setStage(stage);
+        controller.initializeData(stage);
 
         //При нажатии на кнопку проводим валидацию данных в TextField
         updateStyleValidation(Map.of(mailTF, mailLb, passwordF, passwordLb));
@@ -129,7 +136,7 @@ public class EntranceController extends Application {
         Parent registrationRoot = fxmlLoader.load();
 
         RegistrationController controller = fxmlLoader.getController();
-        controller.setStage(stage);
+        controller.initializeData(stage);
         //Меняем разметку окна авторизации на разметку окна регистрации
         stage.getScene().setRoot(registrationRoot);
     }

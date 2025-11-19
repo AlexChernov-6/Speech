@@ -55,28 +55,28 @@
                 <Insets left="15" right="15"/>
             </GridPane.margin>
 
-            <TextField fx:id="num1" styleClass="text-field" prefWidth="30" prefHeight="40"/>
-            <TextField fx:id="num2" styleClass="text-field" prefWidth="30" prefHeight="40">
+            <TextField fx:id="num1" styleClass="text-field, input-code" prefWidth="30" prefHeight="40" alignment="CENTER"/>
+            <TextField fx:id="num2" styleClass="text-field, input-code" prefWidth="30" prefHeight="40" alignment="CENTER">
                 <HBox.margin>
                     <Insets left="10"/>
                 </HBox.margin>
             </TextField>
-            <TextField fx:id="num3" styleClass="text-field" prefWidth="30" prefHeight="40">
+            <TextField fx:id="num3" styleClass="text-field, input-code" prefWidth="30" prefHeight="40" alignment="CENTER">
                 <HBox.margin>
                     <Insets left="10"/>
                 </HBox.margin>
             </TextField>
-            <TextField fx:id="num4" styleClass="text-field" prefWidth="30" prefHeight="40">
+            <TextField fx:id="num4" styleClass="text-field, input-code" prefWidth="30" prefHeight="40" alignment="CENTER">
                 <HBox.margin>
                     <Insets left="10"/>
                 </HBox.margin>
             </TextField>
-            <TextField fx:id="num5" styleClass="text-field" prefWidth="30" prefHeight="40">
+            <TextField fx:id="num5" styleClass="text-field, input-code" prefWidth="30" prefHeight="40" alignment="CENTER">
                 <HBox.margin>
                     <Insets left="10"/>
                 </HBox.margin>
             </TextField>
-            <TextField fx:id="num6" styleClass="text-field" prefWidth="30" prefHeight="40">
+            <TextField fx:id="num6" styleClass="text-field, input-code" prefWidth="30" prefHeight="40" alignment="CENTER">
                 <HBox.margin>
                     <Insets left="10"/>
                 </HBox.margin>
@@ -90,7 +90,7 @@
             </GridPane.margin>
         </Button>
 
-        <Button onAction="#onConfirmBtn" GridPane.rowIndex="5" GridPane.columnSpan="2" styleClass="login-button"
+        <Button fx:id="confirmBtn" onAction="#onConfirmBtn" GridPane.rowIndex="5" GridPane.columnSpan="2" styleClass="login-button"
                 text="Подтвердить">
             <GridPane.margin>
                 <Insets left="15" right="15"/>

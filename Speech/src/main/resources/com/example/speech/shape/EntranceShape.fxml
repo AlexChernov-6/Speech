@@ -93,7 +93,7 @@
             </Button>
 
             <!--Кнопка для перехода на основное окно приложения-->
-            <Button onAction="#onEntranceBtn" text="Вход" GridPane.rowIndex="7" maxWidth="Infinity"
+            <Button fx:id="entranceBtn" onAction="#onEntranceBtn" text="Вход" GridPane.rowIndex="7" maxWidth="Infinity"
                     styleClass="login-button" GridPane.valignment="TOP">
                 <GridPane.margin>
                     <Insets left="20" right="20"/>

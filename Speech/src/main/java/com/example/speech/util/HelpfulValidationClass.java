@@ -330,6 +330,8 @@ public class HelpfulValidationClass {
                 return false;
             }
         }
+        label.setText("");
+        label.setStyle("");
         return true;
     }
 }
