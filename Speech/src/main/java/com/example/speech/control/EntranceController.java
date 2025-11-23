@@ -23,6 +23,7 @@ import java.util.Map;
 import static com.example.speech.util.HelpfulStylingClass.setupFullScreenListener;
 import static com.example.speech.util.HelpfulValidationClass.updateStyleValidation;
 import static com.example.speech.util.NavigateListener.setEnterPressed;
+import static com.example.speech.util.SendingClass.sendPostalDelivery;
 
 public class EntranceController extends Application {
     //Корневой контейнер самого высокого уровня, то что пользователь видит как окно приложения(окно ОС)
@@ -97,9 +98,11 @@ public class EntranceController extends Application {
     public void onLostPasswordBtn() throws IOException {
         //Проводим валидацию поля email, оно не должно быть пустым
         updateStyleValidation(Map.of(mailTF, mailLb));
-        if(mailLb.getText().equals("E-MAIL"))
+        if(mailLb.getText().equals("E-MAIL")) {
+            sendPostalDelivery(mailTF.getText(), SendingClass.ContextDelivery.SEND_LOST_PASSWORD);
             //Если всё нормально показываем окно с информацией по смене пароля
             new LostPasswordController().showModalLostPasswordStage(stage, mailTF.getText());
+        }
     }
 
     //Метод-обработчик нажатия на кнопку "Вход", меняет содержимое текущей сцены

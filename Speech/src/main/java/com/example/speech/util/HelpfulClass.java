@@ -1,10 +1,20 @@
 package com.example.speech.util;
 
+import com.example.speech.control.EntranceController;
+
 import java.awt.*;
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
+import java.sql.SQLException;
 import java.time.DateTimeException;
 import java.time.LocalDate;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
 
+import static com.example.speech.service.UserService.getUserByEmail;
 import static com.example.speech.util.HelpfulValidationClass.MONTHS;
 
 public class HelpfulClass {
@@ -31,5 +41,34 @@ public class HelpfulClass {
             System.err.println(e.getMessage());
         }
         return null;
+    }
+
+    public static String loadTemplate(String templateName, Map<String, String> variables) throws IOException {
+        String templatePath = "/com/example/speech/html/" + templateName;
+
+        try (InputStream inputStream = EntranceController.class.getResourceAsStream(templatePath)) {
+            if (inputStream == null) {
+                throw new IOException("Template not found: " + templatePath);
+            }
+
+            String template = new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
+
+            // Заменяем переменные в шаблоне
+            for (Map.Entry<String, String> entry : variables.entrySet()) {
+                template = template.replace("{{" + entry.getKey() + "}}",
+                        entry.getValue() != null ? entry.getValue() : "");
+            }
+
+            return template;
+        }
+    }
+
+    public static String loadPasswordResetTemplate(String resetLink, String recipientEmail)
+            throws IOException, SQLException {
+        Map<String, String> variables = new HashMap<>();
+        String userName = Objects.requireNonNull(getUserByEmail(recipientEmail)).getUserName();
+        variables.put("userName", userName);
+        variables.put("resetLink", resetLink);
+        return loadTemplate("lost-password.html", variables);
     }
 }

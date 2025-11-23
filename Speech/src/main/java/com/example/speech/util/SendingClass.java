@@ -2,14 +2,19 @@ package com.example.speech.util;
 
 import javax.mail.*;
 import javax.mail.internet.InternetAddress;
+import javax.mail.internet.MimeBodyPart;
 import javax.mail.internet.MimeMessage;
+import javax.mail.internet.MimeMultipart;
 import javax.swing.*;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.sql.SQLException;
 import java.util.Properties;
 import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
+
+import static com.example.speech.util.HelpfulClass.loadPasswordResetTemplate;
 
 public class SendingClass {
     private static final String EMAIL_ADDRESS;
@@ -70,13 +75,13 @@ public class SendingClass {
 
         switch (context) {
             case SEND_CONFIRMATION_CODE:
-                boolean sent = ConfirmationEmail(recipientEmail);
-                if (sent) {
+                boolean sentConfirmationCode = ConfirmationEmail(recipientEmail);
+                if (sentConfirmationCode) {
                     lastSentTime.put(recipientEmail, System.currentTimeMillis());
                 }
-                return sent;
+                return sentConfirmationCode;
             case SEND_LOST_PASSWORD:
-                return false;
+                return sendResetLostPassword(recipientEmail);
             default:
                 throw new IllegalArgumentException("Неизвестный контекст: " + context);
         }
@@ -145,5 +150,36 @@ public class SendingClass {
 
     public static String getVerificationCode(String emil) {
         return verificationCodes.get(emil);
+    }
+
+    private static boolean sendResetLostPassword(String recipientEmail) {
+        try {
+            Message message = new MimeMessage(SESSION);
+            message.setFrom(new InternetAddress(EMAIL_ADDRESS, "Speech"));
+            message.setRecipients(Message.RecipientType.TO, InternetAddress.parse(recipientEmail));
+            message.setSubject("Восстановление пароля - Speech");
+
+            // Создаем многочастное сообщение для HTML
+            MimeMultipart multipart = new MimeMultipart("related");
+
+            // HTML часть
+            BodyPart messageBodyPart = new MimeBodyPart();
+            String htmlText = loadPasswordResetTemplate(
+                    "https://metanit.com/java/javafx/3.2.php", recipientEmail);
+            messageBodyPart.setContent(htmlText, "text/html; charset=utf-8");
+            multipart.addBodyPart(messageBodyPart);
+
+            message.setContent(multipart);
+
+            // Отправляем сообщение
+            Transport.send(message);
+            return true;
+
+        } catch (MessagingException | UnsupportedEncodingException e) {
+            System.err.println("Ошибка отправки письма восстановления: " + e.getMessage());
+            return false;
+        } catch (IOException | SQLException e) {
+            throw new RuntimeException(e);
+        }
     }
 }
