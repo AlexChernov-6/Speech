@@ -1,0 +1,106 @@
+package com.example.speech.model;
+
+import jakarta.persistence.*;
+
+import java.time.LocalDate;
+
+@Entity
+@Table(name = "users", schema = "public")
+public class User {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id_user")
+    private Integer idUser;
+    @Column(name = "email_user")
+    private String emailUser;
+    @Column(name = "visible_name_user")
+    private String visibleNameUser;
+    @Column(name = "name_user")
+    private String nameUser;
+    @Column(name = "password_user")
+    private String passwordUser;
+    @Column(name = "birthday_user")
+    private LocalDate birthdayUser;
+    @Column(name = "user_photo")
+    private byte[] photoUser;
+    @Column(name = "user_status")
+    private String statusUser;
+
+    public User() { }
+
+    public User(Integer idUser, String emailUser, String visibleNameUser, String nameUser, String passwordUser, LocalDate birthdayUser, byte[] photoUser, String statusUser) {
+        this.idUser = idUser;
+        this.emailUser = emailUser;
+        this.visibleNameUser = visibleNameUser;
+        this.nameUser = nameUser;
+        this.passwordUser = passwordUser;
+        this.birthdayUser = birthdayUser;
+        this.photoUser = photoUser;
+        this.statusUser = statusUser;
+    }
+
+
+    public Integer getIdUser() {
+        return idUser;
+    }
+
+    public void setIdUser(Integer idUser) {
+        this.idUser = idUser;
+    }
+
+    public String getEmailUser() {
+        return emailUser;
+    }
+
+    public void setEmailUser(String emailUser) {
+        this.emailUser = emailUser;
+    }
+
+    public String getVisibleNameUser() {
+        return visibleNameUser;
+    }
+
+    public void setVisibleNameUser(String visibleNameUser) {
+        this.visibleNameUser = visibleNameUser;
+    }
+
+    public String getNameUser() {
+        return nameUser;
+    }
+
+    public void setNameUser(String nameUser) {
+        this.nameUser = nameUser;
+    }
+
+    public String getPasswordUser() {
+        return passwordUser;
+    }
+
+    public void setPasswordUser(String passwordUser) {
+        this.passwordUser = passwordUser;
+    }
+
+    public LocalDate getBirthdayUser() {
+        return birthdayUser;
+    }
+
+    public void setBirthdayUser(LocalDate birthdayUser) {
+        this.birthdayUser = birthdayUser;
+    }
+
+    public byte[] getPhotoUser() {
+        return photoUser;
+    }
+
+    public void setPhotoUser(byte[] photoUser) {
+        this.photoUser = photoUser;
+    }
+
+    public String getStatusUser() {
+        return statusUser;
+    }
+
+    public void setStatusUser(String statusUser) {
+        this.statusUser = statusUser;
+    }
+}

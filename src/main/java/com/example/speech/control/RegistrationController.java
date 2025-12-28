@@ -1,0 +1,117 @@
+package com.example.speech.control;
+
+import com.example.speech.model.User;
+import com.example.speech.util.HelpfulClass;
+import javafx.application.Platform;
+import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
+import javafx.scene.Parent;
+import javafx.scene.control.*;
+import javafx.scene.layout.AnchorPane;
+import javafx.scene.layout.HBox;
+import javafx.stage.Stage;
+
+import java.io.IOException;
+import java.util.Map;
+
+import static com.example.speech.util.HelpfulInitializationClass.setValuesComboBox;
+import static com.example.speech.util.HelpfulStylingClass.setRedEndChar;
+import static com.example.speech.util.HelpfulStylingClass.setupFullScreenListener;
+import static com.example.speech.util.HelpfulValidationClass.updateStyleValidation;
+import static com.example.speech.util.NavigateListener.setEnterPressed;
+
+//Класс будет реализовывать интерфейс Window и переопределять метод setStage
+//Потому что нам важно получить окно, в котором будем работать
+public class RegistrationController {
+
+    private Stage stage;
+
+    @FXML
+    private AnchorPane rootAnchorPane;
+
+    @FXML
+    private Label mailLb, visibleNameLb, userNameLb, passwordLb, birthdayLb;
+
+    @FXML
+    private TextField mailTF, visibleNameTF, userNameTF;
+
+    @FXML
+    private PasswordField passwordF;
+
+    @FXML
+    private ComboBox<Integer> dayBirthdayCB, yearBirthdayCB;
+
+    @FXML
+    private ComboBox<String> monthBirthdayCB;
+
+    @FXML
+    private HBox birthdayHBox;
+
+    @FXML
+    private Button registrationBtn;
+
+    private String startValueEmail, startValueVisibleName, startValueUserName, startValuePassword;
+
+    public void initializeData(Stage stage) {
+        this.stage = stage;
+        //Добавляем обработчик состояния окна(fullScreen или нет)
+        setupFullScreenListener(stage, rootAnchorPane);
+        setRedEndChar(mailLb, userNameLb, passwordLb, birthdayLb);
+        setValuesComboBox(dayBirthdayCB, monthBirthdayCB, yearBirthdayCB);
+        setEnterPressed(registrationBtn);
+        Platform.runLater(() -> mailTF.requestFocus());
+    }
+
+    @FXML
+    private void onRegistrationBtn() throws IOException {
+        if (startValueEmail == null)
+            startValueEmail = mailLb.getText();
+
+        if (startValueVisibleName == null)
+            startValueVisibleName = visibleNameLb.getText();
+
+        if (startValueUserName == null)
+            startValueUserName = userNameLb.getText();
+
+        if (startValuePassword == null)
+            startValuePassword = passwordLb.getText();
+
+        //При нажатии на кнопку проводим валидацию данных в TextField
+        updateStyleValidation(Map.of(mailTF, mailLb, visibleNameTF, visibleNameLb,
+                userNameTF, userNameLb, passwordF, passwordLb, birthdayHBox, birthdayLb));
+
+        //Если данные заполнены корректно
+        if(mailLb.getText().equals(startValueEmail) && visibleNameLb.getText().equals(startValueVisibleName)
+                && userNameLb.getText().equals(startValueUserName) && passwordLb.getText().equals(startValuePassword)) {
+            User newUser = new User(null, mailTF.getText(), visibleNameTF.getText(), userNameTF.getText(), passwordF.getText(),
+                    HelpfulClass.getLocalDate(dayBirthdayCB.getValue(), monthBirthdayCB.getValue(), yearBirthdayCB.getValue()),
+                    null, null);
+            new ConfirmationEmailController().showModalConfirmationEmailStage(stage, newUser);
+        }
+    }
+
+    @FXML
+    private void onEntranceBtn() throws IOException {
+        FXMLLoader fxmlLoader = new FXMLLoader(EntranceController.class.getResource(
+                "/com/example/speech/shape/EntranceShape.fxml"
+        ));
+        Parent entranceWindowRoot = fxmlLoader.load();
+
+        EntranceController controller = fxmlLoader.getController();
+        controller.initializeData(stage);
+        //И меняем разметку на разметку EntranceShape.fxml
+        stage.getScene().setRoot(entranceWindowRoot);
+    }
+
+    @FXML
+    private void onTermsOfUse() {
+        //Открываем страницу с документацией на тему условия использования
+        HelpfulClass.openWebPage("https://metanit.com/java/javafx/3.2.php");
+    }
+
+    @FXML
+    private void onSecurityPolicy() {
+        //Открываем страницу с документацией на тему политика безопасности
+        HelpfulClass.openWebPage("https://metanit.com/java/javafx/3.2.php");
+    }
+}
