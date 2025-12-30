@@ -136,10 +136,22 @@
     -fx-background-color: rgba(250, 80, 80, 0.8);
 }
 
-.custom-message-button {
-    -fx-background-color: rgba(0, 0, 0, 0.01);
+.list-view {
+    -fx-background-color: transparent;
 }
 
-.custom-message-button:hover {
-    -fx-background-color: rgba(255, 255, 255, 0.3);
+.list-cell {
+    -fx-background-color: white;
+}
+
+.list-cell:filled:hover {
+    -fx-background-color: #f5f5f5;
+}
+
+.list-cell:filled:selected {
+    -fx-background-color: #b0d0da;
+}
+
+.custom-message-button {
+    -fx-background-color: transparent;
 }

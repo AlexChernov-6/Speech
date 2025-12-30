@@ -45,8 +45,8 @@ public class ListChannelsCellController extends ListCell<ChannelUser> {
                 setGraphic(root);
 
                 // Установите высоту ячейки
-                setPrefHeight(80);
-                setMinHeight(80);
+                setPrefHeight(60);
+                setMinHeight(60);
             } catch (Exception e) {
                 e.printStackTrace();
                 setText("Ошибка загрузки данных");

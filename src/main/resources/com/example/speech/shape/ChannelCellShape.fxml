@@ -3,44 +3,42 @@
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 <?import javafx.scene.image.ImageView?>
+<?import javafx.geometry.Insets?>
 
-<!-- Используйте HBox вместо GridPane для простоты -->
 <?import javafx.scene.image.Image?>
-<HBox xmlns="http://javafx.com/javafx"
-      xmlns:fx="http://javafx.com/fxml"
-      fx:controller="com.example.speech.control.ChannelCellController"
-      prefHeight="60"
-      prefWidth="260"
-      styleClass="custom-message-button"
-      alignment="CENTER_LEFT"
-      spacing="10"
-      style="-fx-padding: 10; -fx-background-color: transparent;">
+<?import javafx.scene.shape.Rectangle?>
+<?import javafx.scene.shape.Circle?>
+<HBox xmlns:fx="http://javafx.com/fxml" fx:controller="com.example.speech.control.ChannelCellController"
+      prefHeight="60" prefWidth="260" alignment="CENTER_LEFT" fx:id="rootContainer">
+    <padding>
+        <Insets left="5" top="5" right="5" bottom="5"/>
+    </padding>
 
-    <!-- Аватарка канала -->
-    <ImageView fx:id="channelPhotoIV"
-               fitHeight="40"
-               fitWidth="40"
-               preserveRatio="true">
-        <!-- Добавьте placeholder на случай null изображения -->
-        <image>
-            <Image url="@../image/default-channel.png" /> <!-- создайте этот файл -->
-        </image>
-    </ImageView>
 
-    <!-- Информация о канале -->
+    <StackPane>
+        <!-- Фоновая заливка на случай отсутствия изображения -->
+        <Circle radius="22.5" fill="lightgray"/>
+
+        <!-- ImageView с круглым clip -->
+        <ImageView fx:id="channelPhotoIV" fitHeight="45" fitWidth="45" preserveRatio="true">
+            <clip>
+                <Circle radius="22.5" centerX="22.5" centerY="22.5"/>
+            </clip>
+            <Image url="@../image/defaultChannel.jpg"/>
+        </ImageView>
+    </StackPane>
+
     <VBox spacing="5" HBox.hgrow="ALWAYS">
+        <HBox.margin>
+            <Insets left="10" right="10"/>
+        </HBox.margin>
         <Label fx:id="channelNameLb"
-               style="-fx-font-weight: bold; -fx-font-size: 14px;"/>
+               style="-fx-font-weight: bold; -fx-font-size: 13px;"/>
         <Label fx:id="stateLb"
-               style="-fx-text-fill: gray; -fx-font-size: 12px;"/>
+               style="-fx-text-fill: gray; -fx-font-size: 10px;"/>
     </VBox>
 
-    <!-- Кнопка удаления -->
-    <Button fx:id="deleteChanelBtn"
-            text="✕"
-            prefWidth="30"
-            prefHeight="30"
-            style="-fx-background-radius: 15; -fx-background-color: #ff4444; -fx-text-fill: white;"
-            onAction="#onDeleteChanelBtn"/>
+    <Button fx:id="deleteChanelBtn" prefWidth="40" prefHeight="15"  styleClass="window-control-button, close-button"
+            onAction="#onDeleteChanelBtn" visible="false" style="-fx-background-radius: 10px; -fx-border-radius: 10px"/>
 
 </HBox>
