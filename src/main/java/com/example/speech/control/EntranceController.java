@@ -1,5 +1,6 @@
 package com.example.speech.control;
 
+import com.example.speech.service.UserService;
 import com.example.speech.util.HibernateSessionFactory;
 import com.example.speech.util.ResizeListener;
 
@@ -46,6 +47,8 @@ public class EntranceController extends Application {
     private Button entranceBtn;
 
     private String startValueEmail, startValuePassword;
+
+    private UserService userService = new UserService();
 
     public void initializeData(Stage stage) {
         this.stage = stage;
@@ -121,14 +124,15 @@ public class EntranceController extends Application {
         Parent speechBaseRoot = fxmlLoader.load();
 
         SpeechBaseController controller = fxmlLoader.getController();
-        controller.initializeData(stage);
 
         //При нажатии на кнопку проводим валидацию данных в TextField
         updateStyleValidation(Map.of(mailTF, mailLb, passwordF, passwordLb));
         //Если данные заполнены корректно
-        if(mailLb.getText().equals(startValueEmail) && passwordLb.getText().equals(startValuePassword))
+        if(mailLb.getText().equals(startValueEmail) && passwordLb.getText().equals(startValuePassword)) {
             //Меняем разметку окна авторизации на разметку основного окна
+            controller.initializeData(stage, userService.getUserByEmail(mailTF.getText()));
             stage.getScene().setRoot(speechBaseRoot);
+        }
     }
 
     @FXML

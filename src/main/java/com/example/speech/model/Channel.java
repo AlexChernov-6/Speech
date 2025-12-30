@@ -13,6 +13,8 @@ public class Channel {
     private String channelName;
     @Column(name = "channel_photo")
     private byte[] channelLogo;
+    @Column(name = "channel_count_user")
+    private int channelCountUser;
 
     public Channel() { }
 
@@ -44,5 +46,13 @@ public class Channel {
 
     public void setChannelLogo(byte[] channelLogo) {
         this.channelLogo = channelLogo;
+    }
+
+    public int getChannelCountUser() {
+        return channelCountUser;
+    }
+
+    public void setChannelCountUser(int channelCountUser) {
+        this.channelCountUser = channelCountUser;
     }
 }

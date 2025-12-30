@@ -158,7 +158,7 @@ public class ConfirmationEmailController {
                     Parent speechBaseRoot = fxmlLoader.load();
 
                     SpeechBaseController controller = fxmlLoader.getController();
-                    controller.initializeData(mainStage);
+                    controller.initializeData(mainStage, newUser);
                     //Меняем разметку окна авторизации на разметку основного окна
                     mainStage.getScene().setRoot(speechBaseRoot);
                     onCloseBtn();

@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.image.ImageView?>
+
+<!-- Используйте HBox вместо GridPane для простоты -->
+<?import javafx.scene.image.Image?>
+<HBox xmlns="http://javafx.com/javafx"
+      xmlns:fx="http://javafx.com/fxml"
+      fx:controller="com.example.speech.control.ChannelCellController"
+      prefHeight="60"
+      prefWidth="260"
+      styleClass="custom-message-button"
+      alignment="CENTER_LEFT"
+      spacing="10"
+      style="-fx-padding: 10; -fx-background-color: transparent;">
+
+    <!-- Аватарка канала -->
+    <ImageView fx:id="channelPhotoIV"
+               fitHeight="40"
+               fitWidth="40"
+               preserveRatio="true">
+        <!-- Добавьте placeholder на случай null изображения -->
+        <image>
+            <Image url="@../image/default-channel.png" /> <!-- создайте этот файл -->
+        </image>
+    </ImageView>
+
+    <!-- Информация о канале -->
+    <VBox spacing="5" HBox.hgrow="ALWAYS">
+        <Label fx:id="channelNameLb"
+               style="-fx-font-weight: bold; -fx-font-size: 14px;"/>
+        <Label fx:id="stateLb"
+               style="-fx-text-fill: gray; -fx-font-size: 12px;"/>
+    </VBox>
+
+    <!-- Кнопка удаления -->
+    <Button fx:id="deleteChanelBtn"
+            text="✕"
+            prefWidth="30"
+            prefHeight="30"
+            style="-fx-background-radius: 15; -fx-background-color: #ff4444; -fx-text-fill: white;"
+            onAction="#onDeleteChanelBtn"/>
+
+</HBox>

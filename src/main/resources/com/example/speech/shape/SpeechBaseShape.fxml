@@ -16,7 +16,7 @@
         <VBox fx:id="staticLeftVVB" prefWidth="300" AnchorPane.leftAnchor="0" AnchorPane.topAnchor="40"
               alignment="TOP_CENTER" AnchorPane.bottomAnchor="0" style="-fx-border-color: white;">
             <Button text="Найти или начать беседу" prefWidth="280" prefHeight="30"/>
-            <ListView fx:id="chatsView" prefWidth="280" prefHeight="Infinity"/>
+            <ListView fx:id="chatsView" prefWidth="280" VBox.vgrow="ALWAYS"/>
         </VBox>
 
 
