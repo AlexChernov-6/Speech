@@ -123,7 +123,27 @@
 
 /*Изображение для кнопки закрыть окно*/
 .close-button {
-     -fx-background-image: url('image/imageCloseBtn.png');
+    -fx-background-image: url('image/imageCloseBtn.png');
+}
+
+.search-message-button {
+    -fx-background-image: url('image/imageSearchButton.png');
+}
+
+.menu-message-button {
+    -fx-background-image: url('image/imageMenuButton.png');
+}
+
+.add-file-message-button {
+    -fx-background-image: url('image/imageAddFileButton.png');
+}
+
+.emoji-button {
+    -fx-background-image: url('image/imageEmojiButton.png');
+}
+
+.send-message-button {
+    -fx-background-image: url('image/imageSendButton.png');
 }
 
 /*Меняем фон при наведении курсора на кнопку*/

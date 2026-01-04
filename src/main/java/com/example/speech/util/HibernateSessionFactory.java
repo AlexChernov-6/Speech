@@ -1,8 +1,6 @@
 package com.example.speech.util;
 
-import com.example.speech.model.Channel;
-import com.example.speech.model.ChannelUser;
-import com.example.speech.model.User;
+import com.example.speech.model.*;
 import org.hibernate.SessionFactory;
 import org.hibernate.cfg.Configuration;
 
@@ -22,6 +20,8 @@ public class HibernateSessionFactory {
                         .addAnnotatedClass(User.class)
                         .addAnnotatedClass(Channel.class)
                         .addAnnotatedClass(ChannelUser.class)
+                        .addAnnotatedClass(ChannelType.class)
+                        .addAnnotatedClass(Message.class)
                         .buildSessionFactory();
             } catch (IOException e) {
                 System.err.println(e.getMessage());
