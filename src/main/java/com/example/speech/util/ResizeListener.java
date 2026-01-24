@@ -1,9 +1,11 @@
 package com.example.speech.util;
 
+import com.example.speech.control.ListChannelsCellController;
 import javafx.event.EventHandler;
 import javafx.scene.Cursor;
 import javafx.scene.Node;
 import javafx.scene.control.*;
+import javafx.scene.control.skin.VirtualFlow;
 import javafx.scene.input.MouseEvent;
 import javafx.stage.Screen;
 import javafx.stage.Stage;
@@ -66,7 +68,13 @@ public class ResizeListener implements EventHandler<MouseEvent> {
     private final List<Class<?>> blockingControls = List.of(
             Button.class,
             TextInputControl.class,
-            ComboBox.class
+            ComboBox.class,
+            ScrollPane.class,
+            VirtualFlow.class,
+            ListCell.class,
+            ListView.class,
+            ListChannelsCellController.class,
+            ScrollBar.class
     );
 
     //Конструктор класса в качестве аргумента принимает Stage с которым будет работать

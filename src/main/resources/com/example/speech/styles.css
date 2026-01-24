@@ -175,3 +175,13 @@
 .custom-message-button {
     -fx-background-color: transparent;
 }
+
+.no-horizontal-scroll .scroll-bar:horizontal {
+    -fx-opacity: 0;
+    -fx-pref-height: 0;
+    visibility: hidden;
+}
+
+.no-horizontal-scroll .scroll-bar:horizontal .thumb {
+    -fx-opacity: 0;
+}

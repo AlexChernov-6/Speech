@@ -5,6 +5,8 @@ import org.hibernate.annotations.ColumnDefault;
 import org.hibernate.annotations.GenerationTime;
 
 import java.time.LocalDateTime;
+import java.util.Arrays;
+import java.util.Objects;
 
 @Entity
 @Table(name = "messages", schema = "public")
@@ -60,5 +62,17 @@ public class Message {
 
     public void setMessageContent(byte[] messageContent) {
         this.messageContent = messageContent;
+    }
+
+    @Override
+    public boolean equals(Object object) {
+        if (object == null || getClass() != object.getClass()) return false;
+        Message message = (Message) object;
+        return messageId == message.messageId && Objects.equals(messageDatetime, message.messageDatetime) && Objects.equals(channelUser, message.channelUser) && Objects.deepEquals(messageContent, message.messageContent);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(messageId, messageDatetime, channelUser, Arrays.hashCode(messageContent));
     }
 }

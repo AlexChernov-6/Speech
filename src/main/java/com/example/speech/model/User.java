@@ -1,6 +1,8 @@
 package com.example.speech.model;
 
+import com.example.speech.util.ImageConverter;
 import jakarta.persistence.*;
+import javafx.scene.image.Image;
 
 import java.time.LocalDate;
 
@@ -25,6 +27,22 @@ public class User {
     private byte[] photoUser;
     @Column(name = "user_status")
     private String statusUser;
+
+    @Transient
+    private Image photoImage;
+
+
+    public Image getPhotoImage() {
+        if (photoImage == null && photoUser != null) {
+            try {
+                photoImage = ImageConverter.convertBytesToImage(photoUser);
+            } catch (Exception e) {
+                System.err.println( e.getMessage());
+                photoImage = ImageConverter.getDefaultImage();
+            }
+        }
+        return photoImage != null ? photoImage : ImageConverter.getDefaultImage();
+    }
 
     public User() { }
 

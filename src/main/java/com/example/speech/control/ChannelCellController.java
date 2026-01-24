@@ -2,7 +2,6 @@ package com.example.speech.control;
 
 import com.example.speech.model.ChannelUser;
 import com.example.speech.service.ChannelUserService;
-import com.example.speech.util.HelpfulStylingClass;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
@@ -22,7 +21,7 @@ public class ChannelCellController {
 
     public void initialize(ChannelUser channelUser) {
         if (channelUser.getUser().getPhotoUser() != null && channelUser.getUser().getPhotoUser().length > 0)
-            channelPhotoIV.setImage(HelpfulStylingClass.byteArrayToImage(channelUser.getChannel().getChannelLogo()));
+            channelPhotoIV.setImage(channelUser.getUser().getPhotoImage());
         channelNameLb.setText(channelUser.getChannel().getChannelName());
         stateLb.setText(channelUser.getChannel().getChannelCountUser() == 2 ?
                 channelUserService.getInterlocutorStatus(channelUser.getChannel(), channelUser.getUser()) :

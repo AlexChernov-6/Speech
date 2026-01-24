@@ -58,6 +58,13 @@ public class EntranceController extends Application {
         Platform.runLater(() -> mailTF.requestFocus());
     }
 
+    //Удалить
+    @FXML
+    public void initialize() {
+        mailTF.setText("user1@yandex.ru");
+        passwordF.setText("password123");
+    }
+
     //Переопределённый метод абстрактного класса Application, который вызывается при запуске программы
     //В качестве аргумента принимает окно программы(Stage), данный метод так же может выступать в роли
     //Реализатора запуска приложения

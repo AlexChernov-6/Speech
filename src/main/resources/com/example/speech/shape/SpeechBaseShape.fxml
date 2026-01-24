@@ -37,9 +37,7 @@
                 </HBox>
             </AnchorPane>
 
-            <VBox style="-fx-background-color: black;" VBox.vgrow="ALWAYS">
-
-            </VBox>
+            <ListView fx:id="messagesLV" VBox.vgrow="ALWAYS"/>
 
             <AnchorPane fx:id="messageAnchor" style="-fx-background-color: rgba(255,255,255,0.5);" prefHeight="40" maxHeight="40">
                 <VBox AnchorPane.leftAnchor="0" AnchorPane.bottomAnchor="0" prefWidth="50" alignment="CENTER">
@@ -56,7 +54,8 @@
 
                 <VBox fx:id="sendVB" AnchorPane.rightAnchor="0" AnchorPane.bottomAnchor="0" prefWidth="50"
                       alignment="CENTER" visible="false">
-                    <Button styleClass="window-control-button, send-message-button" prefHeight="25" prefWidth="50"/>
+                    <Button styleClass="window-control-button, send-message-button" prefHeight="25" prefWidth="50"
+                            onAction="#handleSendMessage"/>
                 </VBox>
             </AnchorPane>
         </VBox>

@@ -19,13 +19,12 @@ public class ListChannelsCellController extends ListCell<ChannelUser> {
             root = loader.load();
             controller = loader.getController();
 
-            // Установите минимальную высоту для корневого элемента
             root.minHeight(60);
             root.prefHeight(60);
 
-        } catch (IOException exc) {
-            exc.printStackTrace();
-            throw new RuntimeException("Failed to load ChannelCellShape.fxml", exc);
+        } catch (IOException e) {
+            System.err.println(e.getMessage());
+            throw new RuntimeException("Failed to load ChannelCellShape.fxml", e);
         }
     }
 
@@ -33,7 +32,6 @@ public class ListChannelsCellController extends ListCell<ChannelUser> {
     protected void updateItem(ChannelUser channelUser, boolean empty) {
         super.updateItem(channelUser, empty);
 
-        // Важно очищать
         setText(null);
         setGraphic(null);
 
