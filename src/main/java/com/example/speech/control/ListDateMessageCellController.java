@@ -6,13 +6,13 @@ import javafx.scene.control.ListCell;
 
 import java.io.IOException;
 
-public class ListTextMessageCellController extends ListCell<Message> {
-    private TextMessageCellController controller;
+public class ListDateMessageCellController extends ListCell<Message> {
+    private DateMessageCellController controller;
     
-    public ListTextMessageCellController() {
+    public ListDateMessageCellController() {
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource(
-                    "/com/example/speech/shape/TextMessageCellShape.fxml"));
+                    "/com/example/speech/shape/DateMessageCellShape.fxml"));
             loader.load();
             controller = loader.getController();
             setGraphic(loader.getRoot());
@@ -30,15 +30,18 @@ public class ListTextMessageCellController extends ListCell<Message> {
             setGraphic(null);
         } else {
             if (getListView() != null) {
-                double maxWidth = getListView().getWidth() - 100;
+                double listViewWidth = getListView().getWidth();
+                double maxWidth = listViewWidth * 0.6;
                 controller.setMaxWidth(maxWidth);
                 
-                getListView().widthProperty().addListener((observable, oldValue, newValue) -> {
-                    controller.setMaxWidth(newValue.doubleValue() - 100);
+                getListView().widthProperty().addListener((obs, oldVal, newVal) -> {
+                    controller.setMaxWidth(newVal.doubleValue() * 0.6);
                 });
             }
             
-            controller.initializeMessage(message);
+            String dateStr = message.getMessageDatetime().toLocalDate()
+                .format(java.time.format.DateTimeFormatter.ofPattern("dd.MM.yyyy"));
+            controller.setDate(dateStr);
         }
     }
 }

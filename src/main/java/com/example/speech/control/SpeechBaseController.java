@@ -5,9 +5,9 @@ import com.example.speech.model.Message;
 import com.example.speech.model.User;
 import com.example.speech.service.ChannelUserService;
 import com.example.speech.service.MessageService;
+import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
-import javafx.geometry.Pos;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
 import javafx.scene.control.TextArea;
@@ -15,7 +15,6 @@ import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 
-import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 import static com.example.speech.util.HelpfulStylingClass.setupFullScreenListener;
@@ -51,8 +50,8 @@ public class SpeechBaseController {
         setupMessageTextAreaListener();
         selectedChatVB.widthProperty().addListener((ch, oldValue, newValue) -> {
             messagesLV.setPrefWidth((Double) newValue);
-            messagesLV.setCellFactory(cellData -> new ListTextMessageCellController());
         });
+        messagesLV.setCellFactory(new MessageCellCreator());
         messagesLV.getStyleClass().add("no-horizontal-scroll");
     }
 
@@ -81,28 +80,17 @@ public class SpeechBaseController {
 
         messageTA.setText("");
 
-        List<Message> messages = messageService.getAllMessageInChannel(selectedChat.getChannel().getChannelID());
+        List<Message> messages = messageService.getAllMessageInChannel(
+                selectedChat.getChannel().getChannelID()
+        );
 
-        Message previousMessage = null;
-        for (Message message : messages) {
-
-            if(previousMessage == null || !previousMessage.getMessageDatetime().toLocalDate()
-                    .isEqual(message.getMessageDatetime().toLocalDate())) {
-                Label label = new Label(message.getMessageDatetime().toLocalDate()
-                        .format(DateTimeFormatter.ofPattern("dd.MM.yyyy")));
-                label.setStyle("-fx-background-color: rgba(50,50,50,0.5); -fx-text-fill: white;");
-                label.setAlignment(Pos.CENTER);
-                label.setPrefWidth(selectedChatVB.getWidth());
-                selectedChatVB.widthProperty().addListener((observable, oldValue, newValue) -> {
-                    label.setMaxWidth(newValue.doubleValue());
-                });
-                //messagesLV.getItems().add(label);
-            }
-
-
-            previousMessage = message;
-        }
         messagesLV.getItems().addAll(FXCollections.observableArrayList(messages));
+
+        Platform.runLater(() -> {
+            if (!messagesLV.getItems().isEmpty()) {
+                messagesLV.scrollTo(messagesLV.getItems().size() - 1);
+            }
+        });
 
         //long startTime = System.currentTimeMillis();
         //Заменить на конечный скрол
