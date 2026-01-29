@@ -1,15 +1,20 @@
 package com.example.speech.control;
 
 import com.example.speech.model.Message;
+import com.example.speech.model.User;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.control.ListCell;
 
 import java.io.IOException;
 
 public class ListTextMessageCellController extends ListCell<Message> {
-    private TextMessageCellController controller;
+    private final TextMessageCellController controller;
+    private final User currentUser;
+    private final boolean drawUserPhoto;
     
-    public ListTextMessageCellController() {
+    public ListTextMessageCellController(User currentUser, boolean drawUserPhoto) {
+        this.currentUser = currentUser;
+        this.drawUserPhoto = drawUserPhoto;
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource(
                     "/com/example/speech/shape/TextMessageCellShape.fxml"));
@@ -38,7 +43,7 @@ public class ListTextMessageCellController extends ListCell<Message> {
                 });
             }
             
-            controller.initializeMessage(message);
+            controller.initializeMessage(message, currentUser, drawUserPhoto);
         }
     }
 }

@@ -2,6 +2,7 @@ package com.example.speech.model;
 
 import jakarta.persistence.*;
 import org.hibernate.annotations.ColumnDefault;
+import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.GenerationTime;
 
 import java.time.LocalDateTime;
@@ -15,21 +16,24 @@ public class Message {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "message_id")
     private long messageId;
-    @ColumnDefault("current_timestamp")
-    @Column(name = "message_datetime", insertable = false, updatable = false)
+    @Column(name = "message_datetime", updatable = false)
+    @CreationTimestamp
     private LocalDateTime messageDatetime;
     @ManyToOne @JoinColumn(name = "channel_user_id")
     private ChannelUser channelUser;
     @Column(name = "message_content")
     private byte[] messageContent;
+    @Column(name = "message_status", updatable = false)
+    private String messageStatus = "отправлено";
 
     public Message() { }
 
-    public Message(long messageId, LocalDateTime messageDatetime, ChannelUser channelUser, byte[] messageContent) {
+    public Message(long messageId, LocalDateTime messageDatetime, ChannelUser channelUser, byte[] messageContent, String messageStatus) {
         this.messageId = messageId;
         this.messageDatetime = messageDatetime;
         this.channelUser = channelUser;
         this.messageContent = messageContent;
+        this.messageStatus = messageStatus;
     }
 
     public long getMessageId() {
@@ -62,6 +66,14 @@ public class Message {
 
     public void setMessageContent(byte[] messageContent) {
         this.messageContent = messageContent;
+    }
+
+    public String getMessageStatus() {
+        return messageStatus;
+    }
+
+    public void setMessageStatus(String messageStatus) {
+        this.messageStatus = messageStatus;
     }
 
     @Override

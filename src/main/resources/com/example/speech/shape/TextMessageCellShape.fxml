@@ -8,10 +8,7 @@
 <?import javafx.scene.control.Label?>
 
 <HBox xmlns:fx="http://javafx.com/fxml" fx:controller="com.example.speech.control.TextMessageCellController"
-      maxHeight="600">
-    <padding>
-        <Insets left="10" right="10" top="10" bottom="10"/>
-    </padding>
+      maxHeight="600" alignment="BOTTOM_LEFT" fx:id="rootMessageHB">
 
     <ImageView fx:id="userPhotoIV" fitHeight="45" fitWidth="45" preserveRatio="true">
         <clip>
@@ -20,18 +17,37 @@
         <Image url="@../image/defaultChannel.jpg"/>
     </ImageView>
 
-    <GridPane style="-fx-background-color: green;" fx:id="contentGP">
+    <GridPane fx:id="contentGP">
+        <padding>
+            <Insets left="10" top="10" bottom="7" right="7"/>
+        </padding>
+
         <rowConstraints>
             <RowConstraints/>
             <RowConstraints prefHeight="20"/>
         </rowConstraints>
+        <columnConstraints>
+            <ColumnConstraints/>
+            <ColumnConstraints prefWidth="60" minWidth="60"/>
+        </columnConstraints>
         <HBox.margin>
             <Insets left="10"/>
         </HBox.margin>
 
-        <Label fx:id="messageLabel" wrapText="true" style="-fx-text-fill: white; -fx-font-size: 14px;"/>
+        <Label fx:id="messageLabel" wrapText="true" style="-fx-font-size: 14px;" text="Content"
+               GridPane.columnSpan="2"/>
 
-        <Label fx:id="timeLabel" alignment="BOTTOM_RIGHT" style="-fx-text-fill: lightgray; -fx-font-size: 10px;"
-               GridPane.rowIndex="1" GridPane.halignment="RIGHT"/>
+        <HBox fx:id="timeStatusHB" GridPane.rowIndex="1" GridPane.columnIndex="1" alignment="BOTTOM_RIGHT">
+            <Label fx:id="timeLabel" style="-fx-text-fill: gray; -fx-font-size: 10px;" text="00:00">
+                <HBox.margin>
+                    <Insets right="3"/>
+                </HBox.margin>
+            </Label>
+            <ImageView fx:id="statusIV" fitHeight="13" fitWidth="13" preserveRatio="true">
+                <HBox.margin>
+                    <Insets bottom="1.7"/>
+                </HBox.margin>
+            </ImageView>
+        </HBox>
     </GridPane>
 </HBox>

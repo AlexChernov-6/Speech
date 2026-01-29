@@ -4,10 +4,9 @@
 <?import javafx.scene.layout.*?>
 <?import javafx.scene.image.ImageView?>
 <?import javafx.geometry.Insets?>
-
 <?import javafx.scene.image.Image?>
-<?import javafx.scene.shape.Rectangle?>
 <?import javafx.scene.shape.Circle?>
+
 <HBox xmlns:fx="http://javafx.com/fxml" fx:controller="com.example.speech.control.ChannelCellController"
       prefHeight="60" prefWidth="260" alignment="CENTER_LEFT" fx:id="rootContainer">
     <padding>

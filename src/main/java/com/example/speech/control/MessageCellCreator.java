@@ -1,6 +1,7 @@
 package com.example.speech.control;
 
 import com.example.speech.model.Message;
+import com.example.speech.model.User;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
@@ -8,13 +9,21 @@ import javafx.scene.layout.VBox;
 import javafx.util.Callback;
 
 import java.io.IOException;
+import java.util.Objects;
 
 public class MessageCellCreator implements Callback<ListView<Message>, ListCell<Message>> {
+
+    private final User currentUser;
+    private Message nextMessage;
+
+    public MessageCellCreator(User currentUser) {
+        this.currentUser = currentUser;
+    }
 
     @Override
     public ListCell<Message> call(ListView<Message> listView) {
         return new ListCell<Message>() {
-            private VBox container = new VBox();
+            private final VBox container = new VBox();
             private javafx.scene.Node dateNode = null;
             private javafx.scene.Node messageNode = null;
 
@@ -46,6 +55,7 @@ public class MessageCellCreator implements Callback<ListView<Message>, ListCell<
                     container.getChildren().add(messageNode);
 
                     setGraphic(container);
+                    setStyle("-fx-background-color: transparent; -fx-border-color: transparent;");
                 }
             }
 
@@ -97,12 +107,44 @@ public class MessageCellCreator implements Callback<ListView<Message>, ListCell<
                         controller.setMaxWidth(maxWidth);
                     }
 
-                    controller.initializeMessage(message);
+                    controller.initializeMessage(message, currentUser, shouldShowAvatarForMessage(message, getIndex()));
                     return node;
                 } catch (IOException e) {
                     e.printStackTrace();
                     return new javafx.scene.control.Label("Ошибка загрузки сообщения");
                 }
+            }
+
+            private boolean shouldShowAvatarForMessage(Message currentMessage, int currentIndex) {
+                ListView<Message> listView = getListView();
+                if (listView == null) return true;
+
+                int totalItems = listView.getItems().size();
+
+                // 1. Если это последнее сообщение в списке - показываем аватар
+                if (currentIndex == totalItems - 1) return true;
+
+                // 2. Получаем следующее сообщение
+                nextMessage = listView.getItems().get(currentIndex + 1);
+
+                // 3. Если следующее сообщение от другого пользователя - показываем аватар
+                if (!Objects.equals(nextMessage.getChannelUser().getUser().getIdUser(),
+                        currentMessage.getChannelUser().getUser().getIdUser())) {
+                    return true;
+                }
+
+                // 4. Если следующее сообщение отправлено через большой промежуток времени (> 15 мин) - показываем аватар
+                long minutesBetween = java.time.Duration.between(
+                        currentMessage.getMessageDatetime(),
+                        nextMessage.getMessageDatetime()
+                ).toMinutes();
+
+                if (minutesBetween >= 15) {
+                    return true;
+                }
+
+                // 5. Во всех остальных случаях не показываем аватар
+                return false;
             }
         };
     }

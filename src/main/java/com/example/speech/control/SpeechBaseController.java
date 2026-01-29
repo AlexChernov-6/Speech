@@ -8,13 +8,13 @@ import com.example.speech.service.MessageService;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
-import javafx.scene.control.Label;
-import javafx.scene.control.ListView;
-import javafx.scene.control.TextArea;
+import javafx.scene.control.*;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 
+import java.nio.charset.StandardCharsets;
+import java.time.LocalDateTime;
 import java.util.List;
 
 import static com.example.speech.util.HelpfulStylingClass.setupFullScreenListener;
@@ -51,7 +51,7 @@ public class SpeechBaseController {
         selectedChatVB.widthProperty().addListener((ch, oldValue, newValue) -> {
             messagesLV.setPrefWidth((Double) newValue);
         });
-        messagesLV.setCellFactory(new MessageCellCreator());
+        messagesLV.setCellFactory(new MessageCellCreator(currentUser));
         messagesLV.getStyleClass().add("no-horizontal-scroll");
     }
 
@@ -65,7 +65,11 @@ public class SpeechBaseController {
         chatsView.getSelectionModel().selectedItemProperty().addListener(
                 (observable, oldValue, newValue) -> {
                     if (newValue != null) {
+                        long startTime = System.currentTimeMillis();
                         loadChannelMessages(newValue);
+                        long endTime = System.currentTimeMillis();
+                        long duration = endTime - startTime;
+                        System.out.println("Время выполнения: " + duration + " мс");
                     }
                 });
     }
@@ -120,11 +124,18 @@ public class SpeechBaseController {
     }
 
     private void adjustTextAreaHeight(String newValue, String oldValue) {
+
         if (countLines(newValue) > countLines(oldValue) && messageAnchor.getHeight() <= 180) {
             messageAnchor.setMinHeight(messageAnchor.getHeight() + 20);
         } else if (countLines(newValue) < countLines(oldValue) && messageAnchor.getHeight() >= 60
                 && !checkScrollVisibility(messageTA)) {
             messageAnchor.setMinHeight(messageAnchor.getHeight() - 20);
+        }
+
+        if (newValue == null || newValue.trim().isEmpty()) {
+            messageAnchor.setMinHeight(40);
+            messageAnchor.setPrefHeight(40);
+            messageTA.setPrefHeight(40);
         }
     }
 
@@ -168,15 +179,48 @@ public class SpeechBaseController {
         if (!text.isEmpty() && chatsView.getSelectionModel().getSelectedItem() != null) {
             ChannelUser selectedChat = chatsView.getSelectionModel().getSelectedItem();
 
-            Message newMessage = new Message();
-            newMessage.setMessageContent(text.getBytes(java.nio.charset.StandardCharsets.UTF_8));
-            newMessage.setChannelUser(selectedChat);
+            Message tempMessage  = new Message();
+            tempMessage.setMessageDatetime(LocalDateTime.now());
+            tempMessage.setMessageContent(text.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+            tempMessage.setChannelUser(selectedChat);
+            tempMessage.setMessageStatus("загружается");
 
-            messageService.save(newMessage);
+            messagesLV.getItems().add(tempMessage);
 
-            loadChannelMessages(selectedChat);
+            Platform.runLater(() -> {
+                messagesLV.scrollTo(messagesLV.getItems().size() - 1);
+            });
 
-            messageTA.clear();
+            messageTA.setText("");
+
+            new Thread(() -> {
+                try {
+                    Message messageToSave = new Message();
+                    messageToSave.setMessageContent(text.getBytes(StandardCharsets.UTF_8));
+                    messageToSave.setChannelUser(selectedChat);
+
+                    boolean saved = messageService.save(messageToSave);
+
+                    if (saved) {
+                        Message savedMessage = messageService.getRowById(messageToSave.getMessageId());
+
+                        Platform.runLater(() -> {
+                            int index = messagesLV.getItems().indexOf(tempMessage);
+                            if (index >= 0) {
+                                messagesLV.getItems().set(index, savedMessage);
+                                messagesLV.refresh();
+                            }
+                        });
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    Platform.runLater(() -> {
+                        //Обработать неудачную отправку
+                        tempMessage.setMessageStatus("ошибка отправки");
+                        messagesLV.refresh();
+                    });
+                }
+            }).start();
         }
     }
 }
