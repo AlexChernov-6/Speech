@@ -7,8 +7,10 @@ import javafx.geometry.Insets;
 import javafx.scene.control.Label;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.scene.input.MouseButton;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.StackPane;
 
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
@@ -27,6 +29,8 @@ public class TextMessageCellController {
     public ImageView statusIV;
     @FXML
     private HBox timeStatusHB, rootMessageHB;
+    @FXML
+    private StackPane messagesSP;
     //Добавить обработку нажания лкм и пкм для rootMessageHB
 
     private static final Image shipped = new Image(Objects.requireNonNull
@@ -36,7 +40,8 @@ public class TextMessageCellController {
     private static final Image loading = new Image(Objects.requireNonNull
             (TextMessageCellController.class.getResourceAsStream("/com/example/speech/image/clock.png")));
 
-    public GridPane initializeMessage(Message message, User currentUser, boolean drawUserPhoto) {
+    public GridPane initializeMessage(Message message, User currentUser, boolean drawUserPhoto, StackPane messagesSP) {
+        this.messagesSP = messagesSP;
         userPhotoIV.setImage(message.getChannelUser().getUser().getPhotoImage());
         messageLabel.setText(new String(message.getMessageContent(), StandardCharsets.UTF_8));
         timeLabel.setText(message.getMessageDatetime().toLocalTime().format(DateTimeFormatter.ofPattern("HH:mm")));
@@ -60,10 +65,24 @@ public class TextMessageCellController {
             contentGP.setStyle("-fx-background-radius: 15px 15px 15px 15px; -fx-border-radius: 15px 15px 15px 15px;");
         } else
             contentGP.setStyle("");
+
+        setMouseListener();
         return contentGP;
     }
 
     public void setMaxWidth(double v) {
         contentGP.setMaxWidth(v);
+    }
+
+    public void setMouseListener() {
+        rootMessageHB.setOnMouseClicked(event -> {
+            if (event.getButton() == MouseButton.PRIMARY) {
+                rootMessageHB.setStyle("");
+                rootMessageHB.setStyle("-fx-background-color: green;");
+            } else if (event.getButton() == MouseButton.SECONDARY) {
+                rootMessageHB.setStyle("");
+                rootMessageHB.setStyle("-fx-background-color: red;");
+            }
+        });
     }
 }

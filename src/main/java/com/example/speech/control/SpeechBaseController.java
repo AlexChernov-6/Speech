@@ -10,6 +10,7 @@ import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.scene.layout.AnchorPane;
+import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 
@@ -41,6 +42,8 @@ public class SpeechBaseController {
     private ListView<Message> messagesLV;
     @FXML
     private AnchorPane messageAnchor;
+    @FXML
+    private StackPane messagesSP;
 
     public void initializeData(Stage stage, User currentUser) {
         this.stage = stage;
@@ -51,7 +54,8 @@ public class SpeechBaseController {
         selectedChatVB.widthProperty().addListener((ch, oldValue, newValue) -> {
             messagesLV.setPrefWidth((Double) newValue);
         });
-        messagesLV.setCellFactory(new MessageCellCreator(currentUser));
+        messagesLV.setSelectionModel(null);
+        messagesLV.setCellFactory(new MessageCellCreator(currentUser, messagesSP));
         messagesLV.getStyleClass().add("no-horizontal-scroll");
     }
 
@@ -65,11 +69,7 @@ public class SpeechBaseController {
         chatsView.getSelectionModel().selectedItemProperty().addListener(
                 (observable, oldValue, newValue) -> {
                     if (newValue != null) {
-                        long startTime = System.currentTimeMillis();
                         loadChannelMessages(newValue);
-                        long endTime = System.currentTimeMillis();
-                        long duration = endTime - startTime;
-                        System.out.println("Время выполнения: " + duration + " мс");
                     }
                 });
     }

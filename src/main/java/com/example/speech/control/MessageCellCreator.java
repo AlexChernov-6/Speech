@@ -5,6 +5,7 @@ import com.example.speech.model.User;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
+import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.util.Callback;
 
@@ -15,9 +16,11 @@ public class MessageCellCreator implements Callback<ListView<Message>, ListCell<
 
     private final User currentUser;
     private Message nextMessage;
+    private StackPane messagesSP;
 
-    public MessageCellCreator(User currentUser) {
+    public MessageCellCreator(User currentUser, StackPane messagesSP) {
         this.currentUser = currentUser;
+        this.messagesSP = messagesSP;
     }
 
     @Override
@@ -107,7 +110,8 @@ public class MessageCellCreator implements Callback<ListView<Message>, ListCell<
                         controller.setMaxWidth(maxWidth);
                     }
 
-                    controller.initializeMessage(message, currentUser, shouldShowAvatarForMessage(message, getIndex()));
+                    controller.initializeMessage(message, currentUser, shouldShowAvatarForMessage(message, getIndex()),
+                            messagesSP);
                     return node;
                 } catch (IOException e) {
                     e.printStackTrace();

@@ -37,7 +37,9 @@
                 </HBox>
             </AnchorPane>
 
-            <ListView fx:id="messagesLV" VBox.vgrow="ALWAYS"/>
+            <StackPane fx:id="messagesSP" VBox.vgrow="ALWAYS">
+                <ListView fx:id="messagesLV"/>
+            </StackPane>
 
             <AnchorPane fx:id="messageAnchor" style="-fx-background-color: rgba(255,255,255,0.5);" prefHeight="40" maxHeight="40">
                 <VBox AnchorPane.leftAnchor="0" AnchorPane.bottomAnchor="0" prefWidth="50" alignment="CENTER">
