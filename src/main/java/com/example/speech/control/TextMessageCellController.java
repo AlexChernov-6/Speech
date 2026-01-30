@@ -4,6 +4,7 @@ import com.example.speech.model.Message;
 import com.example.speech.model.User;
 import javafx.fxml.FXML;
 import javafx.geometry.Insets;
+import javafx.geometry.Point2D;
 import javafx.scene.control.Label;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
@@ -31,7 +32,6 @@ public class TextMessageCellController {
     private HBox timeStatusHB, rootMessageHB;
     @FXML
     private StackPane messagesSP;
-    //Добавить обработку нажания лкм и пкм для rootMessageHB
 
     private static final Image shipped = new Image(Objects.requireNonNull
             (TextMessageCellController.class.getResourceAsStream("/com/example/speech/image/check.png")));
@@ -76,12 +76,16 @@ public class TextMessageCellController {
 
     public void setMouseListener() {
         rootMessageHB.setOnMouseClicked(event -> {
-            if (event.getButton() == MouseButton.PRIMARY) {
-                rootMessageHB.setStyle("");
-                rootMessageHB.setStyle("-fx-background-color: green;");
-            } else if (event.getButton() == MouseButton.SECONDARY) {
-                rootMessageHB.setStyle("");
-                rootMessageHB.setStyle("-fx-background-color: red;");
+            if (event.getButton() == MouseButton.SECONDARY) {
+                // Преобразуем координаты в координаты StackPane
+                Point2D sceneCoords = new Point2D(event.getSceneX(), event.getSceneY());
+                Point2D stackPaneCoords = messagesSP.sceneToLocal(sceneCoords);
+
+                new WorkingWithAMessageListController().initializeShape(messagesSP,
+                        stackPaneCoords.getX(),
+                        stackPaneCoords.getY());
+
+                event.consume(); // Останавливаем всплытие
             }
         });
     }

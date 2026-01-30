@@ -199,3 +199,21 @@
     -fx-padding: 8px 12px;
     -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.05), 3, 0.3, 0, 1);
 }
+
+.working-with-a-message-root-pane {
+    -fx-background-color: rgba(255, 255, 255, 0.95);
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.05), 3, 0.3, 0, 1);
+    -fx-background-radius: 5px;
+    -fx-border-radius: 5px;
+}
+
+.working-with-a-message-button {
+    -fx-alignment: CENTER_LEFT;
+    -fx-border-width: 0;
+    -fx-cursor: hand;
+    -fx-background-color: transparent;
+}
+
+.working-with-a-message-button:hover {
+    -fx-background-color: rgba(200, 200, 200);
+}

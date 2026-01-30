@@ -57,6 +57,7 @@ public class SpeechBaseController {
         messagesLV.setSelectionModel(null);
         messagesLV.setCellFactory(new MessageCellCreator(currentUser, messagesSP));
         messagesLV.getStyleClass().add("no-horizontal-scroll");
+        stackPaneListener();
     }
 
     public void initializeListViewChats() {
@@ -222,5 +223,13 @@ public class SpeechBaseController {
                 }
             }).start();
         }
+    }
+
+    private void stackPaneListener() {
+        messagesSP.setOnMouseClicked(event -> {
+            messagesSP.getChildren().removeIf(
+                    node -> node instanceof WorkingWithAMessageListController
+            );
+        });
     }
 }
