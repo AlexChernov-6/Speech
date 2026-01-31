@@ -4,6 +4,7 @@ import com.example.speech.model.Message;
 import com.example.speech.model.User;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.control.ListCell;
+import javafx.scene.control.ListView;
 import javafx.scene.layout.StackPane;
 
 import java.io.IOException;
@@ -13,11 +14,14 @@ public class ListTextMessageCellController extends ListCell<Message> {
     private final User currentUser;
     private final boolean drawUserPhoto;
     private final StackPane messagesSP;
+    private final ListView<Message> messagesLV;
     
-    public ListTextMessageCellController(User currentUser, boolean drawUserPhoto, StackPane messagesSP) {
+    public ListTextMessageCellController(User currentUser, boolean drawUserPhoto, StackPane messagesSP
+            , ListView<Message> messagesLV) {
         this.currentUser = currentUser;
         this.drawUserPhoto = drawUserPhoto;
         this.messagesSP = messagesSP;
+        this.messagesLV = messagesLV;
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource(
                     "/com/example/speech/shape/TextMessageCellShape.fxml"));
@@ -45,7 +49,7 @@ public class ListTextMessageCellController extends ListCell<Message> {
                 });
             }
             
-            controller.initializeMessage(message, currentUser, drawUserPhoto, messagesSP);
+            controller.initializeMessage(message, currentUser, drawUserPhoto, messagesSP, messagesLV);
         }
     }
 }

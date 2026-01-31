@@ -17,10 +17,12 @@ public class MessageCellCreator implements Callback<ListView<Message>, ListCell<
     private final User currentUser;
     private Message nextMessage;
     private StackPane messagesSP;
+    private ListView<Message> messagesLV;
 
-    public MessageCellCreator(User currentUser, StackPane messagesSP) {
+    public MessageCellCreator(User currentUser, StackPane messagesSP, ListView<Message> messagesLV) {
         this.currentUser = currentUser;
         this.messagesSP = messagesSP;
+        this.messagesLV = messagesLV;
     }
 
     @Override
@@ -111,7 +113,7 @@ public class MessageCellCreator implements Callback<ListView<Message>, ListCell<
                     }
 
                     controller.initializeMessage(message, currentUser, shouldShowAvatarForMessage(message, getIndex()),
-                            messagesSP);
+                            messagesSP, messagesLV);
                     return node;
                 } catch (IOException e) {
                     e.printStackTrace();

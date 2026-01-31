@@ -7,61 +7,63 @@
 <AnchorPane fx:id="rootAnchorPane" stylesheets="@../styles.css" styleClass="root-pane" xmlns:fx="http://javafx.com/fxml/1"
             xmlns="http://javafx.com/javafx/17.0.12" fx:controller="com.example.speech.control.SpeechBaseController">
 
-    <AnchorPane AnchorPane.bottomAnchor="0" AnchorPane.leftAnchor="0" AnchorPane.rightAnchor="0" AnchorPane.topAnchor="0"
-                style="-fx-background-color: gray;">
+    <StackPane fx:id="messagesSP" AnchorPane.bottomAnchor="0" AnchorPane.leftAnchor="0" AnchorPane.rightAnchor="0"
+               AnchorPane.topAnchor="0">
+        <AnchorPane style="-fx-background-color: gray;">
 
-        <fx:include prefHeight="40" source="WindowControlsShape.fxml" AnchorPane.leftAnchor="0" AnchorPane.rightAnchor="0"
-                    AnchorPane.topAnchor="0"/>
+            <fx:include prefHeight="40" source="WindowControlsShape.fxml" AnchorPane.leftAnchor="0" AnchorPane.rightAnchor="0"
+                        AnchorPane.topAnchor="0"/>
 
-        <VBox prefWidth="300" AnchorPane.leftAnchor="0" AnchorPane.topAnchor="40" alignment="TOP_CENTER"
-              AnchorPane.bottomAnchor="0">
-            <Button text="Найти или начать беседу" prefWidth="280" prefHeight="30" styleClass="login-button"/>
-            <ListView fx:id="chatsView" prefWidth="280" VBox.vgrow="ALWAYS" styleClass="list-view">
-                <padding>
-                    <Insets left="10" right="10" top="10" bottom="5"/>
-                </padding>
-            </ListView>
-        </VBox>
+            <VBox prefWidth="300" AnchorPane.leftAnchor="0" AnchorPane.topAnchor="40" alignment="TOP_CENTER"
+                  AnchorPane.bottomAnchor="0">
+                <Button text="Найти или начать беседу" prefWidth="280" prefHeight="30" styleClass="login-button"/>
+                <ListView fx:id="chatsView" prefWidth="280" VBox.vgrow="ALWAYS" styleClass="list-view">
+                    <padding>
+                        <Insets left="10" right="10" top="10" bottom="5"/>
+                    </padding>
+                </ListView>
+            </VBox>
 
-        <VBox fx:id="selectedChatVB" AnchorPane.leftAnchor="300" AnchorPane.topAnchor="40" AnchorPane.bottomAnchor="5"
-              AnchorPane.rightAnchor="5">
-            <AnchorPane style="-fx-background-color: white;" prefHeight="40">
-                <VBox AnchorPane.leftAnchor="5" AnchorPane.topAnchor="0" AnchorPane.bottomAnchor="0" alignment="CENTER_LEFT">
-                    <Label fx:id="channelName" text="labelName"/>
-                    <Label fx:id="channelStatus" text="channelStatus"/>
-                </VBox>
+            <VBox fx:id="selectedChatVB" AnchorPane.leftAnchor="300" AnchorPane.topAnchor="40" AnchorPane.bottomAnchor="5"
+                  AnchorPane.rightAnchor="5">
+                <AnchorPane style="-fx-background-color: white;" prefHeight="40">
+                    <VBox AnchorPane.leftAnchor="5" AnchorPane.topAnchor="0" AnchorPane.bottomAnchor="0" alignment="CENTER_LEFT">
+                        <Label fx:id="channelName" text="labelName"/>
+                        <Label fx:id="channelStatus" text="channelStatus"/>
+                    </VBox>
 
-                <HBox AnchorPane.rightAnchor="0" AnchorPane.topAnchor="0" AnchorPane.bottomAnchor="0" alignment="CENTER_RIGHT">
-                    <Button styleClass="window-control-button, search-message-button" prefHeight="25" prefWidth="50"/>
-                    <Button styleClass="window-control-button, menu-message-button" prefHeight="25" prefWidth="50"/>
-                </HBox>
-            </AnchorPane>
+                    <HBox AnchorPane.rightAnchor="0" AnchorPane.topAnchor="0" AnchorPane.bottomAnchor="0" alignment="CENTER_RIGHT">
+                        <Button styleClass="window-control-button, search-message-button" prefHeight="25" prefWidth="50"/>
+                        <Button styleClass="window-control-button, menu-message-button" prefHeight="25" prefWidth="50"/>
+                    </HBox>
+                </AnchorPane>
 
-            <StackPane fx:id="messagesSP" VBox.vgrow="ALWAYS">
-                <ListView fx:id="messagesLV"/>
-            </StackPane>
 
-            <AnchorPane fx:id="messageAnchor" style="-fx-background-color: rgba(255,255,255,0.5);" prefHeight="40" maxHeight="40">
-                <VBox AnchorPane.leftAnchor="0" AnchorPane.bottomAnchor="0" prefWidth="50" alignment="CENTER">
-                    <Button styleClass="window-control-button, add-file-message-button" prefHeight="25" prefWidth="50"/>
-                </VBox>
+                <ListView fx:id="messagesLV" VBox.vgrow="ALWAYS"/>
 
-                <TextArea fx:id="messageTA" promptText="Сообщение..." prefHeight="40" AnchorPane.leftAnchor="50"
-                          AnchorPane.topAnchor="0" AnchorPane.bottomAnchor="0" AnchorPane.rightAnchor="50"
-                          style="-fx-font-size: 14px;" wrapText="true"/>
 
-                <VBox fx:id="emojiVB" AnchorPane.rightAnchor="0" AnchorPane.bottomAnchor="0" prefWidth="50" alignment="CENTER">
-                    <Button styleClass="window-control-button, emoji-button" prefHeight="25" prefWidth="50"/>
-                </VBox>
+                <AnchorPane fx:id="messageAnchor" style="-fx-background-color: rgba(255,255,255,0.5);" prefHeight="40" maxHeight="40">
+                    <VBox AnchorPane.leftAnchor="0" AnchorPane.bottomAnchor="0" prefWidth="50" alignment="CENTER">
+                        <Button styleClass="window-control-button, add-file-message-button" prefHeight="25" prefWidth="50"/>
+                    </VBox>
 
-                <VBox fx:id="sendVB" AnchorPane.rightAnchor="0" AnchorPane.bottomAnchor="0" prefWidth="50"
-                      alignment="CENTER" visible="false">
-                    <Button styleClass="window-control-button, send-message-button" prefHeight="25" prefWidth="50"
-                            onAction="#handleSendMessage"/>
-                </VBox>
-            </AnchorPane>
-        </VBox>
+                    <TextArea fx:id="messageTA" promptText="Сообщение..." prefHeight="40" AnchorPane.leftAnchor="50"
+                              AnchorPane.topAnchor="0" AnchorPane.bottomAnchor="0" AnchorPane.rightAnchor="50"
+                              style="-fx-font-size: 14px;" wrapText="true"/>
 
-    </AnchorPane>
+                    <VBox fx:id="emojiVB" AnchorPane.rightAnchor="0" AnchorPane.bottomAnchor="0" prefWidth="50" alignment="CENTER">
+                        <Button styleClass="window-control-button, emoji-button" prefHeight="25" prefWidth="50"/>
+                    </VBox>
+
+                    <VBox fx:id="sendVB" AnchorPane.rightAnchor="0" AnchorPane.bottomAnchor="0" prefWidth="50"
+                          alignment="CENTER" visible="false">
+                        <Button styleClass="window-control-button, send-message-button" prefHeight="25" prefWidth="50"
+                                onAction="#handleSendMessage"/>
+                    </VBox>
+                </AnchorPane>
+            </VBox>
+
+        </AnchorPane>
+    </StackPane>
 
 </AnchorPane>

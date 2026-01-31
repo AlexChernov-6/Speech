@@ -55,7 +55,7 @@ public class SpeechBaseController {
             messagesLV.setPrefWidth((Double) newValue);
         });
         messagesLV.setSelectionModel(null);
-        messagesLV.setCellFactory(new MessageCellCreator(currentUser, messagesSP));
+        messagesLV.setCellFactory(new MessageCellCreator(currentUser, messagesSP, messagesLV));
         messagesLV.getStyleClass().add("no-horizontal-scroll");
         stackPaneListener();
     }

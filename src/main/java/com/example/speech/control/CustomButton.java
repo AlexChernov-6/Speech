@@ -12,7 +12,7 @@ public class CustomButton extends Button {
     public CustomButton(Image image, String text) {
         super();
 
-        HBox hBox = new HBox(5);
+        HBox hBox = new HBox(10);
         hBox.setAlignment(Pos.CENTER_LEFT);
 
         ImageView imageView = new ImageView(image);

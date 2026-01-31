@@ -6,6 +6,7 @@ import javafx.fxml.FXML;
 import javafx.geometry.Insets;
 import javafx.geometry.Point2D;
 import javafx.scene.control.Label;
+import javafx.scene.control.ListView;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.MouseButton;
@@ -30,8 +31,9 @@ public class TextMessageCellController {
     public ImageView statusIV;
     @FXML
     private HBox timeStatusHB, rootMessageHB;
-    @FXML
+
     private StackPane messagesSP;
+    private ListView<Message> messagesLV;
 
     private static final Image shipped = new Image(Objects.requireNonNull
             (TextMessageCellController.class.getResourceAsStream("/com/example/speech/image/check.png")));
@@ -40,8 +42,10 @@ public class TextMessageCellController {
     private static final Image loading = new Image(Objects.requireNonNull
             (TextMessageCellController.class.getResourceAsStream("/com/example/speech/image/clock.png")));
 
-    public GridPane initializeMessage(Message message, User currentUser, boolean drawUserPhoto, StackPane messagesSP) {
+    public GridPane initializeMessage(Message message, User currentUser, boolean drawUserPhoto, StackPane messagesSP,
+                                      ListView<Message> messagesLV) {
         this.messagesSP = messagesSP;
+        this.messagesLV = messagesLV;
         userPhotoIV.setImage(message.getChannelUser().getUser().getPhotoImage());
         messageLabel.setText(new String(message.getMessageContent(), StandardCharsets.UTF_8));
         timeLabel.setText(message.getMessageDatetime().toLocalTime().format(DateTimeFormatter.ofPattern("HH:mm")));
@@ -75,17 +79,24 @@ public class TextMessageCellController {
     }
 
     public void setMouseListener() {
-        rootMessageHB.setOnMouseClicked(event -> {
+        contentGP.setOnMouseClicked(event -> {
             if (event.getButton() == MouseButton.SECONDARY) {
-                // Преобразуем координаты в координаты StackPane
+                // Получаем координаты клика относительно сцены
                 Point2D sceneCoords = new Point2D(event.getSceneX(), event.getSceneY());
+
+                // Преобразуем в координаты StackPane
                 Point2D stackPaneCoords = messagesSP.sceneToLocal(sceneCoords);
 
-                new WorkingWithAMessageListController().initializeShape(messagesSP,
+                WorkingWithAMessageListController controller = new WorkingWithAMessageListController();
+                controller.initializeShape(
                         stackPaneCoords.getX(),
-                        stackPaneCoords.getY());
+                        stackPaneCoords.getY(),
+                        messagesLV,
+                        messagesSP
+                );
+                messagesSP.getChildren().add(controller);
 
-                event.consume(); // Останавливаем всплытие
+                event.consume();
             }
         });
     }
