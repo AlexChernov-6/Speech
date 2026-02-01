@@ -1,8 +1,10 @@
 package com.example.speech.control;
 
+import com.example.speech.model.ChannelUser;
 import com.example.speech.model.Message;
 import com.example.speech.model.User;
 import javafx.fxml.FXMLLoader;
+import javafx.scene.control.Label;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
 import javafx.scene.layout.StackPane;
@@ -18,11 +20,13 @@ public class MessageCellCreator implements Callback<ListView<Message>, ListCell<
     private Message nextMessage;
     private StackPane messagesSP;
     private ListView<Message> messagesLV;
+    private Label channelName;
 
-    public MessageCellCreator(User currentUser, StackPane messagesSP, ListView<Message> messagesLV) {
+    public MessageCellCreator(User currentUser, StackPane messagesSP, ListView<Message> messagesLV, Label channelName) {
         this.currentUser = currentUser;
         this.messagesSP = messagesSP;
         this.messagesLV = messagesLV;
+        this.channelName = channelName;
     }
 
     @Override
@@ -113,7 +117,7 @@ public class MessageCellCreator implements Callback<ListView<Message>, ListCell<
                     }
 
                     controller.initializeMessage(message, currentUser, shouldShowAvatarForMessage(message, getIndex()),
-                            messagesSP, messagesLV);
+                            messagesSP, messagesLV, channelName);
                     return node;
                 } catch (IOException e) {
                     e.printStackTrace();

@@ -22,8 +22,10 @@ import static com.example.speech.util.HelpfulStylingClass.setupFullScreenListene
 
 public class SpeechBaseController {
     private Stage stage;
-    private User user;
+    private User currentUser;
 
+    @FXML
+    private Button startConversation;
     @FXML
     private ListView<ChannelUser> chatsView;
 
@@ -44,18 +46,33 @@ public class SpeechBaseController {
     private AnchorPane messageAnchor;
     @FXML
     private StackPane messagesSP;
+    @FXML
+    private VBox leftVB;
 
     public void initializeData(Stage stage, User currentUser) {
         this.stage = stage;
-        this.user = currentUser;
+        this.currentUser = currentUser;
         setupFullScreenListener(stage, rootAnchorPane);
         initializeListViewChats();
         setupMessageTextAreaListener();
-        selectedChatVB.widthProperty().addListener((ch, oldValue, newValue) -> {
-            messagesLV.setPrefWidth((Double) newValue);
+        messagesSP.widthProperty().addListener((ch, oldValue, newValue) -> {
+            double newWidth = newValue.doubleValue() - 300;
+
+            if (newWidth <= 400) {
+                AnchorPane.setLeftAnchor(selectedChatVB, 5.0);
+                leftVB.setVisible(false);
+                chatsView.setVisible(false);
+            }
+            if (newWidth >= 400) {
+                AnchorPane.setLeftAnchor(selectedChatVB, 300.0);
+                leftVB.setVisible(true);
+                chatsView.setVisible(true);
+            }
+
+            messagesLV.setPrefWidth(newWidth);
         });
         messagesLV.setSelectionModel(null);
-        messagesLV.setCellFactory(new MessageCellCreator(currentUser, messagesSP, messagesLV));
+        messagesLV.setCellFactory(new MessageCellCreator(currentUser, messagesSP, messagesLV, channelName));
         messagesLV.getStyleClass().add("no-horizontal-scroll");
         stackPaneListener();
     }
@@ -64,7 +81,7 @@ public class SpeechBaseController {
         chatsView.getItems().clear();
         chatsView.setFixedCellSize(60);
         chatsView.setCellFactory(lv -> new ListChannelsCellController());
-        List<ChannelUser> userChats = channelUserService.getAllChatsByUser(user);
+        List<ChannelUser> userChats = channelUserService.getAllChatsByUser(currentUser);
         chatsView.getItems().addAll(userChats);
 
         chatsView.getSelectionModel().selectedItemProperty().addListener(
@@ -89,7 +106,8 @@ public class SpeechBaseController {
                 selectedChat.getChannel().getChannelID()
         );
 
-        messagesLV.getItems().addAll(FXCollections.observableArrayList(messages));
+        messagesLV.getItems().addAll(FXCollections.observableArrayList(messages).stream()
+                .filter(message -> !message.getDeletedByUsers().contains(Long.valueOf(currentUser.getIdUser()))).toList());
 
         Platform.runLater(() -> {
             if (!messagesLV.getItems().isEmpty()) {
@@ -227,9 +245,7 @@ public class SpeechBaseController {
 
     private void stackPaneListener() {
         messagesSP.setOnMouseClicked(event -> {
-            messagesSP.getChildren().removeIf(
-                    node -> node instanceof WorkingWithAMessageListController
-            );
+            messagesSP.getChildren().removeIf(node -> node instanceof WorkingWithAMessageListController);
         });
     }
 }

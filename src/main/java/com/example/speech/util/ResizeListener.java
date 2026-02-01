@@ -7,6 +7,7 @@ import javafx.scene.Node;
 import javafx.scene.control.*;
 import javafx.scene.control.skin.VirtualFlow;
 import javafx.scene.input.MouseEvent;
+import javafx.scene.layout.VBox;
 import javafx.stage.Screen;
 import javafx.stage.Stage;
 
@@ -74,7 +75,8 @@ public class ResizeListener implements EventHandler<MouseEvent> {
             ListCell.class,
             ListView.class,
             ListChannelsCellController.class,
-            ScrollBar.class
+            ScrollBar.class,
+            VBox.class
     );
 
     //Конструктор класса в качестве аргумента принимает Stage с которым будет работать

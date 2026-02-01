@@ -1,5 +1,6 @@
 package com.example.speech.control;
 
+import com.example.speech.model.ChannelUser;
 import com.example.speech.model.Message;
 import com.example.speech.model.User;
 import javafx.fxml.FXML;
@@ -34,6 +35,9 @@ public class TextMessageCellController {
 
     private StackPane messagesSP;
     private ListView<Message> messagesLV;
+    private Message message;
+    private User currentUser;
+    private String channelName;
 
     private static final Image shipped = new Image(Objects.requireNonNull
             (TextMessageCellController.class.getResourceAsStream("/com/example/speech/image/check.png")));
@@ -43,9 +47,12 @@ public class TextMessageCellController {
             (TextMessageCellController.class.getResourceAsStream("/com/example/speech/image/clock.png")));
 
     public GridPane initializeMessage(Message message, User currentUser, boolean drawUserPhoto, StackPane messagesSP,
-                                      ListView<Message> messagesLV) {
+                                      ListView<Message> messagesLV, Label channelName) {
+        this.message = message;
         this.messagesSP = messagesSP;
         this.messagesLV = messagesLV;
+        this.currentUser = currentUser;
+        this.channelName = channelName.getText();
         userPhotoIV.setImage(message.getChannelUser().getUser().getPhotoImage());
         messageLabel.setText(new String(message.getMessageContent(), StandardCharsets.UTF_8));
         timeLabel.setText(message.getMessageDatetime().toLocalTime().format(DateTimeFormatter.ofPattern("HH:mm")));
@@ -81,18 +88,16 @@ public class TextMessageCellController {
     public void setMouseListener() {
         contentGP.setOnMouseClicked(event -> {
             if (event.getButton() == MouseButton.SECONDARY) {
-                // Получаем координаты клика относительно сцены
-                Point2D sceneCoords = new Point2D(event.getSceneX(), event.getSceneY());
-
-                // Преобразуем в координаты StackPane
-                Point2D stackPaneCoords = messagesSP.sceneToLocal(sceneCoords);
-
                 WorkingWithAMessageListController controller = new WorkingWithAMessageListController();
                 controller.initializeShape(
-                        stackPaneCoords.getX(),
-                        stackPaneCoords.getY(),
+                        event.getSceneX(),
+                        event.getSceneY(),
                         messagesLV,
-                        messagesSP
+                        messagesSP,
+                        message,
+                        (Objects.equals(currentUser.getIdUser(), message.getChannelUser().getUser().getIdUser())),
+                        channelName,
+                        Long.valueOf(currentUser.getIdUser())
                 );
                 messagesSP.getChildren().add(controller);
 

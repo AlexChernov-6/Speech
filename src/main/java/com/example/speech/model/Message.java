@@ -6,7 +6,9 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.GenerationTime;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Objects;
 
 @Entity
@@ -25,6 +27,8 @@ public class Message {
     private byte[] messageContent;
     @Column(name = "message_status", updatable = false)
     private String messageStatus = "отправлено";
+    @Column(name = "deleted_by_users")
+    private List<Long> deletedByUsers;
 
     public Message() { }
 
@@ -74,6 +78,16 @@ public class Message {
 
     public void setMessageStatus(String messageStatus) {
         this.messageStatus = messageStatus;
+    }
+
+    public List<Long> getDeletedByUsers() {
+        if (deletedByUsers == null)
+            deletedByUsers = new ArrayList<>();
+        return deletedByUsers;
+    }
+
+    public void setDeletedByUsers(List<Long> deletedByUsers) {
+        this.deletedByUsers = deletedByUsers;
     }
 
     @Override

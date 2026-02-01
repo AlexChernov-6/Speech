@@ -1,13 +1,21 @@
 package com.example.speech.control;
 
+import com.example.speech.model.ChannelUser;
 import com.example.speech.model.Message;
+import com.example.speech.service.MessageService;
+import com.example.speech.util.HelpfulInitializationClass;
 import javafx.geometry.Insets;
+import javafx.scene.control.Alert;
+import javafx.scene.control.ButtonType;
 import javafx.scene.control.ListView;
 import javafx.scene.image.Image;
+import javafx.scene.input.Clipboard;
+import javafx.scene.input.ClipboardContent;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 
 public class WorkingWithAMessageListController extends Pane {
@@ -24,10 +32,16 @@ public class WorkingWithAMessageListController extends Pane {
             (WorkingWithAMessageListController.class.getResourceAsStream("/com/example/speech/image/delete.png")));
     private static final Image selectI = new Image(Objects.requireNonNull
             (WorkingWithAMessageListController.class.getResourceAsStream("/com/example/speech/image/select.png")));
+    private static final Image changeI = new Image(Objects.requireNonNull
+            (WorkingWithAMessageListController.class.getResourceAsStream("/com/example/speech/image/change.png")));
 
-    public void initializeShape(double xPos, double yPos, ListView<Message> messagesLV, StackPane messagesSP) {
+    private final Clipboard clipboard = Clipboard.getSystemClipboard();
+    private final ClipboardContent content = new ClipboardContent();
+
+    public void initializeShape(double xPos, double yPos, ListView<Message> messagesLV, StackPane messagesSP
+            , Message message, boolean isCurrentUserMessage, String channelName, Long currentUserId) {
         double vBoxWidth = 200;
-        double vBoxHeight = 250;
+        double vBoxHeight = (isCurrentUserMessage) ? 300 : 250;
 
         VBox rootVB = new VBox();
         rootVB.setMaxWidth(vBoxWidth);
@@ -70,6 +84,11 @@ public class WorkingWithAMessageListController extends Pane {
         CustomButton copy = new CustomButton(copyI, "Копировать текст");
         copy.setPrefWidth(vBoxWidth);
         copy.setPrefHeight(40);
+        copy.setOnAction(e -> {
+            content.putString(new String(message.getMessageContent(), StandardCharsets.UTF_8));
+            clipboard.setContent(content);
+            messagesSP.getChildren().remove(this);
+        });
 
         CustomButton forward = new CustomButton(forwardI, "Переслать");
         forward.setPrefWidth(vBoxWidth);
@@ -78,13 +97,27 @@ public class WorkingWithAMessageListController extends Pane {
         CustomButton delete = new CustomButton(deleteI, "Удалить");
         delete.setPrefWidth(vBoxWidth);
         delete.setPrefHeight(40);
+        delete.setOnAction(e -> {
+            messagesSP.getChildren().remove(this);
+            new ConfirmationOfMessageDeletion().initializeShape(channelName, message, messagesSP, messagesLV
+                    , currentUserId);
+        });
+
 
         CustomButton select = new CustomButton(selectI, "Выделить");
         select.setPrefWidth(vBoxWidth);
         select.setPrefHeight(40);
         VBox.setMargin(select, new Insets(0, 0, 5, 0));
 
-        rootVB.getChildren().addAll(reply, pin, copy, forward, delete, select);
+        if(isCurrentUserMessage) {
+            CustomButton change = new CustomButton(changeI, "Изменить");
+            change.setPrefWidth(vBoxWidth);
+            change.setPrefHeight(40);
+
+            rootVB.getChildren().addAll(reply, change, pin, copy, forward, delete, select);
+        } else {
+            rootVB.getChildren().addAll(reply, pin, copy, forward, delete, select);
+        }
 
         this.getChildren().add(rootVB);
 
