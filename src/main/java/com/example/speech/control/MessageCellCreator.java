@@ -7,6 +7,7 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
+import javafx.scene.control.TextArea;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.util.Callback;
@@ -16,17 +17,11 @@ import java.util.Objects;
 
 public class MessageCellCreator implements Callback<ListView<Message>, ListCell<Message>> {
 
-    private final User currentUser;
+    private SpeechBaseController speechBaseController;
     private Message nextMessage;
-    private StackPane messagesSP;
-    private ListView<Message> messagesLV;
-    private Label channelName;
 
-    public MessageCellCreator(User currentUser, StackPane messagesSP, ListView<Message> messagesLV, Label channelName) {
-        this.currentUser = currentUser;
-        this.messagesSP = messagesSP;
-        this.messagesLV = messagesLV;
-        this.channelName = channelName;
+    public MessageCellCreator(SpeechBaseController speechBaseController) {
+        this.speechBaseController = speechBaseController;
     }
 
     @Override
@@ -116,8 +111,8 @@ public class MessageCellCreator implements Callback<ListView<Message>, ListCell<
                         controller.setMaxWidth(maxWidth);
                     }
 
-                    controller.initializeMessage(message, currentUser, shouldShowAvatarForMessage(message, getIndex()),
-                            messagesSP, messagesLV, channelName);
+                    controller.initializeMessage(speechBaseController, message
+                            , shouldShowAvatarForMessage(message, getIndex()));
                     return node;
                 } catch (IOException e) {
                     e.printStackTrace();

@@ -25,8 +25,6 @@ public class SpeechBaseController {
     private User currentUser;
 
     @FXML
-    private Button startConversation;
-    @FXML
     private ListView<ChannelUser> chatsView;
 
     private final ChannelUserService channelUserService = new ChannelUserService();
@@ -72,7 +70,7 @@ public class SpeechBaseController {
             messagesLV.setPrefWidth(newWidth);
         });
         messagesLV.setSelectionModel(null);
-        messagesLV.setCellFactory(new MessageCellCreator(currentUser, messagesSP, messagesLV, channelName));
+        messagesLV.setCellFactory(new MessageCellCreator(this));
         messagesLV.getStyleClass().add("no-horizontal-scroll");
         stackPaneListener();
     }
@@ -247,5 +245,69 @@ public class SpeechBaseController {
         messagesSP.setOnMouseClicked(event -> {
             messagesSP.getChildren().removeIf(node -> node instanceof WorkingWithAMessageListController);
         });
+    }
+
+    public User getCurrentUser() {
+        return currentUser;
+    }
+
+    public MessageService getMessageService() {
+        return messageService;
+    }
+
+    public TextArea getMessageTA() {
+        return messageTA;
+    }
+
+    public StackPane getMessagesSP() {
+        return messagesSP;
+    }
+
+    public ListView<Message> getMessagesLV() {
+        return messagesLV;
+    }
+
+    public Stage getStage() {
+        return stage;
+    }
+
+    public ListView<ChannelUser> getChatsView() {
+        return chatsView;
+    }
+
+    public ChannelUserService getChannelUserService() {
+        return channelUserService;
+    }
+
+    public Label getChannelName() {
+        return channelName;
+    }
+
+    public Label getChannelStatus() {
+        return channelStatus;
+    }
+
+    public AnchorPane getRootAnchorPane() {
+        return rootAnchorPane;
+    }
+
+    public VBox getSelectedChatVB() {
+        return selectedChatVB;
+    }
+
+    public VBox getEmojiVB() {
+        return emojiVB;
+    }
+
+    public VBox getSendVB() {
+        return sendVB;
+    }
+
+    public AnchorPane getMessageAnchor() {
+        return messageAnchor;
+    }
+
+    public VBox getLeftVB() {
+        return leftVB;
     }
 }

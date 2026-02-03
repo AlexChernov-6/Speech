@@ -217,3 +217,40 @@
 .working-with-a-message-button:hover {
     -fx-background-color: rgba(200, 200, 200);
 }
+
+.check-box {
+    -fx-font-size: 14px;
+    -fx-cursor: hand;
+}
+
+.check-box > .box {
+    -fx-background-color: transparent;
+    -fx-border-color: black;
+    -fx-border-width: 1px;
+    -fx-border-radius: 2px;
+    -fx-padding: 2px;
+    -fx-min-width: 15px;
+    -fx-min-height: 15px;
+    -fx-max-width: 15px;
+    -fx-max-height: 15px;
+}
+
+.check-box:selected > .box > .mark {
+    -fx-background-color: transparent;
+}
+
+.check-box:hover > .box {
+    -fx-border-color: #222;
+}
+
+.check-box:selected > .box {
+    -fx-border-color: #0055FF;
+    -fx-background-color: #0055FF;
+}
+
+.check-box:selected > .box > .mark {
+    -fx-background-color: rgba(255, 255, 255, 0.95) !important;
+    -fx-shape: "M 5.5,8.5 L 2.5,5.5 L 3.5,4.5 L 5.5,6.5 M 5,6.8 L 8.5,3.5 L 9.5,4.5 L 5.5,8.5";
+    -fx-alignment: center;
+    -fx-translate-y: -1;
+}

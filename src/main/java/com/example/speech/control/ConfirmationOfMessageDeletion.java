@@ -39,6 +39,7 @@ public class ConfirmationOfMessageDeletion extends Pane {
         HBox centralHB = new HBox(10);
 
         CheckBox checkBox = new CheckBox();
+        checkBox.getStyleClass().add("check-box");
 
         TextFlow informationTextFlow = new TextFlow();
         Label startLabel = new Label("Также удалить для «");

@@ -1,13 +1,9 @@
 package com.example.speech.control;
 
-import com.example.speech.model.ChannelUser;
 import com.example.speech.model.Message;
-import com.example.speech.service.MessageService;
-import com.example.speech.util.HelpfulInitializationClass;
 import javafx.geometry.Insets;
-import javafx.scene.control.Alert;
-import javafx.scene.control.ButtonType;
 import javafx.scene.control.ListView;
+import javafx.scene.control.TextArea;
 import javafx.scene.image.Image;
 import javafx.scene.input.Clipboard;
 import javafx.scene.input.ClipboardContent;
@@ -38,8 +34,16 @@ public class WorkingWithAMessageListController extends Pane {
     private final Clipboard clipboard = Clipboard.getSystemClipboard();
     private final ClipboardContent content = new ClipboardContent();
 
-    public void initializeShape(double xPos, double yPos, ListView<Message> messagesLV, StackPane messagesSP
-            , Message message, boolean isCurrentUserMessage, String channelName, Long currentUserId) {
+    public void initializeShape(double xPos, double yPos, SpeechBaseController speechBaseController, Message message) {
+        boolean isCurrentUserMessage = (Objects.equals(speechBaseController.getCurrentUser().getIdUser()
+                , message.getChannelUser().getUser().getIdUser()));
+
+        StackPane messagesSP = speechBaseController.getMessagesSP();
+        String channelName = speechBaseController.getChannelName().getText();
+        ListView<Message> messagesLV = speechBaseController.getMessagesLV();
+        TextArea messageTA = speechBaseController.getMessageTA();
+        Long currentUserId = Long.valueOf(speechBaseController.getCurrentUser().getIdUser());
+
         double vBoxWidth = 200;
         double vBoxHeight = (isCurrentUserMessage) ? 300 : 250;
 
@@ -113,6 +117,9 @@ public class WorkingWithAMessageListController extends Pane {
             CustomButton change = new CustomButton(changeI, "Изменить");
             change.setPrefWidth(vBoxWidth);
             change.setPrefHeight(40);
+            change.setOnAction(e -> {
+                messageTA.setText(new String(message.getMessageContent(), StandardCharsets.UTF_8));
+            });
 
             rootVB.getChildren().addAll(reply, change, pin, copy, forward, delete, select);
         } else {
