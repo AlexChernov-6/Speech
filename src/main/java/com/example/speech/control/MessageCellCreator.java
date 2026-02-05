@@ -1,24 +1,22 @@
 package com.example.speech.control;
 
-import com.example.speech.model.ChannelUser;
 import com.example.speech.model.Message;
-import com.example.speech.model.User;
 import javafx.fxml.FXMLLoader;
-import javafx.scene.control.Label;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
-import javafx.scene.control.TextArea;
-import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.util.Callback;
 
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Objects;
 
 public class MessageCellCreator implements Callback<ListView<Message>, ListCell<Message>> {
 
     private SpeechBaseController speechBaseController;
     private Message nextMessage;
+    private Map<Message, TextMessageCellController> controllerCache = new HashMap<>();
 
     public MessageCellCreator(SpeechBaseController speechBaseController) {
         this.speechBaseController = speechBaseController;
@@ -105,10 +103,12 @@ public class MessageCellCreator implements Callback<ListView<Message>, ListCell<
                     javafx.scene.Node node = loader.load();
                     TextMessageCellController controller = loader.getController();
 
+                    controllerCache.put(message, controller);
+
                     // Настройка ширины
                     if (getListView() != null) {
                         double maxWidth = getListView().getWidth() - 100;
-                        controller.setMaxWidth(maxWidth);
+                        controller.setMaxWidthGP(maxWidth);
                     }
 
                     controller.initializeMessage(speechBaseController, message
@@ -152,5 +152,9 @@ public class MessageCellCreator implements Callback<ListView<Message>, ListCell<
                 return false;
             }
         };
+    }
+
+    public TextMessageCellController getControllerCache(Message message) {
+        return controllerCache.get(message);
     }
 }

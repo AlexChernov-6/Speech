@@ -1,12 +1,15 @@
 package com.example.speech.control;
 
 import com.example.speech.model.Message;
+import javafx.application.Platform;
 import javafx.geometry.Insets;
+import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
 import javafx.scene.control.TextArea;
 import javafx.scene.image.Image;
 import javafx.scene.input.Clipboard;
 import javafx.scene.input.ClipboardContent;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
@@ -38,11 +41,15 @@ public class WorkingWithAMessageListController extends Pane {
         boolean isCurrentUserMessage = (Objects.equals(speechBaseController.getCurrentUser().getIdUser()
                 , message.getChannelUser().getUser().getIdUser()));
 
+        String contentMessage = new String(message.getMessageContent(), StandardCharsets.UTF_8);
+
         StackPane messagesSP = speechBaseController.getMessagesSP();
         String channelName = speechBaseController.getChannelName().getText();
         ListView<Message> messagesLV = speechBaseController.getMessagesLV();
         TextArea messageTA = speechBaseController.getMessageTA();
         Long currentUserId = Long.valueOf(speechBaseController.getCurrentUser().getIdUser());
+        HBox updateMessageHB = speechBaseController.getUpdateMessageHB();
+        Label contentUpdateMessageLB = speechBaseController.getContentUpdateMessageLB();
 
         double vBoxWidth = 200;
         double vBoxHeight = (isCurrentUserMessage) ? 300 : 250;
@@ -89,7 +96,7 @@ public class WorkingWithAMessageListController extends Pane {
         copy.setPrefWidth(vBoxWidth);
         copy.setPrefHeight(40);
         copy.setOnAction(e -> {
-            content.putString(new String(message.getMessageContent(), StandardCharsets.UTF_8));
+            content.putString(contentMessage);
             clipboard.setContent(content);
             messagesSP.getChildren().remove(this);
         });
@@ -118,7 +125,16 @@ public class WorkingWithAMessageListController extends Pane {
             change.setPrefWidth(vBoxWidth);
             change.setPrefHeight(40);
             change.setOnAction(e -> {
-                messageTA.setText(new String(message.getMessageContent(), StandardCharsets.UTF_8));
+                messageTA.setText(contentMessage);
+                contentUpdateMessageLB.setText(contentMessage);
+                updateMessageHB.setVisible(true);
+                updateMessageHB.setManaged(true);
+                speechBaseController.setUpdateMessage(message);
+                messagesSP.getChildren().remove(this);
+                Platform.runLater(() -> {
+                    messageTA.requestFocus();
+                    messageTA.positionCaret(messageTA.getText().length());
+                });
             });
 
             rootVB.getChildren().addAll(reply, change, pin, copy, forward, delete, select);

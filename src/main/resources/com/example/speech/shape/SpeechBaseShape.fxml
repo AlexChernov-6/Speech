@@ -4,6 +4,8 @@
 <?import javafx.scene.layout.*?>
 <?import javafx.geometry.Insets?>
 
+<?import javafx.scene.image.ImageView?>
+<?import javafx.scene.image.Image?>
 <AnchorPane fx:id="rootAnchorPane" stylesheets="@../styles.css" styleClass="root-pane" xmlns:fx="http://javafx.com/fxml/1"
             xmlns="http://javafx.com/javafx/17.0.12" fx:controller="com.example.speech.control.SpeechBaseController">
 
@@ -40,22 +42,55 @@
 
                 <ListView fx:id="messagesLV" VBox.vgrow="ALWAYS"/>
 
+                <HBox fx:id="updateMessageHB" style="-fx-background-color: white; -fx-cursor: hand;" prefHeight="40"
+                      visible="false" managed="false">
+                    <ImageView fitHeight="20" fitWidth="20" preserveRatio="true">
+                        <Image url="@../image/change.png"/>
+                        <HBox.margin>
+                            <Insets left="10" top="10"/>
+                        </HBox.margin>
+                    </ImageView>
 
-                <AnchorPane fx:id="messageAnchor" style="-fx-background-color: rgba(255,255,255,0.5);" prefHeight="40" maxHeight="40">
-                    <VBox AnchorPane.leftAnchor="0" AnchorPane.bottomAnchor="0" prefWidth="50" alignment="CENTER">
+                    <VBox HBox.hgrow="ALWAYS" prefWidth="40">
+                        <Label text="Редактирование" style="-fx-text-fill: blue; -fx-font-size: 13px;"/>
+                        <Label text="Content" style="-fx-font-size: 13px" fx:id="contentUpdateMessageLB"/>
+                        <HBox.margin>
+                            <Insets left="20"/>
+                        </HBox.margin>
+                    </VBox>
+
+                    <Button styleClass="window-control-button, close-button" prefWidth="40" prefHeight="20"
+                            onAction="#updateVisibleChangeMessageHB" style="-fx-background-radius: 5px;">
+                        <HBox.margin>
+                            <Insets right="10" top="10"/>
+                        </HBox.margin>
+                    </Button>
+                </HBox>
+
+                <AnchorPane fx:id="messageAnchor" style="-fx-background-color: rgba(255,255,255,0.5);" prefHeight="40"
+                            maxHeight="40">
+                    <VBox AnchorPane.leftAnchor="0" AnchorPane.bottomAnchor="0" prefWidth="50" alignment="CENTER"
+                          prefHeight="40" AnchorPane.topAnchor="0" style="-fx-background-color: white;">
                         <Button styleClass="window-control-button, add-file-message-button" prefHeight="25" prefWidth="50"/>
                     </VBox>
 
-                    <TextArea fx:id="messageTA" promptText="Сообщение..." prefHeight="40" AnchorPane.leftAnchor="50"
-                              AnchorPane.topAnchor="0" AnchorPane.bottomAnchor="0" AnchorPane.rightAnchor="50"
-                              style="-fx-font-size: 14px;" wrapText="true"/>
+                    <StackPane fx:id="textAreaSP" prefHeight="40" AnchorPane.leftAnchor="50"
+                               AnchorPane.topAnchor="0" AnchorPane.bottomAnchor="0" AnchorPane.rightAnchor="50">
+                        <TextArea fx:id="messageTA" style="-fx-font-size: 14px;" wrapText="true"/>
+                        <Label fx:id="promptTextTA" text="Сообщение..." style="-fx-font-size: 14px;" mouseTransparent="true">
+                            <padding>
+                                <Insets left="10"/>
+                            </padding>
+                        </Label>
+                    </StackPane>
 
-                    <VBox fx:id="emojiVB" AnchorPane.rightAnchor="0" AnchorPane.bottomAnchor="0" prefWidth="50" alignment="CENTER">
+                    <VBox fx:id="emojiVB" AnchorPane.rightAnchor="0" AnchorPane.bottomAnchor="0" prefWidth="50" alignment="CENTER"
+                          prefHeight="40" style="-fx-background-color: white;" AnchorPane.topAnchor="0">
                         <Button styleClass="window-control-button, emoji-button" prefHeight="25" prefWidth="50"/>
                     </VBox>
 
-                    <VBox fx:id="sendVB" AnchorPane.rightAnchor="0" AnchorPane.bottomAnchor="0" prefWidth="50"
-                          alignment="CENTER" visible="false">
+                    <VBox fx:id="sendVB" AnchorPane.rightAnchor="0" AnchorPane.bottomAnchor="0" AnchorPane.topAnchor="0"
+                          prefWidth="50" prefHeight="40" alignment="CENTER" visible="false" style="-fx-background-color: white;">
                         <Button styleClass="window-control-button, send-message-button" prefHeight="25" prefWidth="50"
                                 onAction="#handleSendMessage"/>
                     </VBox>

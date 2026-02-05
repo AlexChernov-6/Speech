@@ -7,11 +7,14 @@ import com.example.speech.service.ChannelUserService;
 import com.example.speech.service.MessageService;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
+import javafx.collections.ListChangeListener;
 import javafx.fxml.FXML;
+import javafx.scene.Node;
+import javafx.scene.Scene;
 import javafx.scene.control.*;
-import javafx.scene.layout.AnchorPane;
-import javafx.scene.layout.StackPane;
-import javafx.scene.layout.VBox;
+import javafx.scene.input.MouseButton;
+import javafx.scene.layout.*;
+import javafx.scene.text.Text;
 import javafx.stage.Stage;
 
 import java.nio.charset.StandardCharsets;
@@ -46,6 +49,19 @@ public class SpeechBaseController {
     private StackPane messagesSP;
     @FXML
     private VBox leftVB;
+    @FXML
+    private HBox updateMessageHB;
+    @FXML
+    private Label contentUpdateMessageLB;
+
+    private Message updateMessage;
+
+    @FXML
+    private StackPane textAreaSP;
+    @FXML
+    private Label promptTextTA;
+
+    private int countLinesOldValue;
 
     public void initializeData(Stage stage, User currentUser) {
         this.stage = stage;
@@ -70,9 +86,28 @@ public class SpeechBaseController {
             messagesLV.setPrefWidth(newWidth);
         });
         messagesLV.setSelectionModel(null);
-        messagesLV.setCellFactory(new MessageCellCreator(this));
+        MessageCellCreator messageCellCreator = new MessageCellCreator(this);
+        messagesLV.setCellFactory(messageCellCreator);
         messagesLV.getStyleClass().add("no-horizontal-scroll");
         stackPaneListener();
+
+        textAreaSP.widthProperty().addListener((ch, oldValue, newValue) -> {
+            promptTextTA.setPrefWidth(newValue.doubleValue());
+        });
+
+        messageTA.focusedProperty().addListener((ch, oldValue, newValue) -> {
+            String text = messageTA.getText();
+            if(!newValue && (text == null || text.isEmpty()))
+                textAreaSP.getChildren().add(promptTextTA);
+            else
+                textAreaSP.getChildren().remove(promptTextTA);
+        });
+
+        updateMessageHB.setOnMouseClicked(event -> {
+            if (event.getButton() == MouseButton.PRIMARY) {
+                messageCellCreator.getControllerCache(updateMessage).highlightMessageTemporarily();
+            }
+        });
     }
 
     public void initializeListViewChats() {
@@ -81,6 +116,27 @@ public class SpeechBaseController {
         chatsView.setCellFactory(lv -> new ListChannelsCellController());
         List<ChannelUser> userChats = channelUserService.getAllChatsByUser(currentUser);
         chatsView.getItems().addAll(userChats);
+
+        Platform.runLater(() -> {
+            if (!messagesLV.getItems().isEmpty()) {
+                messagesLV.scrollTo(messagesLV.getItems().size() - 1);
+            }
+        });
+
+        messagesLV.getItems().addListener(new ListChangeListener<Message>() {
+            @Override
+            public void onChanged(Change<? extends Message> change) {
+                while (change.next()) {
+                    if (change.wasAdded() || change.wasRemoved()) {
+                        Platform.runLater(() -> {
+                            if (!messagesLV.getItems().isEmpty()) {
+                                messagesLV.scrollTo(messagesLV.getItems().size());
+                            }
+                        });
+                    }
+                }
+            }
+        });
 
         chatsView.getSelectionModel().selectedItemProperty().addListener(
                 (observable, oldValue, newValue) -> {
@@ -106,13 +162,6 @@ public class SpeechBaseController {
 
         messagesLV.getItems().addAll(FXCollections.observableArrayList(messages).stream()
                 .filter(message -> !message.getDeletedByUsers().contains(Long.valueOf(currentUser.getIdUser()))).toList());
-
-        Platform.runLater(() -> {
-            if (!messagesLV.getItems().isEmpty()) {
-                messagesLV.scrollTo(messagesLV.getItems().size() - 1);
-            }
-        });
-
         //long startTime = System.currentTimeMillis();
         //Заменить на конечный скрол
         //long endTime = System.currentTimeMillis();
@@ -129,71 +178,59 @@ public class SpeechBaseController {
             if (!hasVisibleText) {
                 sendVB.setVisible(false);
                 AnchorPane.setRightAnchor(emojiVB, 0.0);
-                AnchorPane.setRightAnchor(messageTA, 51.0);
+                AnchorPane.setRightAnchor(textAreaSP, 51.0);
             } else {
-                AnchorPane.setRightAnchor(messageTA, 102.0);
+                AnchorPane.setRightAnchor(textAreaSP, 102.0);
                 AnchorPane.setRightAnchor(emojiVB, 50.0);
                 sendVB.setVisible(true);
             }
+            messageTA.setPrefWidth(textAreaSP.getWidth());
 
-            adjustTextAreaHeight(newValue, oldValue);
+            adjustTextAreaHeight(newValue);
         });
     }
 
-    private void adjustTextAreaHeight(String newValue, String oldValue) {
+    private void adjustTextAreaHeight(String newValue) {
+        int countLinesNewValue = countTextAreaLines(messageTA);
 
-        if (countLines(newValue) > countLines(oldValue) && messageAnchor.getHeight() <= 180) {
-            messageAnchor.setMinHeight(messageAnchor.getHeight() + 20);
-        } else if (countLines(newValue) < countLines(oldValue) && messageAnchor.getHeight() >= 60
-                && !checkScrollVisibility(messageTA)) {
-            messageAnchor.setMinHeight(messageAnchor.getHeight() - 20);
-        }
+        int setMinHeightByCountLines = countLinesNewValue * 20;
+
+        if (countLinesNewValue > countLinesOldValue)
+            messageAnchor.setMinHeight(Math.min(setMinHeightByCountLines, 200));
+        if (countLinesNewValue < countLinesOldValue)
+            messageAnchor.setMinHeight(Math.min(Math.max(setMinHeightByCountLines, 40), 200));
 
         if (newValue == null || newValue.trim().isEmpty()) {
             messageAnchor.setMinHeight(40);
             messageAnchor.setPrefHeight(40);
             messageTA.setPrefHeight(40);
         }
+        countLinesOldValue = countLinesNewValue;
     }
 
-    private int countLines(String text) {
-        if (text == null || text.isEmpty()) {
+    public int countTextAreaLines(TextArea original) {
+        String text = original.getText();
+        if (text == null || text.trim().isEmpty()) {
             return 1;
         }
 
-        int lineCount = 1;
-        for (int i = 0; i < text.length(); i++) {
-            char c = text.charAt(i);
-            if (c == '\n') {
-                lineCount++;
-            } else if (c == '\r') {
-                lineCount++;
-                if (i + 1 < text.length() && text.charAt(i + 1) == '\n') {
-                    i++;
-                }
-            }
-        }
-        return lineCount;
+        double textHeight = getTextHeightFromTextArea(original);
+
+        return (int) Math.max(1, Math.round(textHeight / 20)) + 1;
     }
 
-    private boolean checkScrollVisibility(TextArea textArea) {
-        javafx.scene.control.ScrollPane scrollPane =
-                (javafx.scene.control.ScrollPane) textArea.lookup(".scroll-pane");
-
-        if (scrollPane != null) {
-            javafx.scene.control.ScrollBar vScrollBar =
-                    (javafx.scene.control.ScrollBar) scrollPane.lookup(".scroll-bar:vertical");
-
-            return vScrollBar != null && vScrollBar.isVisible();
+    private double getTextHeightFromTextArea(TextArea textArea) {
+        Text textNode = (Text) textArea.lookup(".text");
+        if (textNode != null) {
+            return textNode.getLayoutBounds().getHeight();
         }
-
-        return false;
+        return 20;
     }
 
     @FXML
     private void handleSendMessage() {
         String text = messageTA.getText().trim();
-        if (!text.isEmpty() && chatsView.getSelectionModel().getSelectedItem() != null) {
+        if (!text.isEmpty() && chatsView.getSelectionModel().getSelectedItem() != null && !updateMessageHB.isVisible()) {
             ChannelUser selectedChat = chatsView.getSelectionModel().getSelectedItem();
 
             Message tempMessage  = new Message();
@@ -215,12 +252,9 @@ public class SpeechBaseController {
                     Message messageToSave = new Message();
                     messageToSave.setMessageContent(text.getBytes(StandardCharsets.UTF_8));
                     messageToSave.setChannelUser(selectedChat);
-
                     boolean saved = messageService.save(messageToSave);
-
                     if (saved) {
                         Message savedMessage = messageService.getRowById(messageToSave.getMessageId());
-
                         Platform.runLater(() -> {
                             int index = messagesLV.getItems().indexOf(tempMessage);
                             if (index >= 0) {
@@ -238,6 +272,13 @@ public class SpeechBaseController {
                     });
                 }
             }).start();
+        } else if (!text.isEmpty() && chatsView.getSelectionModel().getSelectedItem() != null && updateMessageHB.isVisible()) {
+            if (!text.equals(new String(updateMessage.getMessageContent(), StandardCharsets.UTF_8))) {
+                updateMessage.setMessageContent(text.getBytes());
+                messageService.update(updateMessage);
+                messagesLV.refresh();
+            }
+            updateVisibleChangeMessageHB();
         }
     }
 
@@ -245,6 +286,13 @@ public class SpeechBaseController {
         messagesSP.setOnMouseClicked(event -> {
             messagesSP.getChildren().removeIf(node -> node instanceof WorkingWithAMessageListController);
         });
+    }
+
+    @FXML
+    private void updateVisibleChangeMessageHB() {
+        updateMessageHB.setVisible(false);
+        updateMessageHB.setManaged(false);
+        messageTA.setText("");
     }
 
     public User getCurrentUser() {
@@ -309,5 +357,21 @@ public class SpeechBaseController {
 
     public VBox getLeftVB() {
         return leftVB;
+    }
+
+    public HBox getUpdateMessageHB() {
+        return updateMessageHB;
+    }
+
+    public Label getContentUpdateMessageLB() {
+        return contentUpdateMessageLB;
+    }
+
+    public Message getUpdateMessage() {
+        return updateMessage;
+    }
+
+    public void setUpdateMessage(Message updateMessage) {
+        this.updateMessage = updateMessage;
     }
 }
