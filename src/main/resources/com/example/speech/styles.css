@@ -254,3 +254,40 @@
     -fx-alignment: center;
     -fx-translate-y: -1;
 }
+
+.reply-button {
+    -fx-background-color: rgba(46, 125, 50, 0.15);
+    -fx-background-radius: 8px;
+    -fx-border-color: #4CAF50;
+    -fx-border-width: 0 0 0 3px;
+    -fx-border-radius: 8px 0 0 6px;
+}
+
+.reply-button:hover {
+    -fx-background-color: rgba(56, 142, 60, 0.25);
+    -fx-cursor: hand;
+}
+
+.reply-button:pressed {
+    -fx-background-color: rgba(27, 94, 32, 0.3);
+}
+
+.reply-user-name {
+    -fx-text-fill: #4CAF50;
+    -fx-font-weight: bold;
+    -fx-font-size: 11px;
+    -fx-padding: 0;
+    -fx-max-width: 250px;
+    -fx-text-overflow: ellipsis;
+    -fx-wrap-text: false;
+}
+
+.reply-message-text {
+    -fx-text-fill: #E8F5E9;
+    -fx-font-size: 12px;
+    -fx-font-weight: normal;
+    -fx-padding: 0;
+    -fx-max-width: 250px;
+    -fx-text-overflow: ellipsis;
+    -fx-wrap-text: false;
+}

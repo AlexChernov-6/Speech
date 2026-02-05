@@ -44,15 +44,14 @@
 
                 <HBox fx:id="updateMessageHB" style="-fx-background-color: white; -fx-cursor: hand;" prefHeight="40"
                       visible="false" managed="false">
-                    <ImageView fitHeight="20" fitWidth="20" preserveRatio="true">
-                        <Image url="@../image/change.png"/>
+                    <ImageView fx:id="HintIV" fitHeight="20" fitWidth="20" preserveRatio="true">
                         <HBox.margin>
                             <Insets left="10" top="10"/>
                         </HBox.margin>
                     </ImageView>
 
                     <VBox HBox.hgrow="ALWAYS" prefWidth="40">
-                        <Label text="Редактирование" style="-fx-text-fill: blue; -fx-font-size: 13px;"/>
+                        <Label fx:id="HintLB" style="-fx-text-fill: blue; -fx-font-size: 13px;"/>
                         <Label text="Content" style="-fx-font-size: 13px" fx:id="contentUpdateMessageLB"/>
                         <HBox.margin>
                             <Insets left="20"/>

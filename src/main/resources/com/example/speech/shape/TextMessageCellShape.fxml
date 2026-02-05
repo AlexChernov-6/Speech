@@ -7,6 +7,7 @@
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.Label?>
 
+<?import javafx.scene.control.Button?>
 <HBox xmlns:fx="http://javafx.com/fxml" fx:controller="com.example.speech.control.TextMessageCellController"
       maxHeight="600" alignment="BOTTOM_LEFT" fx:id="rootMessageHB">
 
@@ -23,21 +24,36 @@
         </padding>
 
         <rowConstraints>
+            <RowConstraints prefHeight="0" minHeight="0" fx:id="replyRow"/>
             <RowConstraints/>
             <RowConstraints prefHeight="20"/>
         </rowConstraints>
         <columnConstraints>
             <ColumnConstraints/>
-            <ColumnConstraints prefWidth="60" minWidth="60"/>
+            <ColumnConstraints prefWidth="100" minWidth="100" fx:id="columnInfo"/>
         </columnConstraints>
         <HBox.margin>
             <Insets left="10"/>
         </HBox.margin>
 
-        <Label fx:id="messageLabel" wrapText="true" style="-fx-font-size: 14px;" text="Content"
-               GridPane.columnSpan="2"/>
+        <Button fx:id="replyMessageBtn" prefHeight="0" visible="false" managed="false" GridPane.columnSpan="2"
+                styleClass="reply-button">
+            <GridPane.margin>
+                <Insets bottom="5"/>
+            </GridPane.margin>
+        </Button>
 
-        <HBox fx:id="timeStatusHB" GridPane.rowIndex="1" GridPane.columnIndex="1" alignment="BOTTOM_RIGHT">
+        <Label fx:id="messageLabel" wrapText="true" style="-fx-font-size: 14px;" text="Content"
+               GridPane.columnSpan="2" GridPane.rowIndex="1"/>
+
+        <HBox fx:id="timeStatusHB" GridPane.rowIndex="2" GridPane.columnIndex="1" alignment="BOTTOM_RIGHT">
+            <Label text="изменено" visible="false" managed="false" fx:id="changeStatusLB"
+                   style="-fx-text-fill: gray; -fx-font-size: 10px;">
+                <HBox.margin>
+                    <Insets right="5"/>
+                </HBox.margin>
+            </Label>
+
             <Label fx:id="timeLabel" style="-fx-text-fill: gray; -fx-font-size: 10px;" text="00:00">
                 <HBox.margin>
                     <Insets right="3"/>

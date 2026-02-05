@@ -7,6 +7,7 @@ import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
 import javafx.scene.control.TextArea;
 import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
 import javafx.scene.input.Clipboard;
 import javafx.scene.input.ClipboardContent;
 import javafx.scene.layout.HBox;
@@ -16,6 +17,8 @@ import javafx.scene.layout.VBox;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Objects;
+
+import com.example.speech.control.SpeechBaseController.ContextPopUpBar;
 
 public class WorkingWithAMessageListController extends Pane {
 
@@ -50,6 +53,8 @@ public class WorkingWithAMessageListController extends Pane {
         Long currentUserId = Long.valueOf(speechBaseController.getCurrentUser().getIdUser());
         HBox updateMessageHB = speechBaseController.getUpdateMessageHB();
         Label contentUpdateMessageLB = speechBaseController.getContentUpdateMessageLB();
+        ImageView HintIV = speechBaseController.getHintIV();
+        Label HintLB = speechBaseController.getHintLB();
 
         double vBoxWidth = 200;
         double vBoxHeight = (isCurrentUserMessage) ? 300 : 250;
@@ -87,6 +92,19 @@ public class WorkingWithAMessageListController extends Pane {
         reply.setPrefWidth(vBoxWidth);
         reply.setPrefHeight(40);
         VBox.setMargin(reply, new Insets(5, 0, 0, 0));
+        reply.setOnAction(e -> {
+            HintIV.setImage(replyI);
+            HintLB.setText("В ответ " + message.getChannelUser().getUser().getNameUser());
+            speechBaseController.setContextPopUpBar(ContextPopUpBar.REPLY_MESSAGE);
+            contentUpdateMessageLB.setText(contentMessage);
+            updateMessageHB.setVisible(true);
+            updateMessageHB.setManaged(true);
+            speechBaseController.setMessageIdReplyTo(message.getMessageId());
+            messagesSP.getChildren().remove(this);
+            Platform.runLater(() -> {
+                messageTA.requestFocus();
+            });
+        });
 
         CustomButton pin = new CustomButton(pinI, "Закрепить");
         pin.setPrefWidth(vBoxWidth);
@@ -126,6 +144,9 @@ public class WorkingWithAMessageListController extends Pane {
             change.setPrefHeight(40);
             change.setOnAction(e -> {
                 messageTA.setText(contentMessage);
+                HintIV.setImage(changeI);
+                HintLB.setText("Редактирование");
+                speechBaseController.setContextPopUpBar(ContextPopUpBar.CHANGE_MESSAGE);
                 contentUpdateMessageLB.setText(contentMessage);
                 updateMessageHB.setVisible(true);
                 updateMessageHB.setManaged(true);

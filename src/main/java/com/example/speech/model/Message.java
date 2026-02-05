@@ -29,15 +29,23 @@ public class Message {
     private String messageStatus = "отправлено";
     @Column(name = "deleted_by_users")
     private List<Long> deletedByUsers;
+    @Column(name = "modified_message", columnDefinition = "boolean default false")
+    private Boolean modifiedMessage = false;
+    @Column(name = "message_id_reply_to")
+    private Long messageIdReplyTo;
 
     public Message() { }
 
-    public Message(long messageId, LocalDateTime messageDatetime, ChannelUser channelUser, byte[] messageContent, String messageStatus) {
+    public Message(long messageId, LocalDateTime messageDatetime, ChannelUser channelUser, byte[] messageContent
+            , String messageStatus, List<Long> deletedByUsers, boolean modifiedMessage, Long messageIdReplyTo) {
         this.messageId = messageId;
         this.messageDatetime = messageDatetime;
         this.channelUser = channelUser;
         this.messageContent = messageContent;
         this.messageStatus = messageStatus;
+        this.deletedByUsers = deletedByUsers;
+        this.modifiedMessage = modifiedMessage;
+        this.messageIdReplyTo = messageIdReplyTo;
     }
 
     public long getMessageId() {
@@ -90,15 +98,32 @@ public class Message {
         this.deletedByUsers = deletedByUsers;
     }
 
+    public Boolean isModifiedMessage() {
+        return modifiedMessage;
+    }
+
+    public void setModifiedMessage(Boolean modifiedMessage) {
+        this.modifiedMessage = modifiedMessage;
+    }
+
+    public Long getMessageIdReplyTo() {
+        return messageIdReplyTo;
+    }
+
+    public void setMessageIdReplyTo(Long messageIdReplyTo) {
+        this.messageIdReplyTo = messageIdReplyTo;
+    }
+
     @Override
-    public boolean equals(Object object) {
-        if (object == null || getClass() != object.getClass()) return false;
-        Message message = (Message) object;
-        return messageId == message.messageId && Objects.equals(messageDatetime, message.messageDatetime) && Objects.equals(channelUser, message.channelUser) && Objects.deepEquals(messageContent, message.messageContent);
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Message message = (Message) o;
+        return Objects.equals(messageId, message.messageId);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(messageId, messageDatetime, channelUser, Arrays.hashCode(messageContent));
+        return Objects.hash(messageId);
     }
 }

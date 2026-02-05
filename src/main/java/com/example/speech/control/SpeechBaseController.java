@@ -9,9 +9,8 @@ import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
 import javafx.fxml.FXML;
-import javafx.scene.Node;
-import javafx.scene.Scene;
 import javafx.scene.control.*;
+import javafx.scene.image.ImageView;
 import javafx.scene.input.MouseButton;
 import javafx.scene.layout.*;
 import javafx.scene.text.Text;
@@ -56,12 +55,27 @@ public class SpeechBaseController {
 
     private Message updateMessage;
 
+    private Long messageIdReplyTo;
+
     @FXML
     private StackPane textAreaSP;
     @FXML
     private Label promptTextTA;
+    @FXML
+    private ImageView HintIV;
+    @FXML
+    private Label HintLB;
+
+    private ContextPopUpBar contextPopUpBar;
+
+    protected enum ContextPopUpBar {
+        CHANGE_MESSAGE,
+        REPLY_MESSAGE
+    }
 
     private int countLinesOldValue;
+
+    private MessageCellCreator messageCellCreator;
 
     public void initializeData(Stage stage, User currentUser) {
         this.stage = stage;
@@ -86,7 +100,7 @@ public class SpeechBaseController {
             messagesLV.setPrefWidth(newWidth);
         });
         messagesLV.setSelectionModel(null);
-        MessageCellCreator messageCellCreator = new MessageCellCreator(this);
+        messageCellCreator = new MessageCellCreator(this);
         messagesLV.setCellFactory(messageCellCreator);
         messagesLV.getStyleClass().add("no-horizontal-scroll");
         stackPaneListener();
@@ -230,7 +244,8 @@ public class SpeechBaseController {
     @FXML
     private void handleSendMessage() {
         String text = messageTA.getText().trim();
-        if (!text.isEmpty() && chatsView.getSelectionModel().getSelectedItem() != null && !updateMessageHB.isVisible()) {
+        if (!text.isEmpty() && chatsView.getSelectionModel().getSelectedItem() != null && (!updateMessageHB.isVisible()
+                || contextPopUpBar == ContextPopUpBar.REPLY_MESSAGE)) {
             ChannelUser selectedChat = chatsView.getSelectionModel().getSelectedItem();
 
             Message tempMessage  = new Message();
@@ -252,6 +267,8 @@ public class SpeechBaseController {
                     Message messageToSave = new Message();
                     messageToSave.setMessageContent(text.getBytes(StandardCharsets.UTF_8));
                     messageToSave.setChannelUser(selectedChat);
+                    if(updateMessageHB.isVisible() && contextPopUpBar == ContextPopUpBar.REPLY_MESSAGE)
+                        messageToSave.setMessageIdReplyTo(messageIdReplyTo);
                     boolean saved = messageService.save(messageToSave);
                     if (saved) {
                         Message savedMessage = messageService.getRowById(messageToSave.getMessageId());
@@ -263,6 +280,7 @@ public class SpeechBaseController {
                             }
                         });
                     }
+                    updateVisibleChangeMessageHB();
                 } catch (Exception e) {
                     e.printStackTrace();
                     Platform.runLater(() -> {
@@ -272,9 +290,11 @@ public class SpeechBaseController {
                     });
                 }
             }).start();
-        } else if (!text.isEmpty() && chatsView.getSelectionModel().getSelectedItem() != null && updateMessageHB.isVisible()) {
+        } else if (!text.isEmpty() && chatsView.getSelectionModel().getSelectedItem() != null && updateMessageHB.isVisible()
+                && contextPopUpBar == ContextPopUpBar.CHANGE_MESSAGE) {
             if (!text.equals(new String(updateMessage.getMessageContent(), StandardCharsets.UTF_8))) {
                 updateMessage.setMessageContent(text.getBytes());
+                updateMessage.setModifiedMessage(true);
                 messageService.update(updateMessage);
                 messagesLV.refresh();
             }
@@ -292,7 +312,8 @@ public class SpeechBaseController {
     private void updateVisibleChangeMessageHB() {
         updateMessageHB.setVisible(false);
         updateMessageHB.setManaged(false);
-        messageTA.setText("");
+        if(contextPopUpBar == ContextPopUpBar.CHANGE_MESSAGE)
+            messageTA.setText("");
     }
 
     public User getCurrentUser() {
@@ -373,5 +394,33 @@ public class SpeechBaseController {
 
     public void setUpdateMessage(Message updateMessage) {
         this.updateMessage = updateMessage;
+    }
+
+    public ContextPopUpBar getContextPopUpBar() {
+        return contextPopUpBar;
+    }
+
+    public void setContextPopUpBar(ContextPopUpBar contextPopUpBar) {
+        this.contextPopUpBar = contextPopUpBar;
+    }
+
+    public ImageView getHintIV() {
+        return HintIV;
+    }
+
+    public Label getHintLB() {
+        return HintLB;
+    }
+
+    public Long getMessageIdReplyTo() {
+        return messageIdReplyTo;
+    }
+
+    public void setMessageIdReplyTo(Long messageIdReplyTo) {
+        this.messageIdReplyTo = messageIdReplyTo;
+    }
+
+    public MessageCellCreator getMessageCellCreator() {
+        return messageCellCreator;
     }
 }
