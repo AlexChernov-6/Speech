@@ -1,6 +1,7 @@
 package com.example.speech.control;
 
 import com.example.speech.model.Message;
+import com.example.speech.service.MessageService;
 import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.scene.control.Label;
@@ -16,6 +17,7 @@ import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 import java.util.Objects;
 
 import com.example.speech.control.SpeechBaseController.ContextPopUpBar;
@@ -26,6 +28,8 @@ public class WorkingWithAMessageListController extends Pane {
             (WorkingWithAMessageListController.class.getResourceAsStream("/com/example/speech/image/reply.png")));
     private static final Image pinI = new Image(Objects.requireNonNull
             (WorkingWithAMessageListController.class.getResourceAsStream("/com/example/speech/image/pin.png")));
+    private static final Image unPinI = new Image(Objects.requireNonNull
+            (WorkingWithAMessageListController.class.getResourceAsStream("/com/example/speech/image/unpin.png")));
     private static final Image copyI = new Image(Objects.requireNonNull
             (WorkingWithAMessageListController.class.getResourceAsStream("/com/example/speech/image/copy.png")));
     private static final Image forwardI = new Image(Objects.requireNonNull
@@ -39,6 +43,7 @@ public class WorkingWithAMessageListController extends Pane {
 
     private final Clipboard clipboard = Clipboard.getSystemClipboard();
     private final ClipboardContent content = new ClipboardContent();
+    private final MessageService messageService = new MessageService();
 
     public void initializeShape(double xPos, double yPos, SpeechBaseController speechBaseController, Message message) {
         boolean isCurrentUserMessage = (Objects.equals(speechBaseController.getCurrentUser().getIdUser()
@@ -106,9 +111,28 @@ public class WorkingWithAMessageListController extends Pane {
             });
         });
 
-        CustomButton pin = new CustomButton(pinI, "Закрепить");
+        CustomButton pin;
+        if (message.getPinMessage()) {
+            pin = new CustomButton(unPinI, "Открепить");
+            pin.setOnAction(e -> {
+                messagesSP.getChildren().remove(this);
+                message.setPinMessage(false);
+                messageService.update(message);
+                speechBaseController.setPinnedMessagesHBVisible();
+            });
+        } else {
+            pin = new CustomButton(pinI, "Закрепить");
+            pin.setOnAction(e -> {
+                messagesSP.getChildren().remove(this);
+                message.setPinMessage(true);
+                messageService.update(message);
+                speechBaseController.setLastPinnedMessage(message);
+                speechBaseController.setPinnedMessagesHBVisible();
+            });
+        }
         pin.setPrefWidth(vBoxWidth);
         pin.setPrefHeight(40);
+
 
         CustomButton copy = new CustomButton(copyI, "Копировать текст");
         copy.setPrefWidth(vBoxWidth);

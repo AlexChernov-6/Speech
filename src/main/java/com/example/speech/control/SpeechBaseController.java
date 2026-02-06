@@ -5,20 +5,27 @@ import com.example.speech.model.Message;
 import com.example.speech.model.User;
 import com.example.speech.service.ChannelUserService;
 import com.example.speech.service.MessageService;
+import javafx.animation.PauseTransition;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
+import javafx.scene.control.skin.VirtualFlow;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.MouseButton;
 import javafx.scene.layout.*;
 import javafx.scene.text.Text;
 import javafx.stage.Stage;
+import javafx.util.Duration;
 
+import java.lang.reflect.Field;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static com.example.speech.util.HelpfulStylingClass.setupFullScreenListener;
 
@@ -65,6 +72,14 @@ public class SpeechBaseController {
     private ImageView HintIV;
     @FXML
     private Label HintLB;
+    @FXML
+    private AnchorPane channelStateAP;
+    @FXML
+    private HBox pinnedMessagesHB, channelStateHB;
+    @FXML
+    private Label contentPinnedMessageLB;
+    @FXML
+    private VBox channelStateVB;
 
     private ContextPopUpBar contextPopUpBar;
 
@@ -77,9 +92,49 @@ public class SpeechBaseController {
 
     private MessageCellCreator messageCellCreator;
 
+    private Message lastPinnedMessage;
+
+    private List<Message> pinnedMessages;
+
+    private Map<Message, Integer> mapMessageInd = new HashMap<>();
+
     public void initializeData(Stage stage, User currentUser) {
         this.stage = stage;
         this.currentUser = currentUser;
+        messagesLV.getItems().addListener((ListChangeListener<Message>) change -> {
+            while (change.next()) {
+                if (change.wasAdded()) {
+                    int addIndex = change.getFrom();
+
+                    for (Message msg : mapMessageInd.keySet()) {
+                        int idx = mapMessageInd.get(msg);
+                        if (idx >= addIndex) {
+                            mapMessageInd.put(msg, idx + change.getAddedSize());
+                        }
+                    }
+
+                    for (int i = 0; i < change.getAddedSize(); i++) {
+                        Message msg = change.getAddedSubList().get(i);
+                        mapMessageInd.put(msg, addIndex + i);
+                    }
+                }
+
+                if (change.wasRemoved()) {
+                    int removeIndex = change.getFrom();
+
+                    for (Message msg : change.getRemoved()) {
+                        mapMessageInd.remove(msg);
+                    }
+
+                    for (Message msg : mapMessageInd.keySet()) {
+                        int idx = mapMessageInd.get(msg);
+                        if (idx > removeIndex) {
+                            mapMessageInd.put(msg, idx - change.getRemovedSize());
+                        }
+                    }
+                }
+            }
+        });
         setupFullScreenListener(stage, rootAnchorPane);
         initializeListViewChats();
         setupMessageTextAreaListener();
@@ -119,7 +174,34 @@ public class SpeechBaseController {
 
         updateMessageHB.setOnMouseClicked(event -> {
             if (event.getButton() == MouseButton.PRIMARY) {
-                messageCellCreator.getControllerCache(updateMessage).highlightMessageTemporarily();
+                scrollToMessage(updateMessage);
+            }
+        });
+
+        pinnedMessagesHB.setOnMouseClicked(event -> {
+            if (event.getButton() == MouseButton.PRIMARY) {
+                scrollToMessage(lastPinnedMessage);
+            }
+        });
+
+        messagesLV.skinProperty().addListener((obs, oldSkin, newSkin) -> {
+            if (newSkin != null) {
+                ScrollBar scrollBar = (ScrollBar) messagesLV.lookup(".scroll-bar:vertical");
+                if (scrollBar != null) {
+                    scrollBar.valueProperty().addListener((observable, oldValue, newValue) -> {
+                        try {
+                            Field field = newSkin.getClass().getDeclaredField("flow");
+                            field.setAccessible(true);
+                            VirtualFlow<?> flow = (VirtualFlow<?>) field.get(newSkin);
+
+                            int firstVisible = flow.getFirstVisibleCell().getIndex();
+
+                            setPinnedMessagesHBVisible(firstVisible);
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+                    });
+                }
             }
         });
     }
@@ -156,12 +238,16 @@ public class SpeechBaseController {
                 (observable, oldValue, newValue) -> {
                     if (newValue != null) {
                         loadChannelMessages(newValue);
+
+                        setPinnedMessagesHBVisible();
                     }
                 });
     }
 
     private void loadChannelMessages(ChannelUser selectedChat) {
         messagesLV.getItems().clear();
+
+        selectedChatVB.setVisible(true);
 
         channelName.setText(selectedChat.getChannel().getChannelName());
         channelStatus.setText(selectedChat.getChannel().getChannelCountUser() == 2 ?
@@ -297,6 +383,8 @@ public class SpeechBaseController {
                 updateMessage.setModifiedMessage(true);
                 messageService.update(updateMessage);
                 messagesLV.refresh();
+                if (updateMessage.getPinMessage() != null && updateMessage.getPinMessage() == true)
+                    setPinnedMessagesHBVisible();
             }
             updateVisibleChangeMessageHB();
         }
@@ -314,6 +402,87 @@ public class SpeechBaseController {
         updateMessageHB.setManaged(false);
         if(contextPopUpBar == ContextPopUpBar.CHANGE_MESSAGE)
             messageTA.setText("");
+    }
+
+    public void setPinnedMessagesHBVisible(int firstVisibleIndex) {
+        // Получаем ВСЕ закрепленные сообщения
+        List<Message> allPinnedMessages = messagesLV.getItems().stream()
+                .filter(mes -> mes != null && Boolean.TRUE.equals(mes.getPinMessage()))
+                .toList();
+
+        if (allPinnedMessages.isEmpty()) {
+            // Нет закрепленных сообщений - скрываем панель
+            if (pinnedMessagesHB.isVisible()) {
+                pinnedMessagesHB.setVisible(false);
+                pinnedMessagesHB.setManaged(false);
+            }
+            lastPinnedMessage = null;
+            return;
+        }
+
+        // Находим ПЕРВОЕ закрепленное сообщение, которое НЕ видно (его индекс >= firstVisibleIndex)
+        // Или последнее закрепленное сообщение, если все видно
+        Message nextPinnedMessage = null;
+
+        for (Message pinnedMsg : allPinnedMessages) {
+            Integer msgIndex = mapMessageInd.get(pinnedMsg);
+            if (msgIndex != null && msgIndex < firstVisibleIndex) {
+                // Нашли закрепленное сообщение, которое еще не видно (или только стало видно)
+                nextPinnedMessage = pinnedMsg;
+                break;
+            }
+        }
+
+        // Если не нашли следующее невидимое закрепленное сообщение,
+        // значит все закрепленные уже видны или их нет
+        if (nextPinnedMessage == null) {
+            lastPinnedMessage = allPinnedMessages.getLast();
+            pinnedMessagesHB.setVisible(true);
+            pinnedMessagesHB.setManaged(true);
+            String messageText = new String(lastPinnedMessage.getMessageContent(), StandardCharsets.UTF_8);
+            if (messageText.length() > 50) {
+                messageText = messageText.substring(0, 47) + "...";
+            }
+            contentPinnedMessageLB.setText(messageText);
+        } else {
+            // Есть закрепленное сообщение, которое еще не видно - показываем панель
+            lastPinnedMessage = nextPinnedMessage;
+            pinnedMessagesHB.setVisible(true);
+            pinnedMessagesHB.setManaged(true);
+            // Обрезаем текст если слишком длинный
+            String messageText = new String(lastPinnedMessage.getMessageContent(), StandardCharsets.UTF_8);
+            if (messageText.length() > 50) {
+                messageText = messageText.substring(0, 47) + "...";
+            }
+            contentPinnedMessageLB.setText(messageText);
+        }
+    }
+
+    public void setPinnedMessagesHBVisible() {
+        pinnedMessages = messagesLV.getItems().stream()
+                .filter(mes -> mes.getPinMessage()).toList();
+
+        lastPinnedMessage = ((pinnedMessages.isEmpty()) ? null : pinnedMessages.getLast());
+        if(lastPinnedMessage == null && pinnedMessagesHB.isVisible()) {
+            pinnedMessagesHB.setVisible(false);
+            pinnedMessagesHB.setManaged(false);
+        } else if(lastPinnedMessage != null) {
+            pinnedMessagesHB.setVisible(true);
+            pinnedMessagesHB.setManaged(true);
+            contentPinnedMessageLB.setText(new String(lastPinnedMessage.getMessageContent()
+                    , StandardCharsets.UTF_8));
+        }
+    }
+
+    private void scrollToMessage(Message message) {
+        Platform.runLater(() -> {
+            messagesLV.scrollTo(message);
+            PauseTransition pause = new PauseTransition(Duration.millis(100));
+            pause.setOnFinished(e -> {
+                messageCellCreator.getControllerCache(message).highlightMessageTemporarily();
+            });
+            pause.play();
+        });
     }
 
     public User getCurrentUser() {
@@ -422,5 +591,13 @@ public class SpeechBaseController {
 
     public MessageCellCreator getMessageCellCreator() {
         return messageCellCreator;
+    }
+
+    public Message getLastPinnedMessage() {
+        return lastPinnedMessage;
+    }
+
+    public void setLastPinnedMessage(Message lastPinnedMessage) {
+        this.lastPinnedMessage = lastPinnedMessage;
     }
 }

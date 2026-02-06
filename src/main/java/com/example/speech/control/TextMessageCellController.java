@@ -33,7 +33,9 @@ public class TextMessageCellController {
     @FXML
     public ImageView statusIV;
     @FXML
-    private HBox timeStatusHB, rootMessageHB;
+    private HBox timeStatusHB;
+    @FXML
+    private HBox rootMessageHB;
     @FXML
     private Label changeStatusLB;
     @FXML
@@ -262,5 +264,9 @@ public class TextMessageCellController {
 
         highlightAnimation.setCycleCount(1);
         highlightAnimation.play();
+    }
+
+    public HBox getRootMessageHB() {
+        return rootMessageHB;
     }
 }

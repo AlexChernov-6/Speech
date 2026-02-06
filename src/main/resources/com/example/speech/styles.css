@@ -146,6 +146,10 @@
     -fx-background-image: url('image/imageSendButton.png');
 }
 
+.pinned-messages-button {
+    -fx-background-image: url('image/pin.png');
+}
+
 /*Меняем фон при наведении курсора на кнопку*/
 .window-control-button:hover {
     -fx-background-color: rgba(240, 255, 244, 0.8);

@@ -5,7 +5,7 @@
 <?import javafx.geometry.Insets?>
 
 <?import javafx.scene.image.ImageView?>
-<?import javafx.scene.image.Image?>
+
 <AnchorPane fx:id="rootAnchorPane" stylesheets="@../styles.css" styleClass="root-pane" xmlns:fx="http://javafx.com/fxml/1"
             xmlns="http://javafx.com/javafx/17.0.12" fx:controller="com.example.speech.control.SpeechBaseController">
 
@@ -26,19 +26,39 @@
             </VBox>
 
             <VBox fx:id="selectedChatVB" AnchorPane.leftAnchor="300" AnchorPane.topAnchor="40" AnchorPane.bottomAnchor="5"
-                  AnchorPane.rightAnchor="5">
-                <AnchorPane style="-fx-background-color: white;" prefHeight="40">
-                    <VBox AnchorPane.leftAnchor="5" AnchorPane.topAnchor="0" AnchorPane.bottomAnchor="0" alignment="CENTER_LEFT">
+                  AnchorPane.rightAnchor="5" visible="false">
+                <AnchorPane style="-fx-background-color: white;" prefHeight="40" fx:id="channelStateAP">
+                    <VBox fx:id="channelStateVB" AnchorPane.leftAnchor="5" AnchorPane.topAnchor="0" AnchorPane.bottomAnchor="0" alignment="CENTER_LEFT">
                         <Label fx:id="channelName" text="labelName"/>
                         <Label fx:id="channelStatus" text="channelStatus"/>
                     </VBox>
 
-                    <HBox AnchorPane.rightAnchor="0" AnchorPane.topAnchor="0" AnchorPane.bottomAnchor="0" alignment="CENTER_RIGHT">
+                    <HBox fx:id="channelStateHB" AnchorPane.rightAnchor="0" AnchorPane.topAnchor="0" AnchorPane.bottomAnchor="0" alignment="CENTER_RIGHT">
                         <Button styleClass="window-control-button, search-message-button" prefHeight="25" prefWidth="50"/>
                         <Button styleClass="window-control-button, menu-message-button" prefHeight="25" prefWidth="50"/>
                     </HBox>
                 </AnchorPane>
 
+                <HBox fx:id="pinnedMessagesHB" style="-fx-background-color: white; -fx-cursor: hand;" prefHeight="40"
+                      visible="false" managed="false">
+                    <VBox.margin>
+                        <Insets top="1"/>
+                    </VBox.margin>
+                    <VBox HBox.hgrow="ALWAYS" prefWidth="40">
+                        <Label text="Закреплённое сообщение" style="-fx-text-fill: blue; -fx-font-size: 13px;"/>
+                        <Label text="Content" style="-fx-font-size: 13px" fx:id="contentPinnedMessageLB"/>
+                        <HBox.margin>
+                            <Insets left="20"/>
+                        </HBox.margin>
+                    </VBox>
+
+                    <Button styleClass="window-control-button, pinned-messages-button" prefWidth="60" prefHeight="30"
+                            style="-fx-background-radius: 5px;" >
+                        <HBox.margin>
+                            <Insets right="10" top="4"/>
+                        </HBox.margin>
+                    </Button>
+                </HBox>
 
                 <ListView fx:id="messagesLV" VBox.vgrow="ALWAYS"/>
 

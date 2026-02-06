@@ -12,6 +12,7 @@ module com.example.speech {
     requires org.hibernate.orm.core;
     requires jakarta.persistence;
     requires org.postgresql.jdbc;
+    requires javafx.base;
 
     opens com.example.speech to javafx.fxml;
     exports com.example.speech.control;

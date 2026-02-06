@@ -33,11 +33,13 @@ public class Message {
     private Boolean modifiedMessage = false;
     @Column(name = "message_id_reply_to")
     private Long messageIdReplyTo;
+    @Column(name = "pin_message", columnDefinition = "boolean default false")
+    private Boolean pinMessage = false;
 
     public Message() { }
 
     public Message(long messageId, LocalDateTime messageDatetime, ChannelUser channelUser, byte[] messageContent
-            , String messageStatus, List<Long> deletedByUsers, boolean modifiedMessage, Long messageIdReplyTo) {
+            , String messageStatus, List<Long> deletedByUsers, boolean modifiedMessage, Long messageIdReplyTo, Boolean pinMessage) {
         this.messageId = messageId;
         this.messageDatetime = messageDatetime;
         this.channelUser = channelUser;
@@ -46,6 +48,7 @@ public class Message {
         this.deletedByUsers = deletedByUsers;
         this.modifiedMessage = modifiedMessage;
         this.messageIdReplyTo = messageIdReplyTo;
+        this.pinMessage = pinMessage;
     }
 
     public long getMessageId() {
@@ -112,6 +115,14 @@ public class Message {
 
     public void setMessageIdReplyTo(Long messageIdReplyTo) {
         this.messageIdReplyTo = messageIdReplyTo;
+    }
+
+    public Boolean getPinMessage() {
+        return pinMessage;
+    }
+
+    public void setPinMessage(Boolean pinMessage) {
+        this.pinMessage = pinMessage;
     }
 
     @Override
