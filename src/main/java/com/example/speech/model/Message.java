@@ -35,11 +35,14 @@ public class Message {
     private Long messageIdReplyTo;
     @Column(name = "pin_message", columnDefinition = "boolean default false")
     private Boolean pinMessage = false;
+    @Column(name = "forwarded_from")
+    private Long forwardedFrom;
 
     public Message() { }
 
     public Message(long messageId, LocalDateTime messageDatetime, ChannelUser channelUser, byte[] messageContent
-            , String messageStatus, List<Long> deletedByUsers, boolean modifiedMessage, Long messageIdReplyTo, Boolean pinMessage) {
+            , String messageStatus, List<Long> deletedByUsers, boolean modifiedMessage, Long messageIdReplyTo
+            , Boolean pinMessage, Long forwardedFrom) {
         this.messageId = messageId;
         this.messageDatetime = messageDatetime;
         this.channelUser = channelUser;
@@ -49,6 +52,7 @@ public class Message {
         this.modifiedMessage = modifiedMessage;
         this.messageIdReplyTo = messageIdReplyTo;
         this.pinMessage = pinMessage;
+        this.forwardedFrom = forwardedFrom;
     }
 
     public long getMessageId() {
@@ -123,6 +127,14 @@ public class Message {
 
     public void setPinMessage(Boolean pinMessage) {
         this.pinMessage = pinMessage;
+    }
+
+    public Long getForwardedFrom() {
+        return forwardedFrom;
+    }
+
+    public void setForwardedFrom(Long forwardedFrom) {
+        this.forwardedFrom = forwardedFrom;
     }
 
     @Override

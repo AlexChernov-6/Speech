@@ -3,6 +3,7 @@ package com.example.speech.service;
 import com.example.speech.model.Message;
 import com.example.speech.util.HibernateSessionFactory;
 import org.hibernate.Session;
+import org.hibernate.Transaction;
 
 import java.util.List;
 
@@ -18,6 +19,33 @@ public class MessageService extends BaseService<Message> {
             return session.createQuery(queryHQL, Message.class)
                     .setParameter("CHANNEL_ID", channelId)
                     .list();
+        }
+    }
+
+    public void unpinAllMessageInChannel(int channelId) {
+        String nativeSQL = "UPDATE messages m " +
+                "SET pin_message = false " +
+                "FROM channel_user cu " +
+                "WHERE m.channel_user_id = cu.channel_user_id " +
+                "AND cu.channel_id = :channelId " +
+                "AND m.pin_message = true";
+
+        Transaction transaction = null;
+        try (Session session = HibernateSessionFactory.getSessionFactory().openSession()) {
+            transaction = session.beginTransaction();
+
+            session.createNativeQuery(nativeSQL)
+                    .setParameter("channelId", channelId)
+                    .executeUpdate();
+
+            transaction.commit();
+
+        } catch (Exception e) {
+            if (transaction != null && transaction.isActive()) {
+                transaction.rollback();
+            }
+            e.printStackTrace();
+            throw new RuntimeException("Ошибка при откреплении сообщений", e);
         }
     }
 }

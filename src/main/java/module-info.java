@@ -13,6 +13,7 @@ module com.example.speech {
     requires jakarta.persistence;
     requires org.postgresql.jdbc;
     requires javafx.base;
+    requires java.rmi;
 
     opens com.example.speech to javafx.fxml;
     exports com.example.speech.control;

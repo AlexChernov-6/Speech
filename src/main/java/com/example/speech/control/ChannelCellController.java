@@ -39,4 +39,9 @@ public class ChannelCellController {
     private void onDeleteChanelBtn() {
 
     }
+
+    public void notVisibleDelBtn() {
+        deleteChanelBtn.setVisible(false);
+        deleteChanelBtn.setManaged(false);
+    }
 }

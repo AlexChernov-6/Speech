@@ -9,7 +9,10 @@ import javafx.animation.PauseTransition;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
+import javafx.collections.ObservableArray;
+import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
+import javafx.scene.Node;
 import javafx.scene.control.*;
 import javafx.scene.control.skin.VirtualFlow;
 import javafx.scene.image.ImageView;
@@ -22,10 +25,7 @@ import javafx.util.Duration;
 import java.lang.reflect.Field;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static com.example.speech.util.HelpfulStylingClass.setupFullScreenListener;
 
@@ -98,6 +98,12 @@ public class SpeechBaseController {
 
     private Map<Message, Integer> mapMessageInd = new HashMap<>();
 
+    private ChannelUser selectedChannelUser;
+
+    private int firstVisible;
+
+    private boolean flag = true;
+
     public void initializeData(Stage stage, User currentUser) {
         this.stage = stage;
         this.currentUser = currentUser;
@@ -117,6 +123,12 @@ public class SpeechBaseController {
                         Message msg = change.getAddedSubList().get(i);
                         mapMessageInd.put(msg, addIndex + i);
                     }
+
+                    Platform.runLater(() -> {
+                        if (!messagesLV.getItems().isEmpty()) {
+                            messagesLV.scrollTo(messagesLV.getItems().size());
+                        }
+                    });
                 }
 
                 if (change.wasRemoved()) {
@@ -132,6 +144,12 @@ public class SpeechBaseController {
                             mapMessageInd.put(msg, idx - change.getRemovedSize());
                         }
                     }
+
+                    Platform.runLater(() -> {
+                        if (!messagesLV.getItems().isEmpty()) {
+                            messagesLV.scrollTo(messagesLV.getItems().size());
+                        }
+                    });
                 }
             }
         });
@@ -194,9 +212,10 @@ public class SpeechBaseController {
                             field.setAccessible(true);
                             VirtualFlow<?> flow = (VirtualFlow<?>) field.get(newSkin);
 
-                            int firstVisible = flow.getFirstVisibleCell().getIndex();
+                            firstVisible = flow.getFirstVisibleCell().getIndex();
 
-                            setPinnedMessagesHBVisible(firstVisible);
+                            if(flag)
+                                setPinnedMessagesHBVisible(firstVisible);
                         } catch (Exception e) {
                             e.printStackTrace();
                         }
@@ -213,33 +232,13 @@ public class SpeechBaseController {
         List<ChannelUser> userChats = channelUserService.getAllChatsByUser(currentUser);
         chatsView.getItems().addAll(userChats);
 
-        Platform.runLater(() -> {
-            if (!messagesLV.getItems().isEmpty()) {
-                messagesLV.scrollTo(messagesLV.getItems().size() - 1);
-            }
-        });
-
-        messagesLV.getItems().addListener(new ListChangeListener<Message>() {
-            @Override
-            public void onChanged(Change<? extends Message> change) {
-                while (change.next()) {
-                    if (change.wasAdded() || change.wasRemoved()) {
-                        Platform.runLater(() -> {
-                            if (!messagesLV.getItems().isEmpty()) {
-                                messagesLV.scrollTo(messagesLV.getItems().size());
-                            }
-                        });
-                    }
-                }
-            }
-        });
-
         chatsView.getSelectionModel().selectedItemProperty().addListener(
                 (observable, oldValue, newValue) -> {
                     if (newValue != null) {
+                        selectedChannelUser = newValue;
+                        hideTheListOfPinnedMessages();
                         loadChannelMessages(newValue);
-
-                        setPinnedMessagesHBVisible();
+                        setPinnedMessagesHBVisible(messagesLV.getItems().size());
                     }
                 });
     }
@@ -257,11 +256,17 @@ public class SpeechBaseController {
         messageTA.setText("");
 
         List<Message> messages = messageService.getAllMessageInChannel(
-                selectedChat.getChannel().getChannelID()
+                selectedChannelUser.getChannel().getChannelID()
         );
 
         messagesLV.getItems().addAll(FXCollections.observableArrayList(messages).stream()
                 .filter(message -> !message.getDeletedByUsers().contains(Long.valueOf(currentUser.getIdUser()))).toList());
+
+        Platform.runLater(() -> {
+            if (!messagesLV.getItems().isEmpty()) {
+                messagesLV.scrollTo(messagesLV.getItems().size() - 1);
+            }
+        });
         //long startTime = System.currentTimeMillis();
         //Заменить на конечный скрол
         //long endTime = System.currentTimeMillis();
@@ -383,8 +388,7 @@ public class SpeechBaseController {
                 updateMessage.setModifiedMessage(true);
                 messageService.update(updateMessage);
                 messagesLV.refresh();
-                if (updateMessage.getPinMessage() != null && updateMessage.getPinMessage() == true)
-                    setPinnedMessagesHBVisible();
+                updateMessage = null;
             }
             updateVisibleChangeMessageHB();
         }
@@ -398,6 +402,7 @@ public class SpeechBaseController {
 
     @FXML
     private void updateVisibleChangeMessageHB() {
+        updateMessage = null;
         updateMessageHB.setVisible(false);
         updateMessageHB.setManaged(false);
         if(contextPopUpBar == ContextPopUpBar.CHANGE_MESSAGE)
@@ -408,6 +413,7 @@ public class SpeechBaseController {
         // Получаем ВСЕ закрепленные сообщения
         List<Message> allPinnedMessages = messagesLV.getItems().stream()
                 .filter(mes -> mes != null && Boolean.TRUE.equals(mes.getPinMessage()))
+                .sorted((m1, m2) -> m2.getMessageDatetime().compareTo(m1.getMessageDatetime()))
                 .toList();
 
         if (allPinnedMessages.isEmpty()) {
@@ -433,45 +439,14 @@ public class SpeechBaseController {
             }
         }
 
-        // Если не нашли следующее невидимое закрепленное сообщение,
-        // значит все закрепленные уже видны или их нет
-        if (nextPinnedMessage == null) {
-            lastPinnedMessage = allPinnedMessages.getLast();
-            pinnedMessagesHB.setVisible(true);
-            pinnedMessagesHB.setManaged(true);
-            String messageText = new String(lastPinnedMessage.getMessageContent(), StandardCharsets.UTF_8);
-            if (messageText.length() > 50) {
-                messageText = messageText.substring(0, 47) + "...";
-            }
-            contentPinnedMessageLB.setText(messageText);
-        } else {
-            // Есть закрепленное сообщение, которое еще не видно - показываем панель
-            lastPinnedMessage = nextPinnedMessage;
-            pinnedMessagesHB.setVisible(true);
-            pinnedMessagesHB.setManaged(true);
-            // Обрезаем текст если слишком длинный
-            String messageText = new String(lastPinnedMessage.getMessageContent(), StandardCharsets.UTF_8);
-            if (messageText.length() > 50) {
-                messageText = messageText.substring(0, 47) + "...";
-            }
-            contentPinnedMessageLB.setText(messageText);
+        lastPinnedMessage = (nextPinnedMessage == null) ? allPinnedMessages.getFirst() : nextPinnedMessage;
+        pinnedMessagesHB.setVisible(true);
+        pinnedMessagesHB.setManaged(true);
+        String messageText = new String(lastPinnedMessage.getMessageContent(), StandardCharsets.UTF_8);
+        if (messageText.length() > 50) {
+            messageText = messageText.substring(0, 47) + "...";
         }
-    }
-
-    public void setPinnedMessagesHBVisible() {
-        pinnedMessages = messagesLV.getItems().stream()
-                .filter(mes -> mes.getPinMessage()).toList();
-
-        lastPinnedMessage = ((pinnedMessages.isEmpty()) ? null : pinnedMessages.getLast());
-        if(lastPinnedMessage == null && pinnedMessagesHB.isVisible()) {
-            pinnedMessagesHB.setVisible(false);
-            pinnedMessagesHB.setManaged(false);
-        } else if(lastPinnedMessage != null) {
-            pinnedMessagesHB.setVisible(true);
-            pinnedMessagesHB.setManaged(true);
-            contentPinnedMessageLB.setText(new String(lastPinnedMessage.getMessageContent()
-                    , StandardCharsets.UTF_8));
-        }
+        contentPinnedMessageLB.setText(messageText);
     }
 
     private void scrollToMessage(Message message) {
@@ -483,6 +458,111 @@ public class SpeechBaseController {
             });
             pause.play();
         });
+    }
+
+    @FXML
+    private void showPinnedContent() {
+        flag = false;
+
+        List<Message> allPinnedMessages = messagesLV.getItems().stream()
+                .filter(mes -> mes != null && Boolean.TRUE.equals(mes.getPinMessage()))
+                .toList();
+
+        for(Node node : channelStateAP.getChildren()) {
+            node.setVisible(false);
+            node.setManaged(false);
+        }
+
+        Button backBtn = new Button();
+        backBtn.setId("backBtn");
+        backBtn.getStyleClass().addAll("window-control-button", "back-button");
+        backBtn.setOnAction(e -> {
+            hideTheListOfPinnedMessages();
+        });
+        backBtn.setPrefWidth(50.0);
+        AnchorPane.setLeftAnchor(backBtn, 10.0);
+        AnchorPane.setTopAnchor(backBtn, 5.0);
+        AnchorPane.setBottomAnchor(backBtn, 5.0);
+        channelStateAP.getChildren().add(backBtn);
+
+        Label countPinnedMessages = new Label(String.format("%d закреплённых сообщений", allPinnedMessages.size()));
+        countPinnedMessages.setId("countPinnedMessages");
+        countPinnedMessages.setStyle("-fx-font-size: 14px; -fx-font-weight: bold;");
+        AnchorPane.setLeftAnchor(countPinnedMessages, 70.0);
+        AnchorPane.setRightAnchor(countPinnedMessages, 0.0);
+        AnchorPane.setTopAnchor(countPinnedMessages, 0.0);
+        AnchorPane.setBottomAnchor(countPinnedMessages, 0.0);
+
+        channelStateAP.getChildren().add(countPinnedMessages);
+
+        if(pinnedMessagesHB.isVisible()) {
+            pinnedMessagesHB.setVisible(false);
+            pinnedMessagesHB.setManaged(false);
+        }
+
+        messagesLV.getItems().clear();
+        messagesLV.getItems().addAll(allPinnedMessages);
+
+        if(updateMessageHB.isVisible()) {
+            updateMessageHB.setVisible(false);
+            updateMessageHB.setManaged(false);
+        }
+
+        for(Node node : messageAnchor.getChildren()) {
+            node.setVisible(false);
+            node.setManaged(false);
+        }
+
+        Button unpinnedAllMessagesBtn = new Button("ОТКРЕПИТЬ " + allPinnedMessages.size() + " СООБЩЕНИЙ");
+        unpinnedAllMessagesBtn.setId("unpinnedAllMessagesBtn");
+        unpinnedAllMessagesBtn.setStyle("-fx-font-size: 16px; -fx-text-fill: blue;");
+        AnchorPane.setLeftAnchor(unpinnedAllMessagesBtn, 0.0);
+        AnchorPane.setRightAnchor(unpinnedAllMessagesBtn, 0.0);
+        AnchorPane.setTopAnchor(unpinnedAllMessagesBtn, 0.0);
+        AnchorPane.setBottomAnchor(unpinnedAllMessagesBtn, 0.0);
+        unpinnedAllMessagesBtn.setOnAction(e -> {
+            new ConfirmationOfMessageDeletion().initializeShape(this);
+        });
+
+        messageAnchor.getChildren().add(unpinnedAllMessagesBtn);
+    }
+
+    public void hideTheListOfPinnedMessages() {
+        flag = true;
+        ObservableList<Message> allMessages = FXCollections.observableArrayList(messageService.getAllMessageInChannel(
+                        selectedChannelUser.getChannel().getChannelID()).stream()
+                .filter(message -> !message.getDeletedByUsers().contains(Long.valueOf(currentUser.getIdUser())))
+                .toList());
+
+        List<Node> toRemove = channelStateAP.getChildren().stream()
+                .filter(node -> node.getId() != null &&(node.getId().equals("backBtn")
+                        || node.getId().equals("countPinnedMessages"))).toList();
+        channelStateAP.getChildren().removeAll(toRemove);
+
+        for(Node node : channelStateAP.getChildren()) {
+            node.setVisible(true);
+            node.setManaged(true);
+        }
+
+        if(messageTA.isVisible())
+            setPinnedMessagesHBVisible(firstVisible);
+
+        messagesLV.getItems().clear();
+        messagesLV.getItems().addAll(allMessages);
+
+        if(updateMessage != null) {
+            updateMessageHB.setVisible(true);
+            updateMessageHB.setManaged(true);
+        }
+
+        List<Node> toRemove2 = messageAnchor.getChildren().stream()
+                .filter(node -> node.getId() != null && node.getId().equals("unpinnedAllMessagesBtn")).toList();
+        messageAnchor.getChildren().removeAll(toRemove2);
+
+        for(Node node : messageAnchor.getChildren()) {
+            node.setVisible(true);
+            node.setManaged(true);
+        }
     }
 
     public User getCurrentUser() {
@@ -599,5 +679,9 @@ public class SpeechBaseController {
 
     public void setLastPinnedMessage(Message lastPinnedMessage) {
         this.lastPinnedMessage = lastPinnedMessage;
+    }
+
+    public ChannelUser getSelectedChannelUser() {
+        return selectedChannelUser;
     }
 }

@@ -89,4 +89,59 @@ public class ConfirmationOfMessageDeletion extends Pane {
 
         stackPane.getChildren().add(this);
     }
+
+    public void initializeShape(SpeechBaseController speechBaseController) {
+        StackPane stackPane = speechBaseController.getMessagesSP();
+        this.setStyle("-fx-background-color: rgba(0, 0, 0, 0.6);");
+
+        double vBoxWidth = 350;
+        double vBoxHeight = 120;
+
+        VBox rootVB = new VBox(15);
+        rootVB.setPrefWidth(vBoxWidth);
+        rootVB.setPrefHeight(vBoxHeight);
+        rootVB.setAlignment(Pos.CENTER_LEFT);
+        rootVB.getStyleClass().add("working-with-a-message-root-pane");
+        rootVB.setLayoutX(stackPane.getScene().getWindow().getWidth() / 2 - vBoxWidth / 2);
+        rootVB.setLayoutY(stackPane.getScene().getWindow().getHeight() / 2 - vBoxHeight / 2);
+        rootVB.setPadding(new Insets(15));
+
+        Label questionLabel = new Label("Открепить все сообщения?");
+        questionLabel.setStyle("-fx-font-size: 14px");
+        questionLabel.setPrefHeight(120);
+        questionLabel.setAlignment(Pos.CENTER_LEFT);
+
+        HBox bottomHB = new HBox(10);
+        bottomHB.setAlignment(Pos.CENTER_RIGHT);
+
+        Button cancellationButton = new Button();
+        cancellationButton.setText("Отмена");
+        cancellationButton.setOnAction(e -> {
+            stackPane.getChildren().remove(this);
+        });
+        cancellationButton.getStyleClass().add("login-button");
+
+        Button unpinnedButton = new Button();
+        unpinnedButton.setText("Открепить");
+        unpinnedButton.setOnAction(e -> {
+            MESSAGE_SERVICE.unpinAllMessageInChannel(speechBaseController.getSelectedChannelUser().getChannel()
+                    .getChannelID());
+            speechBaseController.hideTheListOfPinnedMessages();
+            stackPane.getChildren().remove(this);
+        });
+        unpinnedButton.getStyleClass().add("login-button");
+        bottomHB.getChildren().addAll(cancellationButton, unpinnedButton);
+
+        rootVB.getChildren().addAll(questionLabel, bottomHB);
+        this.getChildren().add(rootVB);
+
+        this.setOnMousePressed(event -> {
+            if(rootVB.getBoundsInParent().contains(event.getX(), event.getY()))
+                event.consume();
+            else
+                stackPane.getChildren().remove(this);
+        });
+
+        stackPane.getChildren().add(this);
+    }
 }

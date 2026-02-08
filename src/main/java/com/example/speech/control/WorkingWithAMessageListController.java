@@ -118,7 +118,7 @@ public class WorkingWithAMessageListController extends Pane {
                 messagesSP.getChildren().remove(this);
                 message.setPinMessage(false);
                 messageService.update(message);
-                speechBaseController.setPinnedMessagesHBVisible();
+                speechBaseController.setPinnedMessagesHBVisible(messagesLV.getItems().size());
             });
         } else {
             pin = new CustomButton(pinI, "Закрепить");
@@ -126,8 +126,7 @@ public class WorkingWithAMessageListController extends Pane {
                 messagesSP.getChildren().remove(this);
                 message.setPinMessage(true);
                 messageService.update(message);
-                speechBaseController.setLastPinnedMessage(message);
-                speechBaseController.setPinnedMessagesHBVisible();
+                speechBaseController.setPinnedMessagesHBVisible(messagesLV.getItems().size());
             });
         }
         pin.setPrefWidth(vBoxWidth);
@@ -146,6 +145,10 @@ public class WorkingWithAMessageListController extends Pane {
         CustomButton forward = new CustomButton(forwardI, "Переслать");
         forward.setPrefWidth(vBoxWidth);
         forward.setPrefHeight(40);
+        forward.setOnAction(e -> {
+            messagesSP.getChildren().remove(this);
+            new ChatSelectionController(speechBaseController, message);
+        });
 
         CustomButton delete = new CustomButton(deleteI, "Удалить");
         delete.setPrefWidth(vBoxWidth);

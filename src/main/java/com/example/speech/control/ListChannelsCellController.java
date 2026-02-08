@@ -51,4 +51,8 @@ public class ListChannelsCellController extends ListCell<ChannelUser> {
             }
         }
     }
+
+    public void notVisibleDelBtn() {
+        controller.notVisibleDelBtn();
+    }
 }
