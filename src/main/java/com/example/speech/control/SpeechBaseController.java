@@ -243,7 +243,7 @@ public class SpeechBaseController {
                 });
     }
 
-    private void loadChannelMessages(ChannelUser selectedChat) {
+    public void loadChannelMessages(ChannelUser selectedChat) {
         messagesLV.getItems().clear();
 
         selectedChatVB.setVisible(true);
@@ -683,5 +683,9 @@ public class SpeechBaseController {
 
     public ChannelUser getSelectedChannelUser() {
         return selectedChannelUser;
+    }
+
+    public void setSelectedChannelUser(ChannelUser selectedChannelUser) {
+        this.selectedChannelUser = selectedChannelUser;
     }
 }

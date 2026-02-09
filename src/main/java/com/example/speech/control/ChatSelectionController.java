@@ -2,8 +2,9 @@ package com.example.speech.control;
 
 import com.example.speech.model.ChannelUser;
 import com.example.speech.model.Message;
-import com.example.speech.model.User;
 import com.example.speech.service.ChannelUserService;
+import com.example.speech.service.MessageService;
+import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.Button;
@@ -15,7 +16,8 @@ import javafx.scene.layout.Priority;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 
-import java.rmi.server.LogStream;
+import java.nio.charset.StandardCharsets;
+import java.time.LocalDateTime;
 
 public class ChatSelectionController extends Pane {
 
@@ -58,7 +60,56 @@ public class ChatSelectionController extends Pane {
 
         chatsView.getSelectionModel().selectedItemProperty().addListener(
                 (observable, oldValue, newValue) -> {
+                    if (newValue != null) {
+                        stackPane.getChildren().remove(this);
+                        for(Message message : messages) {
+                            Message tempMessage = new Message();
+                            tempMessage.setMessageDatetime(LocalDateTime.now());
+                            tempMessage.setMessageContent(message.getMessageContent());
+                            tempMessage.setChannelUser(newValue);
+                            tempMessage.setMessageStatus("загружается");
 
+                            speechBaseController.getMessagesLV().getItems().add(tempMessage);
+
+                            Platform.runLater(() -> {
+                                speechBaseController.getMessagesLV().scrollTo(speechBaseController.getMessagesLV()
+                                        .getItems().size() - 1);
+                            });
+
+                            new Thread(() -> {
+                                try {
+                                    Message messageToSave = new Message();
+                                    messageToSave.setMessageContent(message.getMessageContent());
+                                    messageToSave.setChannelUser(newValue);
+                                    /*if (updateMessageHB.isVisible() && contextPopUpBar == SpeechBaseController.ContextPopUpBar.REPLY_MESSAGE)
+                                        messageToSave.setMessageIdReplyTo(messageIdReplyTo);*/
+                                    messageToSave.setForwardedFrom(Long.valueOf(message.getChannelUser().getUser().getIdUser()));
+                                    MessageService messageService = new MessageService();
+                                    boolean saved = messageService.save(messageToSave);
+                                    if (saved) {
+                                        Message savedMessage = messageService.getRowById(messageToSave.getMessageId());
+                                        Platform.runLater(() -> {
+                                            int index = speechBaseController.getMessagesLV().getItems().indexOf(tempMessage);
+                                            if (index >= 0) {
+                                                speechBaseController.getMessagesLV().getItems().set(index, savedMessage);
+                                                speechBaseController.getMessagesLV().refresh();
+                                            }
+                                        });
+                                    }
+                                } catch (Exception e) {
+                                    e.printStackTrace();
+                                    Platform.runLater(() -> {
+                                        tempMessage.setMessageStatus("ошибка отправки");
+                                        speechBaseController.getMessagesLV().refresh();
+                                    });
+                                }
+                            }).start();
+                        }
+                        speechBaseController.setSelectedChannelUser(newValue);
+                        speechBaseController.hideTheListOfPinnedMessages();
+                        speechBaseController.loadChannelMessages(newValue);
+                        speechBaseController.setPinnedMessagesHBVisible(speechBaseController.getMessagesLV().getItems().size());
+                    }
                 });
 
         Button cancellationButton = new Button();

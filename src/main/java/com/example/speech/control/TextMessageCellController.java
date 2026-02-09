@@ -1,6 +1,8 @@
 package com.example.speech.control;
 
 import com.example.speech.model.Message;
+import com.example.speech.model.User;
+import com.example.speech.service.UserService;
 import javafx.animation.KeyFrame;
 import javafx.animation.KeyValue;
 import javafx.animation.PauseTransition;
@@ -44,6 +46,14 @@ public class TextMessageCellController {
     private RowConstraints replyRow;
     @FXML
     private Button replyMessageBtn;
+    @FXML
+    private RowConstraints forwardRow;
+    @FXML
+    private HBox forwardHB;
+    @FXML
+    private ImageView userLogo;
+    @FXML
+    private Button userInfoBtn;
 
     private SpeechBaseController speechBaseController;
     private Message message;
@@ -136,6 +146,16 @@ public class TextMessageCellController {
                     pause.play();
                 });
             });
+        }
+
+        if(message.getForwardedFrom() != null) {
+            UserService userService = new UserService();
+            User user = userService.getRowById(message.getForwardedFrom());
+            forwardRow.setPrefHeight(25);
+            forwardHB.setVisible(true);
+            forwardHB.setManaged(true);
+            userLogo.setImage(user.getPhotoImage());
+            userInfoBtn.setText(user.getNameUser());
         }
 
         return contentGP;
