@@ -85,7 +85,8 @@ public class SpeechBaseController {
 
     protected enum ContextPopUpBar {
         CHANGE_MESSAGE,
-        REPLY_MESSAGE
+        REPLY_MESSAGE,
+        FORWARD_MESSAGE
     }
 
     private int countLinesOldValue;
@@ -103,6 +104,8 @@ public class SpeechBaseController {
     private int firstVisible;
 
     private boolean flag = true;
+
+    private List<Message> forwardMessages;
 
     public void initializeData(Stage stage, User currentUser) {
         this.stage = stage;
@@ -389,6 +392,49 @@ public class SpeechBaseController {
                 messageService.update(updateMessage);
                 messagesLV.refresh();
                 updateMessage = null;
+            }
+            updateVisibleChangeMessageHB();
+        } else if (chatsView.getSelectionModel().getSelectedItem() != null && updateMessageHB.isVisible()
+                && contextPopUpBar == ContextPopUpBar.FORWARD_MESSAGE) {
+            for(Message message : forwardMessages) {
+                Message tempMessage = new Message();
+                tempMessage.setMessageDatetime(LocalDateTime.now());
+                tempMessage.setMessageContent(message.getMessageContent());
+                tempMessage.setChannelUser(chatsView.getSelectionModel().getSelectedItem());
+                tempMessage.setMessageStatus("загружается");
+
+                messagesLV.getItems().add(tempMessage);
+
+                Platform.runLater(() -> {
+                    messagesLV.scrollTo(messagesLV.getItems().size() - 1);
+                });
+
+                new Thread(() -> {
+                    try {
+                        Message messageToSave = new Message();
+                        messageToSave.setMessageContent(message.getMessageContent());
+                        messageToSave.setChannelUser(chatsView.getSelectionModel().getSelectedItem());
+                        messageToSave.setForwardedFrom(Long.valueOf(message.getChannelUser().getUser().getIdUser()));
+                        MessageService messageService = new MessageService();
+                        boolean saved = messageService.save(messageToSave);
+                        if (saved) {
+                            Message savedMessage = messageService.getRowById(messageToSave.getMessageId());
+                            Platform.runLater(() -> {
+                                int index = messagesLV.getItems().indexOf(tempMessage);
+                                if (index >= 0) {
+                                    messagesLV.getItems().set(index, savedMessage);
+                                    messagesLV.refresh();
+                                }
+                            });
+                        }
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                        Platform.runLater(() -> {
+                            tempMessage.setMessageStatus("ошибка отправки");
+                            messagesLV.refresh();
+                        });
+                    }
+                }).start();
             }
             updateVisibleChangeMessageHB();
         }
@@ -687,5 +733,9 @@ public class SpeechBaseController {
 
     public void setSelectedChannelUser(ChannelUser selectedChannelUser) {
         this.selectedChannelUser = selectedChannelUser;
+    }
+
+    public void setForwardMessages(List<Message> forwardMessages) {
+        this.forwardMessages = forwardMessages;
     }
 }

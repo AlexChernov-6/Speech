@@ -32,7 +32,7 @@ public class WorkingWithAMessageListController extends Pane {
             (WorkingWithAMessageListController.class.getResourceAsStream("/com/example/speech/image/unpin.png")));
     private static final Image copyI = new Image(Objects.requireNonNull
             (WorkingWithAMessageListController.class.getResourceAsStream("/com/example/speech/image/copy.png")));
-    private static final Image forwardI = new Image(Objects.requireNonNull
+    protected static final Image forwardI = new Image(Objects.requireNonNull
             (WorkingWithAMessageListController.class.getResourceAsStream("/com/example/speech/image/forward.png")));
     private static final Image deleteI = new Image(Objects.requireNonNull
             (WorkingWithAMessageListController.class.getResourceAsStream("/com/example/speech/image/delete.png")));

@@ -18,6 +18,10 @@ import javafx.scene.layout.VBox;
 
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+
+import static com.example.speech.control.WorkingWithAMessageListController.forwardI;
 
 public class ChatSelectionController extends Pane {
 
@@ -62,49 +66,32 @@ public class ChatSelectionController extends Pane {
                 (observable, oldValue, newValue) -> {
                     if (newValue != null) {
                         stackPane.getChildren().remove(this);
+                        speechBaseController.setContextPopUpBar(SpeechBaseController.ContextPopUpBar.FORWARD_MESSAGE);
+                        speechBaseController.setForwardMessages(List.of(messages));
+                        speechBaseController.getHintIV().setImage(forwardI);
+                        List<String> senders = new ArrayList<>();
                         for(Message message : messages) {
-                            Message tempMessage = new Message();
-                            tempMessage.setMessageDatetime(LocalDateTime.now());
-                            tempMessage.setMessageContent(message.getMessageContent());
-                            tempMessage.setChannelUser(newValue);
-                            tempMessage.setMessageStatus("загружается");
-
-                            speechBaseController.getMessagesLV().getItems().add(tempMessage);
-
-                            Platform.runLater(() -> {
-                                speechBaseController.getMessagesLV().scrollTo(speechBaseController.getMessagesLV()
-                                        .getItems().size() - 1);
-                            });
-
-                            new Thread(() -> {
-                                try {
-                                    Message messageToSave = new Message();
-                                    messageToSave.setMessageContent(message.getMessageContent());
-                                    messageToSave.setChannelUser(newValue);
-                                    /*if (updateMessageHB.isVisible() && contextPopUpBar == SpeechBaseController.ContextPopUpBar.REPLY_MESSAGE)
-                                        messageToSave.setMessageIdReplyTo(messageIdReplyTo);*/
-                                    messageToSave.setForwardedFrom(Long.valueOf(message.getChannelUser().getUser().getIdUser()));
-                                    MessageService messageService = new MessageService();
-                                    boolean saved = messageService.save(messageToSave);
-                                    if (saved) {
-                                        Message savedMessage = messageService.getRowById(messageToSave.getMessageId());
-                                        Platform.runLater(() -> {
-                                            int index = speechBaseController.getMessagesLV().getItems().indexOf(tempMessage);
-                                            if (index >= 0) {
-                                                speechBaseController.getMessagesLV().getItems().set(index, savedMessage);
-                                                speechBaseController.getMessagesLV().refresh();
-                                            }
-                                        });
-                                    }
-                                } catch (Exception e) {
-                                    e.printStackTrace();
-                                    Platform.runLater(() -> {
-                                        tempMessage.setMessageStatus("ошибка отправки");
-                                        speechBaseController.getMessagesLV().refresh();
-                                    });
-                                }
-                            }).start();
+                            if(!senders.contains(message.getChannelUser().getUser().getNameUser()))
+                                senders.add(message.getChannelUser().getUser().getNameUser());
                         }
+                        if(messages.length > 1)
+                            speechBaseController.getContentUpdateMessageLB().setText(messages.length + " пересланных сообщения");
+                        else
+                            speechBaseController.getContentUpdateMessageLB().setText(new String(messages[0].getMessageContent()
+                                    , StandardCharsets.UTF_8));
+
+                        if(senders.size() == 1)
+                            speechBaseController.getHintLB().setText(senders.getFirst());
+                        else if(senders.size() == 2)
+                            speechBaseController.getHintLB().setText(senders.getFirst() + " и " + senders.getLast());
+                        else if (senders.size() > 2)
+                            speechBaseController.getHintLB().setText(senders.getLast() + " и " + (senders.size() - 1) + " других");
+
+                        speechBaseController.getUpdateMessageHB().setVisible(true);
+                        speechBaseController.getUpdateMessageHB().setManaged(true);
+                        Platform.runLater(() -> {
+                            speechBaseController.getMessageTA().requestFocus();
+                        });
                         speechBaseController.setSelectedChannelUser(newValue);
                         speechBaseController.hideTheListOfPinnedMessages();
                         speechBaseController.loadChannelMessages(newValue);
