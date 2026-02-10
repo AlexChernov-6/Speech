@@ -24,7 +24,7 @@ import com.example.speech.control.SpeechBaseController.ContextPopUpBar;
 
 public class WorkingWithAMessageListController extends Pane {
 
-    private static final Image replyI = new Image(Objects.requireNonNull
+    protected static final Image replyI = new Image(Objects.requireNonNull
             (WorkingWithAMessageListController.class.getResourceAsStream("/com/example/speech/image/reply.png")));
     private static final Image pinI = new Image(Objects.requireNonNull
             (WorkingWithAMessageListController.class.getResourceAsStream("/com/example/speech/image/pin.png")));

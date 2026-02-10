@@ -17,12 +17,15 @@ import javafx.scene.control.Label;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.MouseButton;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.*;
 import javafx.util.Duration;
 
 import java.nio.charset.StandardCharsets;
 import java.time.format.DateTimeFormatter;
 import java.util.Objects;
+
+import static com.example.speech.control.WorkingWithAMessageListController.replyI;
 
 
 public class TextMessageCellController {
@@ -37,7 +40,7 @@ public class TextMessageCellController {
     @FXML
     private HBox timeStatusHB;
     @FXML
-    private HBox rootMessageHB;
+    private AnchorPane rootMessageAP;
     @FXML
     private Label changeStatusLB;
     @FXML
@@ -54,6 +57,10 @@ public class TextMessageCellController {
     private ImageView userLogo;
     @FXML
     private Button userInfoBtn;
+    @FXML
+    private StackPane selectSP;
+    @FXML
+    private ImageView selectIV;
 
     private SpeechBaseController speechBaseController;
     private Message message;
@@ -162,7 +169,7 @@ public class TextMessageCellController {
     }
 
     public void setMaxWidthGP(double v) {
-        contentGP.setMaxWidth(v);
+        contentGP.setMaxWidth(v - 50);
     }
 
     public void setMouseListener() {
@@ -174,16 +181,32 @@ public class TextMessageCellController {
 
                 event.consume();
             }
+
+            if (event.getButton() == MouseButton.PRIMARY && event.getClickCount() == 2) {
+                speechBaseController.getHintIV().setImage(replyI);
+                speechBaseController.getHintLB().setText("В ответ " + message.getChannelUser().getUser().getNameUser());
+                speechBaseController.setContextPopUpBar(SpeechBaseController.ContextPopUpBar.REPLY_MESSAGE);
+                speechBaseController.getContentUpdateMessageLB().setText(new String(message.getMessageContent(), StandardCharsets.UTF_8));
+                speechBaseController.getUpdateMessageHB().setVisible(true);
+                speechBaseController.getUpdateMessageHB().setManaged(true);
+                speechBaseController.setMessageIdReplyTo(message.getMessageId());
+                speechBaseController.getMessagesSP().getChildren().remove(this);
+                Platform.runLater(() -> {
+                    speechBaseController.getMessageTA().requestFocus();
+                });
+            }
         });
     }
+
+
 
     public void highlightMessageTemporarily() {
         String blueColor = "rgba(100, 149, 237, ";
 
         Timeline highlightAnimation = new Timeline(
                 new KeyFrame(Duration.ZERO,
-                        new KeyValue(rootMessageHB.opacityProperty(), 1.0),
-                        new KeyValue(rootMessageHB.styleProperty(),
+                        new KeyValue(rootMessageAP.opacityProperty(), 1.0),
+                        new KeyValue(rootMessageAP.styleProperty(),
                                 " -fx-background-color: " + blueColor + "0.0);" +
                                         " -fx-background-radius: 5px;" +
                                         " -fx-border-color: transparent;" +
@@ -192,8 +215,8 @@ public class TextMessageCellController {
                 ),
 
                 new KeyFrame(Duration.millis(250),
-                        new KeyValue(rootMessageHB.opacityProperty(), 1.0),
-                        new KeyValue(rootMessageHB.styleProperty(),
+                        new KeyValue(rootMessageAP.opacityProperty(), 1.0),
+                        new KeyValue(rootMessageAP.styleProperty(),
                                 " -fx-background-color: " + blueColor + "0.045);" + // 25% от пика
                                         " -fx-background-radius: 5px;" +
                                         " -fx-border-color: transparent;" +
@@ -202,8 +225,8 @@ public class TextMessageCellController {
                 ),
 
                 new KeyFrame(Duration.millis(500),
-                        new KeyValue(rootMessageHB.opacityProperty(), 1.0),
-                        new KeyValue(rootMessageHB.styleProperty(),
+                        new KeyValue(rootMessageAP.opacityProperty(), 1.0),
+                        new KeyValue(rootMessageAP.styleProperty(),
                                 " -fx-background-color: " + blueColor + "0.09);" + // 50% от пика
                                         " -fx-background-radius: 5px;" +
                                         " -fx-border-color: transparent;" +
@@ -212,8 +235,8 @@ public class TextMessageCellController {
                 ),
 
                 new KeyFrame(Duration.millis(750),
-                        new KeyValue(rootMessageHB.opacityProperty(), 1.0),
-                        new KeyValue(rootMessageHB.styleProperty(),
+                        new KeyValue(rootMessageAP.opacityProperty(), 1.0),
+                        new KeyValue(rootMessageAP.styleProperty(),
                                 " -fx-background-color: " + blueColor + "0.135);" + // 75% от пика
                                         " -fx-background-radius: 5px;" +
                                         " -fx-border-color: transparent;" +
@@ -222,8 +245,8 @@ public class TextMessageCellController {
                 ),
 
                 new KeyFrame(Duration.millis(1000),
-                        new KeyValue(rootMessageHB.opacityProperty(), 1.0),
-                        new KeyValue(rootMessageHB.styleProperty(),
+                        new KeyValue(rootMessageAP.opacityProperty(), 1.0),
+                        new KeyValue(rootMessageAP.styleProperty(),
                                 " -fx-background-color: " + blueColor + "0.18);" + // 100% пик
                                         " -fx-background-radius: 5px;" +
                                         " -fx-border-color: transparent;" +
@@ -232,8 +255,8 @@ public class TextMessageCellController {
                 ),
 
                 new KeyFrame(Duration.millis(1500),
-                        new KeyValue(rootMessageHB.opacityProperty(), 1.0),
-                        new KeyValue(rootMessageHB.styleProperty(),
+                        new KeyValue(rootMessageAP.opacityProperty(), 1.0),
+                        new KeyValue(rootMessageAP.styleProperty(),
                                 " -fx-background-color: " + blueColor + "0.18);" +
                                         " -fx-background-radius: 5px;" +
                                         " -fx-border-color: transparent;" +
@@ -242,8 +265,8 @@ public class TextMessageCellController {
                 ),
 
                 new KeyFrame(Duration.millis(2500),
-                        new KeyValue(rootMessageHB.opacityProperty(), 1.0),
-                        new KeyValue(rootMessageHB.styleProperty(),
+                        new KeyValue(rootMessageAP.opacityProperty(), 1.0),
+                        new KeyValue(rootMessageAP.styleProperty(),
                                 " -fx-background-color: " + blueColor + "0.135);" + // 75%
                                         " -fx-background-radius: 5px;" +
                                         " -fx-border-color: transparent;" +
@@ -252,8 +275,8 @@ public class TextMessageCellController {
                 ),
 
                 new KeyFrame(Duration.millis(3500),
-                        new KeyValue(rootMessageHB.opacityProperty(), 1.0),
-                        new KeyValue(rootMessageHB.styleProperty(),
+                        new KeyValue(rootMessageAP.opacityProperty(), 1.0),
+                        new KeyValue(rootMessageAP.styleProperty(),
                                 " -fx-background-color: " + blueColor + "0.09);" + // 50%
                                         " -fx-background-radius: 5px;" +
                                         " -fx-border-color: transparent;" +
@@ -262,8 +285,8 @@ public class TextMessageCellController {
                 ),
 
                 new KeyFrame(Duration.millis(4500),
-                        new KeyValue(rootMessageHB.opacityProperty(), 1.0),
-                        new KeyValue(rootMessageHB.styleProperty(),
+                        new KeyValue(rootMessageAP.opacityProperty(), 1.0),
+                        new KeyValue(rootMessageAP.styleProperty(),
                                 " -fx-background-color: " + blueColor + "0.045);" + // 25%
                                         " -fx-background-radius: 5px;" +
                                         " -fx-border-color: transparent;" +
@@ -272,8 +295,8 @@ public class TextMessageCellController {
                 ),
 
                 new KeyFrame(Duration.millis(6000),
-                        new KeyValue(rootMessageHB.opacityProperty(), 1.0),
-                        new KeyValue(rootMessageHB.styleProperty(),
+                        new KeyValue(rootMessageAP.opacityProperty(), 1.0),
+                        new KeyValue(rootMessageAP.styleProperty(),
                                 " -fx-background-color: transparent;" +
                                         " -fx-background-radius: 0px;" +
                                         " -fx-border-color: transparent;" +
@@ -284,9 +307,5 @@ public class TextMessageCellController {
 
         highlightAnimation.setCycleCount(1);
         highlightAnimation.play();
-    }
-
-    public HBox getRootMessageHB() {
-        return rootMessageHB;
     }
 }

@@ -400,7 +400,7 @@ public class SpeechBaseController {
                 Message tempMessage = new Message();
                 tempMessage.setMessageDatetime(LocalDateTime.now());
                 tempMessage.setMessageContent(message.getMessageContent());
-                tempMessage.setChannelUser(chatsView.getSelectionModel().getSelectedItem());
+                tempMessage.setChannelUser(selectedChannelUser);
                 tempMessage.setMessageStatus("загружается");
 
                 messagesLV.getItems().add(tempMessage);
@@ -413,7 +413,7 @@ public class SpeechBaseController {
                     try {
                         Message messageToSave = new Message();
                         messageToSave.setMessageContent(message.getMessageContent());
-                        messageToSave.setChannelUser(chatsView.getSelectionModel().getSelectedItem());
+                        messageToSave.setChannelUser(selectedChannelUser);
                         messageToSave.setForwardedFrom(Long.valueOf(message.getChannelUser().getUser().getIdUser()));
                         MessageService messageService = new MessageService();
                         boolean saved = messageService.save(messageToSave);

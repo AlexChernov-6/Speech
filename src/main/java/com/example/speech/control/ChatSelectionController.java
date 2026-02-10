@@ -4,17 +4,16 @@ import com.example.speech.model.ChannelUser;
 import com.example.speech.model.Message;
 import com.example.speech.service.ChannelUserService;
 import com.example.speech.service.MessageService;
+import javafx.animation.PauseTransition;
 import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
-import javafx.scene.control.Button;
-import javafx.scene.control.Label;
-import javafx.scene.control.ListView;
-import javafx.scene.control.TextField;
+import javafx.scene.control.*;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
+import javafx.util.Duration;
 
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
@@ -66,6 +65,7 @@ public class ChatSelectionController extends Pane {
                 (observable, oldValue, newValue) -> {
                     if (newValue != null) {
                         stackPane.getChildren().remove(this);
+                        speechBaseController.getChatsView().getSelectionModel().select(newValue);
                         speechBaseController.setContextPopUpBar(SpeechBaseController.ContextPopUpBar.FORWARD_MESSAGE);
                         speechBaseController.setForwardMessages(List.of(messages));
                         speechBaseController.getHintIV().setImage(forwardI);
@@ -92,10 +92,6 @@ public class ChatSelectionController extends Pane {
                         Platform.runLater(() -> {
                             speechBaseController.getMessageTA().requestFocus();
                         });
-                        speechBaseController.setSelectedChannelUser(newValue);
-                        speechBaseController.hideTheListOfPinnedMessages();
-                        speechBaseController.loadChannelMessages(newValue);
-                        speechBaseController.setPinnedMessagesHBVisible(speechBaseController.getMessagesLV().getItems().size());
                     }
                 });
 

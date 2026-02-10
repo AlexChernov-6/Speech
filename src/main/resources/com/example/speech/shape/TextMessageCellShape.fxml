@@ -8,17 +8,19 @@
 <?import javafx.scene.control.Label?>
 
 <?import javafx.scene.control.Button?>
-<HBox xmlns:fx="http://javafx.com/fxml" fx:controller="com.example.speech.control.TextMessageCellController"
-      maxHeight="600" alignment="BOTTOM_LEFT" fx:id="rootMessageHB">
 
-    <ImageView fx:id="userPhotoIV" fitHeight="45" fitWidth="45" preserveRatio="true">
+<AnchorPane xmlns:fx="http://javafx.com/fxml" fx:controller="com.example.speech.control.TextMessageCellController"
+            maxHeight="600" fx:id="rootMessageAP">
+
+    <ImageView fx:id="userPhotoIV" fitHeight="45" fitWidth="45" preserveRatio="true" AnchorPane.leftAnchor="10"
+               AnchorPane.bottomAnchor="0">
         <clip>
             <Circle radius="22.5" centerX="22.5" centerY="22.5"/>
         </clip>
         <Image url="@../image/defaultChannel.jpg"/>
     </ImageView>
 
-    <GridPane fx:id="contentGP">
+    <GridPane fx:id="contentGP" AnchorPane.leftAnchor="70" AnchorPane.topAnchor="0" AnchorPane.bottomAnchor="0">
         <padding>
             <Insets left="10" top="10" bottom="7" right="7"/>
         </padding>
@@ -85,4 +87,15 @@
             </ImageView>
         </HBox>
     </GridPane>
-</HBox>
+
+    <StackPane AnchorPane.bottomAnchor="5" AnchorPane.rightAnchor="5" fx:id="selectSP" visible="false">
+        <ImageView fitHeight="20" fitWidth="20" preserveRatio="true" fx:id="selectIV" visible="false">
+            <clip>
+                <Circle radius="10" centerX="10" centerY="10"/>
+            </clip>
+            <Image url="@../image/defaultChannel.jpg"/>
+        </ImageView>
+
+        <Circle radius="10" centerX="10" centerY="10" stroke="white" fill="transparent"/>
+    </StackPane>
+</AnchorPane>
