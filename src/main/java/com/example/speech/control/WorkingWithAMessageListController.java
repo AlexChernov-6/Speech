@@ -19,6 +19,7 @@ import javafx.scene.layout.VBox;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 
 import com.example.speech.control.SpeechBaseController.ContextPopUpBar;
 
@@ -147,7 +148,7 @@ public class WorkingWithAMessageListController extends Pane {
         forward.setPrefHeight(40);
         forward.setOnAction(e -> {
             messagesSP.getChildren().remove(this);
-            new ChatSelectionController(speechBaseController, message);
+            new ChatSelectionController(speechBaseController, List.of(message));
         });
 
         CustomButton delete = new CustomButton(deleteI, "Удалить");
@@ -155,8 +156,7 @@ public class WorkingWithAMessageListController extends Pane {
         delete.setPrefHeight(40);
         delete.setOnAction(e -> {
             messagesSP.getChildren().remove(this);
-            new ConfirmationOfMessageDeletion().initializeShape(channelName, message, messagesSP, messagesLV
-                    , currentUserId);
+            new ConfirmationOfMessageDeletion().initializeShape(channelName, speechBaseController, List.of(message));
         });
 
 
@@ -164,6 +164,11 @@ public class WorkingWithAMessageListController extends Pane {
         select.setPrefWidth(vBoxWidth);
         select.setPrefHeight(40);
         VBox.setMargin(select, new Insets(0, 0, 5, 0));
+        select.setOnAction(e -> {
+            messagesSP.getChildren().remove(this);
+            speechBaseController.setSelectionModeActive(true);
+            speechBaseController.toggleMessageSelection(message);
+        });
 
         if(isCurrentUserMessage) {
             CustomButton change = new CustomButton(changeI, "Изменить");

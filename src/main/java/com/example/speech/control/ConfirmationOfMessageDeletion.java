@@ -2,6 +2,7 @@ package com.example.speech.control;
 
 import com.example.speech.model.Message;
 import com.example.speech.service.MessageService;
+import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.Button;
@@ -14,11 +15,14 @@ import javafx.scene.layout.VBox;
 import javafx.scene.control.Label;
 import javafx.scene.text.TextFlow;
 
+import java.util.List;
+import java.util.Set;
+
 public class ConfirmationOfMessageDeletion extends Pane {
     private static final MessageService MESSAGE_SERVICE = new MessageService();
 
-    public void initializeShape(String nameOfTheInterlocutor, Message message, StackPane stackPane
-            , ListView<Message> messagesLV, Long currentUserId) {
+    public void initializeShape(String nameOfTheInterlocutor, SpeechBaseController speechBaseController
+            , List<Message> messages) {
         this.setStyle("-fx-background-color: rgba(0, 0, 0, 0.6);");
 
         double vBoxWidth = 350;
@@ -29,8 +33,8 @@ public class ConfirmationOfMessageDeletion extends Pane {
         rootVB.setPrefHeight(vBoxHeight);
         rootVB.setAlignment(Pos.CENTER_LEFT);
         rootVB.getStyleClass().add("working-with-a-message-root-pane");
-        rootVB.setLayoutX(stackPane.getScene().getWindow().getWidth() / 2 - vBoxWidth / 2);
-        rootVB.setLayoutY(stackPane.getScene().getWindow().getHeight() / 2 - vBoxHeight / 2);
+        rootVB.setLayoutX(speechBaseController.getMessagesSP().getScene().getWindow().getWidth() / 2 - vBoxWidth / 2);
+        rootVB.setLayoutY(speechBaseController.getMessagesSP().getScene().getWindow().getHeight() / 2 - vBoxHeight / 2);
         rootVB.setPadding(new Insets(15));
 
         Label questionLabel = new Label("Удалить это сообщение?");
@@ -57,22 +61,28 @@ public class ConfirmationOfMessageDeletion extends Pane {
         Button cancellationButton = new Button();
         cancellationButton.setText("Отмена");
         cancellationButton.setOnAction(e -> {
-            stackPane.getChildren().remove(this);
+            speechBaseController.getMessagesSP().getChildren().remove(this);
         });
         cancellationButton.getStyleClass().add("login-button");
 
         Button deleteButton = new Button();
         deleteButton.setText("Удалить");
         deleteButton.setOnAction(e -> {
-            if (checkBox.isSelected())
-                MESSAGE_SERVICE.delete(message);
-            else {
-                message.getDeletedByUsers().add(currentUserId);
-                MESSAGE_SERVICE.update(message);
+            for (Message message : messages) {
+                if (checkBox.isSelected())
+                    MESSAGE_SERVICE.delete(message);
+                else {
+                    message.getDeletedByUsers().add(Long.valueOf(speechBaseController.getCurrentUser().getIdUser()));
+                    MESSAGE_SERVICE.update(message);
+                }
             }
-
-            messagesLV.getItems().remove(message);
-            stackPane.getChildren().remove(this);
+            speechBaseController.getMessagesLV().getItems().removeAll(messages);
+            speechBaseController.getMessagesSP().getChildren().remove(this);
+            speechBaseController.getMessagesLV().refresh();
+            Platform.runLater(() -> {
+                if (speechBaseController.isSelectionModeActive())
+                    speechBaseController.setSelectionModeActive(false);
+            });
         });
         deleteButton.getStyleClass().add("login-button");
         bottomHB.getChildren().addAll(cancellationButton, deleteButton);
@@ -84,10 +94,10 @@ public class ConfirmationOfMessageDeletion extends Pane {
             if(rootVB.getBoundsInParent().contains(event.getX(), event.getY()))
                 event.consume();
             else
-                stackPane.getChildren().remove(this);
+                speechBaseController.getMessagesSP().getChildren().remove(this);
         });
 
-        stackPane.getChildren().add(this);
+        speechBaseController.getMessagesSP().getChildren().add(this);
     }
 
     public void initializeShape(SpeechBaseController speechBaseController) {

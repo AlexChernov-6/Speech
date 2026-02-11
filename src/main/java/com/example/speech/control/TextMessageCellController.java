@@ -120,8 +120,12 @@ public class TextMessageCellController {
             replyMessageBtn.setVisible(true);
             replyMessageBtn.setManaged(true);
 
-            String userName = replyMessage.getChannelUser().getUser().getNameUser();
-            String messageContentReply = new String(replyMessage.getMessageContent(), StandardCharsets.UTF_8);
+            String userName = "";
+            String messageContentReply = "";
+            if (replyMessage != null) {
+                userName = replyMessage.getChannelUser().getUser().getNameUser();
+                messageContentReply = new String(replyMessage.getMessageContent(), StandardCharsets.UTF_8);
+            }
 
             String displayUserName = userName.length() > 20 ? userName.substring(0, 20) + "..." : userName;
             String displayMessage = messageContentReply.length() > 50 ? messageContentReply.substring(0, 50) + "..." : messageContentReply;
@@ -129,8 +133,15 @@ public class TextMessageCellController {
             Label nameLabel = new Label(displayUserName);
             nameLabel.getStyleClass().add("reply-user-name");
 
-            Label messageLabel = new Label(displayMessage);
-            messageLabel.getStyleClass().add("reply-message-text");
+            Label messageLabel = new Label("Удаленное сообщение");
+            if(displayMessage.isEmpty()) {
+                messageLabel.getStyleClass().add("reply-message-text");
+                messageLabel.setStyle("-fx-font-style: italic;");
+            } else {
+                messageLabel.setText(displayMessage);
+                messageLabel.getStyleClass().add("reply-message-text");
+            }
+
 
             VBox textContainer = new VBox(nameLabel, messageLabel);
             textContainer.setSpacing(2);
@@ -143,14 +154,16 @@ public class TextMessageCellController {
 
             replyMessageBtn.setOnAction(e -> {
                 Platform.runLater(() -> {
-                    speechBaseController.getMessagesLV().scrollTo(replyMessage);
-                    PauseTransition pause = new PauseTransition(Duration.millis(100));
-                    pause.setOnFinished(event -> {
-                        speechBaseController.getMessageCellCreator()
-                                .getControllerCache(replyMessage)
-                                .highlightMessageTemporarily();
-                    });
-                    pause.play();
+                    if(replyMessage != null) {
+                        speechBaseController.getMessagesLV().scrollTo(replyMessage);
+                        PauseTransition pause = new PauseTransition(Duration.millis(100));
+                        pause.setOnFinished(event -> {
+                            speechBaseController.getMessageCellCreator()
+                                    .getControllerCache(replyMessage)
+                                    .highlightMessageTemporarily();
+                        });
+                        pause.play();
+                    }
                 });
             });
         }
@@ -174,26 +187,35 @@ public class TextMessageCellController {
 
     public void setMouseListener() {
         contentGP.setOnMouseClicked(event -> {
-            if (event.getButton() == MouseButton.SECONDARY) {
-                WorkingWithAMessageListController controller = new WorkingWithAMessageListController();
-                controller.initializeShape(event.getSceneX(), event.getSceneY(), speechBaseController, message);
-                speechBaseController.getMessagesSP().getChildren().add(controller);
-
-                event.consume();
+            if (speechBaseController.isSelectionModeActive()) {
+                if (event.getButton() == MouseButton.PRIMARY) {
+                    speechBaseController.toggleMessageSelection(message);
+                    event.consume();
+                }
             }
+            if (!speechBaseController.isSelectionModeActive() ||
+                    event.getButton() == MouseButton.SECONDARY) {
+                if (event.getButton() == MouseButton.SECONDARY) {
+                    WorkingWithAMessageListController controller = new WorkingWithAMessageListController();
+                    controller.initializeShape(event.getSceneX(), event.getSceneY(), speechBaseController, message);
+                    speechBaseController.getMessagesSP().getChildren().add(controller);
 
-            if (event.getButton() == MouseButton.PRIMARY && event.getClickCount() == 2) {
-                speechBaseController.getHintIV().setImage(replyI);
-                speechBaseController.getHintLB().setText("В ответ " + message.getChannelUser().getUser().getNameUser());
-                speechBaseController.setContextPopUpBar(SpeechBaseController.ContextPopUpBar.REPLY_MESSAGE);
-                speechBaseController.getContentUpdateMessageLB().setText(new String(message.getMessageContent(), StandardCharsets.UTF_8));
-                speechBaseController.getUpdateMessageHB().setVisible(true);
-                speechBaseController.getUpdateMessageHB().setManaged(true);
-                speechBaseController.setMessageIdReplyTo(message.getMessageId());
-                speechBaseController.getMessagesSP().getChildren().remove(this);
-                Platform.runLater(() -> {
-                    speechBaseController.getMessageTA().requestFocus();
-                });
+                    event.consume();
+                }
+
+                if (event.getButton() == MouseButton.PRIMARY && event.getClickCount() == 2) {
+                    speechBaseController.getHintIV().setImage(replyI);
+                    speechBaseController.getHintLB().setText("В ответ " + message.getChannelUser().getUser().getNameUser());
+                    speechBaseController.setContextPopUpBar(SpeechBaseController.ContextPopUpBar.REPLY_MESSAGE);
+                    speechBaseController.getContentUpdateMessageLB().setText(new String(message.getMessageContent(), StandardCharsets.UTF_8));
+                    speechBaseController.getUpdateMessageHB().setVisible(true);
+                    speechBaseController.getUpdateMessageHB().setManaged(true);
+                    speechBaseController.setMessageIdReplyTo(message.getMessageId());
+                    speechBaseController.getMessagesSP().getChildren().remove(this);
+                    Platform.runLater(() -> {
+                        speechBaseController.getMessageTA().requestFocus();
+                    });
+                }
             }
         });
     }
@@ -307,5 +329,16 @@ public class TextMessageCellController {
 
         highlightAnimation.setCycleCount(1);
         highlightAnimation.play();
+    }
+
+    public void setSelectionModeActive(boolean active) {
+        selectSP.setVisible(active);
+        if (!active) {
+            selectIV.setVisible(false); // ensure checkmark hidden when exiting mode
+        }
+    }
+
+    public void setSelected(boolean selected) {
+        selectIV.setVisible(selected);
     }
 }

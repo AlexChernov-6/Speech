@@ -102,15 +102,23 @@ public class MessageCellCreator implements Callback<ListView<Message>, ListCell<
                             "/com/example/speech/shape/TextMessageCellShape.fxml"));
                     javafx.scene.Node node = loader.load();
                     TextMessageCellController controller = loader.getController();
+                    if (controller != null) {
+                        controller.setSelectionModeActive(
+                                speechBaseController.isSelectionModeActive());
+                        controller.setSelected(
+                                speechBaseController.isMessageSelected(message));
+                    }
 
                     controllerCache.put(message, controller);
 
                     // Настройка ширины
                     if (getListView() != null) {
                         double maxWidth = getListView().getWidth() - 100;
+                        assert controller != null;
                         controller.setMaxWidthGP(maxWidth);
                     }
 
+                    assert controller != null;
                     controller.initializeMessage(speechBaseController, message
                             , shouldShowAvatarForMessage(message, getIndex()));
                     return node;
@@ -156,5 +164,9 @@ public class MessageCellCreator implements Callback<ListView<Message>, ListCell<
 
     public TextMessageCellController getControllerCache(Message message) {
         return controllerCache.get(message);
+    }
+
+    public Map<Message, TextMessageCellController> getControllerCache() {
+        return controllerCache;
     }
 }

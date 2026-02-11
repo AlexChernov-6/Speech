@@ -9,19 +9,20 @@ import javafx.animation.PauseTransition;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
-import javafx.collections.ObservableArray;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.scene.Node;
 import javafx.scene.control.*;
 import javafx.scene.control.skin.VirtualFlow;
 import javafx.scene.image.ImageView;
+import javafx.scene.input.KeyCode;
 import javafx.scene.input.MouseButton;
 import javafx.scene.layout.*;
 import javafx.scene.text.Text;
 import javafx.stage.Stage;
 import javafx.util.Duration;
 
+import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
@@ -105,7 +106,14 @@ public class SpeechBaseController {
 
     private boolean flag = true;
 
-    private List<Message> forwardMessages;
+    private List<Message> forwardMessages = new ArrayList<>();
+
+    private boolean selectionModeActive = false;
+    private List<Message> selectedMessages = new ArrayList<>();
+
+    private Button selectionForwardBtn;
+    private Button selectionDeleteBtn;
+    private Button selectionCancelBtn;
 
     public void initializeData(Stage stage, User currentUser) {
         this.stage = stage;
@@ -115,8 +123,11 @@ public class SpeechBaseController {
                 if (change.wasAdded()) {
                     int addIndex = change.getFrom();
 
-                    for (Message msg : mapMessageInd.keySet()) {
-                        int idx = mapMessageInd.get(msg);
+                    // ✔ Копия ключей – безопасная итерация
+                    for (Message msg : new ArrayList<>(mapMessageInd.keySet())) {
+                        Integer idxObj = mapMessageInd.get(msg);
+                        if (idxObj == null) continue; // защита на случай гонок
+                        int idx = idxObj;
                         if (idx >= addIndex) {
                             mapMessageInd.put(msg, idx + change.getAddedSize());
                         }
@@ -141,8 +152,11 @@ public class SpeechBaseController {
                         mapMessageInd.remove(msg);
                     }
 
-                    for (Message msg : mapMessageInd.keySet()) {
-                        int idx = mapMessageInd.get(msg);
+                    // ✔ Копия ключей
+                    for (Message msg : new ArrayList<>(mapMessageInd.keySet())) {
+                        Integer idxObj = mapMessageInd.get(msg);
+                        if (idxObj == null) continue;
+                        int idx = idxObj;
                         if (idx > removeIndex) {
                             mapMessageInd.put(msg, idx - change.getRemovedSize());
                         }
@@ -187,7 +201,7 @@ public class SpeechBaseController {
 
         messageTA.focusedProperty().addListener((ch, oldValue, newValue) -> {
             String text = messageTA.getText();
-            if(!newValue && (text == null || text.isEmpty()))
+            if (!newValue && (text == null || text.isEmpty()))
                 textAreaSP.getChildren().add(promptTextTA);
             else
                 textAreaSP.getChildren().remove(promptTextTA);
@@ -217,13 +231,19 @@ public class SpeechBaseController {
 
                             firstVisible = flow.getFirstVisibleCell().getIndex();
 
-                            if(flag)
+                            if (flag)
                                 setPinnedMessagesHBVisible(firstVisible);
                         } catch (Exception e) {
                             e.printStackTrace();
                         }
                     });
                 }
+            }
+        });
+
+        messagesLV.setOnKeyPressed(event -> {
+            if (event.getCode() == KeyCode.ESCAPE && isSelectionModeActive()) {
+                setSelectionModeActive(false);
             }
         });
     }
@@ -342,7 +362,7 @@ public class SpeechBaseController {
                 || contextPopUpBar == ContextPopUpBar.REPLY_MESSAGE)) {
             ChannelUser selectedChat = chatsView.getSelectionModel().getSelectedItem();
 
-            Message tempMessage  = new Message();
+            Message tempMessage = new Message();
             tempMessage.setMessageDatetime(LocalDateTime.now());
             tempMessage.setMessageContent(text.getBytes(java.nio.charset.StandardCharsets.UTF_8));
             tempMessage.setChannelUser(selectedChat);
@@ -361,7 +381,7 @@ public class SpeechBaseController {
                     Message messageToSave = new Message();
                     messageToSave.setMessageContent(text.getBytes(StandardCharsets.UTF_8));
                     messageToSave.setChannelUser(selectedChat);
-                    if(updateMessageHB.isVisible() && contextPopUpBar == ContextPopUpBar.REPLY_MESSAGE)
+                    if (updateMessageHB.isVisible() && contextPopUpBar == ContextPopUpBar.REPLY_MESSAGE)
                         messageToSave.setMessageIdReplyTo(messageIdReplyTo);
                     boolean saved = messageService.save(messageToSave);
                     if (saved) {
@@ -394,48 +414,81 @@ public class SpeechBaseController {
                 updateMessage = null;
             }
             updateVisibleChangeMessageHB();
-        } else if (chatsView.getSelectionModel().getSelectedItem() != null && updateMessageHB.isVisible()
+        } else if (chatsView.getSelectionModel().getSelectedItem() != null
+                && updateMessageHB.isVisible()
                 && contextPopUpBar == ContextPopUpBar.FORWARD_MESSAGE) {
-            for(Message message : forwardMessages) {
-                Message tempMessage = new Message();
-                tempMessage.setMessageDatetime(LocalDateTime.now());
-                tempMessage.setMessageContent(message.getMessageContent());
-                tempMessage.setChannelUser(selectedChannelUser);
-                tempMessage.setMessageStatus("загружается");
 
-                messagesLV.getItems().add(tempMessage);
+            // Список временных сообщений, которые уже показаны в UI
+            List<Message> tempMessages = new ArrayList<>();
 
-                Platform.runLater(() -> {
-                    messagesLV.scrollTo(messagesLV.getItems().size() - 1);
-                });
+            for (Message original : forwardMessages) {
+                Message temp = new Message();
+                temp.setMessageDatetime(LocalDateTime.now());
+                temp.setMessageContent(original.getMessageContent());
+                temp.setChannelUser(selectedChannelUser);
+                temp.setMessageStatus("загружается");
+                temp.setForwardedFrom(Long.valueOf(original.getChannelUser().getUser().getIdUser()));
 
-                new Thread(() -> {
+                messagesLV.getItems().add(temp);
+                tempMessages.add(temp); // запоминаем ссылку на временное сообщение
+            }
+
+            // Прокрутка вниз после добавления всех временных сообщений
+            Platform.runLater(() ->
+                    messagesLV.scrollTo(messagesLV.getItems().size() - 1)
+            );
+
+            new Thread(() -> {
+                for (int i = 0; i < forwardMessages.size(); i++) {
+                    Message original = forwardMessages.get(i);
+                    Message tempMsg = tempMessages.get(i);
+
                     try {
-                        Message messageToSave = new Message();
-                        messageToSave.setMessageContent(message.getMessageContent());
-                        messageToSave.setChannelUser(selectedChannelUser);
-                        messageToSave.setForwardedFrom(Long.valueOf(message.getChannelUser().getUser().getIdUser()));
-                        MessageService messageService = new MessageService();
-                        boolean saved = messageService.save(messageToSave);
+                        // ✅ 1. Создаём НОВЫЙ объект для вставки в БД
+                        Message newMsg = new Message();
+                        newMsg.setMessageContent(original.getMessageContent());
+                        newMsg.setChannelUser(selectedChannelUser);
+                        newMsg.setMessageDatetime(LocalDateTime.now());
+                        newMsg.setMessageStatus("отправлено");
+
+                        // ✅ 2. Устанавливаем поле forwardedFrom (ID отправителя оригинала)
+                        newMsg.setForwardedFrom(Long.valueOf(original.getChannelUser().getUser().getIdUser()));
+
+                        // ✅ 3. Сохраняем новый объект
+                        MessageService service = new MessageService();
+                        boolean saved = service.save(newMsg);
+
                         if (saved) {
-                            Message savedMessage = messageService.getRowById(messageToSave.getMessageId());
+                            // Получаем сохранённую сущность с присвоенным ID
+                            Message savedMsg = service.getRowById(newMsg.getMessageId());
+                            final Message finalSaved = savedMsg;
+
                             Platform.runLater(() -> {
-                                int index = messagesLV.getItems().indexOf(tempMessage);
-                                if (index >= 0) {
-                                    messagesLV.getItems().set(index, savedMessage);
+                                int idx = messagesLV.getItems().indexOf(tempMsg);
+                                if (idx >= 0) {
+                                    // Заменяем временное сообщение на сохранённое
+                                    messagesLV.getItems().set(idx, finalSaved);
                                     messagesLV.refresh();
                                 }
+                            });
+                        } else {
+                            // Ошибка сохранения
+                            Platform.runLater(() -> {
+                                tempMsg.setMessageStatus("ошибка отправки");
+                                messagesLV.refresh();
                             });
                         }
                     } catch (Exception e) {
                         e.printStackTrace();
                         Platform.runLater(() -> {
-                            tempMessage.setMessageStatus("ошибка отправки");
+                            tempMsg.setMessageStatus("ошибка отправки");
                             messagesLV.refresh();
                         });
                     }
-                }).start();
-            }
+                }
+            }).start();
+
+            // Скрываем панель пересылки
             updateVisibleChangeMessageHB();
         }
     }
@@ -451,7 +504,7 @@ public class SpeechBaseController {
         updateMessage = null;
         updateMessageHB.setVisible(false);
         updateMessageHB.setManaged(false);
-        if(contextPopUpBar == ContextPopUpBar.CHANGE_MESSAGE)
+        if (contextPopUpBar == ContextPopUpBar.CHANGE_MESSAGE)
             messageTA.setText("");
     }
 
@@ -514,7 +567,7 @@ public class SpeechBaseController {
                 .filter(mes -> mes != null && Boolean.TRUE.equals(mes.getPinMessage()))
                 .toList();
 
-        for(Node node : channelStateAP.getChildren()) {
+        for (Node node : channelStateAP.getChildren()) {
             node.setVisible(false);
             node.setManaged(false);
         }
@@ -541,7 +594,7 @@ public class SpeechBaseController {
 
         channelStateAP.getChildren().add(countPinnedMessages);
 
-        if(pinnedMessagesHB.isVisible()) {
+        if (pinnedMessagesHB.isVisible()) {
             pinnedMessagesHB.setVisible(false);
             pinnedMessagesHB.setManaged(false);
         }
@@ -549,12 +602,12 @@ public class SpeechBaseController {
         messagesLV.getItems().clear();
         messagesLV.getItems().addAll(allPinnedMessages);
 
-        if(updateMessageHB.isVisible()) {
+        if (updateMessageHB.isVisible()) {
             updateMessageHB.setVisible(false);
             updateMessageHB.setManaged(false);
         }
 
-        for(Node node : messageAnchor.getChildren()) {
+        for (Node node : messageAnchor.getChildren()) {
             node.setVisible(false);
             node.setManaged(false);
         }
@@ -581,22 +634,22 @@ public class SpeechBaseController {
                 .toList());
 
         List<Node> toRemove = channelStateAP.getChildren().stream()
-                .filter(node -> node.getId() != null &&(node.getId().equals("backBtn")
+                .filter(node -> node.getId() != null && (node.getId().equals("backBtn")
                         || node.getId().equals("countPinnedMessages"))).toList();
         channelStateAP.getChildren().removeAll(toRemove);
 
-        for(Node node : channelStateAP.getChildren()) {
+        for (Node node : channelStateAP.getChildren()) {
             node.setVisible(true);
             node.setManaged(true);
         }
 
-        if(messageTA.isVisible())
+        if (messageTA.isVisible())
             setPinnedMessagesHBVisible(firstVisible);
 
         messagesLV.getItems().clear();
         messagesLV.getItems().addAll(allMessages);
 
-        if(updateMessage != null) {
+        if (updateMessage != null) {
             updateMessageHB.setVisible(true);
             updateMessageHB.setManaged(true);
         }
@@ -605,7 +658,7 @@ public class SpeechBaseController {
                 .filter(node -> node.getId() != null && node.getId().equals("unpinnedAllMessagesBtn")).toList();
         messageAnchor.getChildren().removeAll(toRemove2);
 
-        for(Node node : messageAnchor.getChildren()) {
+        for (Node node : messageAnchor.getChildren()) {
             node.setVisible(true);
             node.setManaged(true);
         }
@@ -737,5 +790,123 @@ public class SpeechBaseController {
 
     public void setForwardMessages(List<Message> forwardMessages) {
         this.forwardMessages = forwardMessages;
+    }
+
+    public boolean isSelectionModeActive() {
+        return selectionModeActive;
+    }
+
+    public void setSelectionModeActive(boolean active) {
+        if (this.selectionModeActive == active) return;
+        this.selectionModeActive = active;
+        if (!active) {
+            selectedMessages.clear();
+        }
+        updateAllMessageCellsSelectionMode();
+        checkSelectedMode(active);
+    }
+
+    public void toggleMessageSelection(Message message) {
+        if (!selectionModeActive) return;
+        if (selectedMessages.contains(message)) {
+            selectedMessages.remove(message);
+        } else {
+            selectedMessages.add(message);
+        }
+        updateMessageCellSelection(message);
+    }
+
+    public boolean isMessageSelected(Message message) {
+        return selectedMessages.contains(message);
+    }
+
+    public void clearSelection() {
+        selectedMessages.clear();
+        updateAllMessageCellsSelection();
+    }
+
+    // Update all cached cells with current selection mode and selected state
+    private void updateAllMessageCellsSelectionMode() {
+        MessageCellCreator creator = getMessageCellCreator(); // assume getter exists
+        for (Map.Entry<Message, TextMessageCellController> entry :
+                creator.getControllerCache().entrySet()) {
+            TextMessageCellController controller = entry.getValue();
+            controller.setSelectionModeActive(selectionModeActive);
+            if (selectionModeActive) {
+                controller.setSelected(selectedMessages.contains(entry.getKey()));
+            } else {
+                controller.setSelected(false);
+            }
+        }
+    }
+
+    // Update a single cell's selection state
+    private void updateMessageCellSelection(Message message) {
+        TextMessageCellController controller =
+                getMessageCellCreator().getControllerCache().get(message);
+        if (controller != null) {
+            controller.setSelected(selectedMessages.contains(message));
+        }
+    }
+
+    // Update only the selected state of all cells (mode unchanged)
+    private void updateAllMessageCellsSelection() {
+        for (Map.Entry<Message, TextMessageCellController> entry :
+                getMessageCellCreator().getControllerCache().entrySet()) {
+            entry.getValue().setSelected(selectedMessages.contains(entry.getKey()));
+        }
+    }
+
+    private void checkSelectedMode(boolean active) {
+        if (active) {
+            for (Node node : channelStateAP.getChildren()) {
+                node.setVisible(false);
+                node.setManaged(false);
+            }
+
+            selectionForwardBtn = new Button("ПЕРЕСЛАТЬ");
+            selectionForwardBtn.getStyleClass().add("login-button");
+            selectionForwardBtn.setOnAction(e -> {
+                forwardMessages.clear();
+                forwardMessages.addAll(selectedMessages);
+                new ChatSelectionController(this, forwardMessages);
+                setSelectionModeActive(false);
+            });
+            selectionForwardBtn.setPrefWidth(120);
+            selectionForwardBtn.setPrefHeight(20);
+            AnchorPane.setLeftAnchor(selectionForwardBtn, 10.0);
+            AnchorPane.setTopAnchor(selectionForwardBtn, 10.0);
+            AnchorPane.setBottomAnchor(selectionForwardBtn, 10.0);
+
+            selectionDeleteBtn = new Button("УДАЛИТЬ");
+            selectionDeleteBtn.getStyleClass().add("login-button");
+            selectionDeleteBtn.setOnAction(e -> {
+                new ConfirmationOfMessageDeletion().initializeShape(channelName.getText(), this
+                        , selectedMessages);
+            });
+            selectionDeleteBtn.setPrefWidth(120);
+            selectionDeleteBtn.setPrefHeight(20);
+            AnchorPane.setLeftAnchor(selectionDeleteBtn, 140.0);
+            AnchorPane.setTopAnchor(selectionDeleteBtn, 10.0);
+            AnchorPane.setBottomAnchor(selectionDeleteBtn, 10.0);
+
+            selectionCancelBtn = new Button("ОТМЕНА");
+            selectionCancelBtn.getStyleClass().add("login-button");
+            selectionCancelBtn.setOnAction(e -> {
+                setSelectionModeActive(false);
+            });
+            selectionCancelBtn.setPrefWidth(120);
+            selectionCancelBtn.setPrefHeight(20);
+            AnchorPane.setRightAnchor(selectionCancelBtn, 10.0);
+            AnchorPane.setTopAnchor(selectionCancelBtn, 10.0);
+            AnchorPane.setBottomAnchor(selectionCancelBtn, 10.0);
+            channelStateAP.getChildren().addAll(selectionForwardBtn, selectionDeleteBtn, selectionCancelBtn);
+        } else {
+            channelStateAP.getChildren().removeAll(selectionForwardBtn, selectionDeleteBtn, selectionCancelBtn);
+            for (Node node : channelStateAP.getChildren()) {
+                node.setVisible(true);
+                node.setManaged(true);
+            }
+        }
     }
 }

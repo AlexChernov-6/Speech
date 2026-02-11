@@ -19,12 +19,13 @@ import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 import static com.example.speech.control.WorkingWithAMessageListController.forwardI;
 
 public class ChatSelectionController extends Pane {
 
-    public ChatSelectionController(SpeechBaseController speechBaseController, Message... messages) {
+    public ChatSelectionController(SpeechBaseController speechBaseController, List<Message> messages) {
         StackPane stackPane = speechBaseController.getMessagesSP();
         this.setStyle("-fx-background-color: rgba(0, 0, 0, 0.6);");
 
@@ -67,17 +68,17 @@ public class ChatSelectionController extends Pane {
                         stackPane.getChildren().remove(this);
                         speechBaseController.getChatsView().getSelectionModel().select(newValue);
                         speechBaseController.setContextPopUpBar(SpeechBaseController.ContextPopUpBar.FORWARD_MESSAGE);
-                        speechBaseController.setForwardMessages(List.of(messages));
+                        speechBaseController.setForwardMessages(messages);
                         speechBaseController.getHintIV().setImage(forwardI);
                         List<String> senders = new ArrayList<>();
                         for(Message message : messages) {
                             if(!senders.contains(message.getChannelUser().getUser().getNameUser()))
                                 senders.add(message.getChannelUser().getUser().getNameUser());
                         }
-                        if(messages.length > 1)
-                            speechBaseController.getContentUpdateMessageLB().setText(messages.length + " пересланных сообщения");
+                        if(messages.size() > 1)
+                            speechBaseController.getContentUpdateMessageLB().setText(messages.size() + " пересланных сообщения");
                         else
-                            speechBaseController.getContentUpdateMessageLB().setText(new String(messages[0].getMessageContent()
+                            speechBaseController.getContentUpdateMessageLB().setText(new String(messages.getFirst().getMessageContent()
                                     , StandardCharsets.UTF_8));
 
                         if(senders.size() == 1)

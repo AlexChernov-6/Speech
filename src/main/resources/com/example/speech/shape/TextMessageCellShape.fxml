@@ -93,7 +93,7 @@
             <clip>
                 <Circle radius="10" centerX="10" centerY="10"/>
             </clip>
-            <Image url="@../image/defaultChannel.jpg"/>
+            <Image url="@../image/setSelect.png"/>
         </ImageView>
 
         <Circle radius="10" centerX="10" centerY="10" stroke="white" fill="transparent"/>
