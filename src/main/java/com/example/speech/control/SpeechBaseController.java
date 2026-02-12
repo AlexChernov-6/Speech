@@ -99,8 +99,6 @@ public class SpeechBaseController {
 
     private List<Message> pinnedMessages;
 
-    private Map<Message, Integer> mapMessageInd = new HashMap<>();
-
     private ChannelUser selectedChannelUser;
 
     private int firstVisible;
@@ -125,55 +123,14 @@ public class SpeechBaseController {
         return dragSelecting;
     }
 
-    private Message prevMsg;
+    private Message[] messagesArray = new Message[4];
 
     public void initializeData(Stage stage, User currentUser) {
         this.stage = stage;
         this.currentUser = currentUser;
         messagesLV.getItems().addListener((ListChangeListener<Message>) change -> {
             while (change.next()) {
-                if (change.wasAdded()) {
-                    int addIndex = change.getFrom();
-
-                    // ✔ Копия ключей – безопасная итерация
-                    for (Message msg : new ArrayList<>(mapMessageInd.keySet())) {
-                        Integer idxObj = mapMessageInd.get(msg);
-                        if (idxObj == null) continue; // защита на случай гонок
-                        int idx = idxObj;
-                        if (idx >= addIndex) {
-                            mapMessageInd.put(msg, idx + change.getAddedSize());
-                        }
-                    }
-
-                    for (int i = 0; i < change.getAddedSize(); i++) {
-                        Message msg = change.getAddedSubList().get(i);
-                        mapMessageInd.put(msg, addIndex + i);
-                    }
-
-                    Platform.runLater(() -> {
-                        if (!messagesLV.getItems().isEmpty()) {
-                            messagesLV.scrollTo(messagesLV.getItems().size());
-                        }
-                    });
-                }
-
-                if (change.wasRemoved()) {
-                    int removeIndex = change.getFrom();
-
-                    for (Message msg : change.getRemoved()) {
-                        mapMessageInd.remove(msg);
-                    }
-
-                    // ✔ Копия ключей
-                    for (Message msg : new ArrayList<>(mapMessageInd.keySet())) {
-                        Integer idxObj = mapMessageInd.get(msg);
-                        if (idxObj == null) continue;
-                        int idx = idxObj;
-                        if (idx > removeIndex) {
-                            mapMessageInd.put(msg, idx - change.getRemovedSize());
-                        }
-                    }
-
+                if (change.wasAdded() || change.wasRemoved()) {
                     Platform.runLater(() -> {
                         if (!messagesLV.getItems().isEmpty()) {
                             messagesLV.scrollTo(messagesLV.getItems().size());
@@ -261,15 +218,12 @@ public class SpeechBaseController {
 
         messagesLV.setOnMousePressed(event -> {
             if (event.getButton() == MouseButton.PRIMARY) {
-                Message clickedMsg = findMessageAt(event.getScreenX(), event.getScreenY());
-                if (clickedMsg != null) {
-                    dragStartIndex = messagesLV.getItems().indexOf(clickedMsg);
+                messagesArray[3] = findMessageAt(event.getScreenX(), event.getScreenY());
+                if (messagesArray[3] != null) {
+                    dragStartIndex = messagesLV.getItems().indexOf(messagesArray[3]);
                     dragStartX = event.getScreenX();
                     dragStartY = event.getScreenY();
                     dragSelecting = false;
-                    if(selectionModeActive) {
-                        toggleMessageSelection(clickedMsg);
-                    }
                 }
                 event.consume();
             }
@@ -292,10 +246,17 @@ public class SpeechBaseController {
                 }
 
                 if (dragSelecting) {
-                    Message currentMsg = findMessageAt(event.getScreenX(), event.getScreenY());
-                    if (currentMsg != null && !currentMsg.equals(prevMsg)) {
-                        toggleMessageSelection(currentMsg);
-                        prevMsg = currentMsg;
+                    messagesArray[2] = findMessageAt(event.getScreenX(), event.getScreenY());
+                    if (messagesArray[2] != null && !messagesArray[2].equals(messagesArray[1])) {
+                        if(messagesArray[2].equals(messagesArray[0]) && messagesArray[1] != null)
+                            toggleMessageSelection(messagesArray[1]);
+                        if(!messagesArray[2].equals(messagesArray[3])) {
+                            toggleMessageSelection(messagesArray[2]);
+                            messagesArray[3] = null;
+                        }
+                        if(messagesArray[1] != null)
+                            messagesArray[0] = messagesArray[1];
+                        messagesArray[1] = messagesArray[2];
                     }
                 }
                 event.consume();
@@ -304,7 +265,7 @@ public class SpeechBaseController {
 
         messagesLV.setOnMouseReleased(event -> {
             if (event.getButton() == MouseButton.PRIMARY) {
-                // Сбрасываем состояние перетаскивания, но выделение оставляем
+                messagesArray[3] = null;
                 dragSelecting = false;
                 dragStartIndex = -1;
                 event.consume();
@@ -352,7 +313,7 @@ public class SpeechBaseController {
 
         Platform.runLater(() -> {
             if (!messagesLV.getItems().isEmpty()) {
-                messagesLV.scrollTo(messagesLV.getItems().size() - 1);
+                messagesLV.scrollTo(messagesLV.getItems().size());
             }
         });
 
@@ -438,7 +399,7 @@ public class SpeechBaseController {
             messagesLV.getItems().add(tempMessage);
 
             Platform.runLater(() -> {
-                messagesLV.scrollTo(messagesLV.getItems().size() - 1);
+                messagesLV.scrollTo(messagesLV.getItems().size());
             });
 
             messageTA.setText("");
@@ -502,7 +463,7 @@ public class SpeechBaseController {
 
             // Прокрутка вниз после добавления всех временных сообщений
             Platform.runLater(() ->
-                    messagesLV.scrollTo(messagesLV.getItems().size() - 1)
+                    messagesLV.scrollTo(messagesLV.getItems().size())
             );
 
             new Thread(() -> {
@@ -597,8 +558,8 @@ public class SpeechBaseController {
         Message nextPinnedMessage = null;
 
         for (Message pinnedMsg : allPinnedMessages) {
-            Integer msgIndex = mapMessageInd.get(pinnedMsg);
-            if (msgIndex != null && msgIndex < firstVisibleIndex) {
+            int msgIndex = messagesLV.getItems().indexOf(pinnedMsg);
+            if (msgIndex < firstVisibleIndex) {
                 // Нашли закрепленное сообщение, которое еще не видно (или только стало видно)
                 nextPinnedMessage = pinnedMsg;
                 break;
