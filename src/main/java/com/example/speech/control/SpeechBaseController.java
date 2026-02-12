@@ -17,6 +17,7 @@ import javafx.scene.control.skin.VirtualFlow;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.MouseButton;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.*;
 import javafx.scene.text.Text;
 import javafx.stage.Stage;
@@ -114,6 +115,17 @@ public class SpeechBaseController {
     private Button selectionForwardBtn;
     private Button selectionDeleteBtn;
     private Button selectionCancelBtn;
+
+    private boolean dragSelecting = false;
+    private int dragStartIndex = -1;
+    private double dragStartX, dragStartY;
+    private static final double DRAG_DISTANCE_THRESHOLD = 5.0; // пикселей
+
+    public boolean isDragSelecting() {
+        return dragSelecting;
+    }
+
+    private Message prevMsg;
 
     public void initializeData(Stage stage, User currentUser) {
         this.stage = stage;
@@ -246,6 +258,58 @@ public class SpeechBaseController {
                 setSelectionModeActive(false);
             }
         });
+
+        messagesLV.setOnMousePressed(event -> {
+            if (event.getButton() == MouseButton.PRIMARY) {
+                Message clickedMsg = findMessageAt(event.getScreenX(), event.getScreenY());
+                if (clickedMsg != null) {
+                    dragStartIndex = messagesLV.getItems().indexOf(clickedMsg);
+                    dragStartX = event.getScreenX();
+                    dragStartY = event.getScreenY();
+                    dragSelecting = false;
+                    if(selectionModeActive) {
+                        toggleMessageSelection(clickedMsg);
+                    }
+                }
+                event.consume();
+            }
+        });
+
+        messagesLV.setOnMouseDragged(event -> {
+            if (event.getButton() == MouseButton.PRIMARY && dragStartIndex != -1) {
+                double distance = Math.hypot(
+                        event.getScreenX() - dragStartX,
+                        event.getScreenY() - dragStartY
+                );
+
+                // Перетаскивание начинается только после превышения порога
+                if (!dragSelecting && distance > DRAG_DISTANCE_THRESHOLD) {
+                    dragSelecting = true;
+                    // Убедимся, что режим выделения активен
+                    if (!selectionModeActive) {
+                        setSelectionModeActive(true);
+                    }
+                }
+
+                if (dragSelecting) {
+                    Message currentMsg = findMessageAt(event.getScreenX(), event.getScreenY());
+                    if (currentMsg != null && !currentMsg.equals(prevMsg)) {
+                        toggleMessageSelection(currentMsg);
+                        prevMsg = currentMsg;
+                    }
+                }
+                event.consume();
+            }
+        });
+
+        messagesLV.setOnMouseReleased(event -> {
+            if (event.getButton() == MouseButton.PRIMARY) {
+                // Сбрасываем состояние перетаскивания, но выделение оставляем
+                dragSelecting = false;
+                dragStartIndex = -1;
+                event.consume();
+            }
+        });
     }
 
     public void initializeListViewChats() {
@@ -262,6 +326,7 @@ public class SpeechBaseController {
                         hideTheListOfPinnedMessages();
                         loadChannelMessages(newValue);
                         setPinnedMessagesHBVisible(messagesLV.getItems().size());
+                        setSelectionModeActive(false);
                     }
                 });
     }
@@ -290,6 +355,8 @@ public class SpeechBaseController {
                 messagesLV.scrollTo(messagesLV.getItems().size() - 1);
             }
         });
+
+        messageCellCreator.clearCache();
         //long startTime = System.currentTimeMillis();
         //Заменить на конечный скрол
         //long endTime = System.currentTimeMillis();
@@ -867,8 +934,12 @@ public class SpeechBaseController {
             selectionForwardBtn = new Button("ПЕРЕСЛАТЬ");
             selectionForwardBtn.getStyleClass().add("login-button");
             selectionForwardBtn.setOnAction(e -> {
+                System.out.println(selectedMessages.size());
+                System.out.println(forwardMessages.size());
                 forwardMessages.clear();
                 forwardMessages.addAll(selectedMessages);
+                System.out.println(selectedMessages.size());
+                System.out.println(forwardMessages.size());
                 new ChatSelectionController(this, forwardMessages);
                 setSelectionModeActive(false);
             });
@@ -908,5 +979,34 @@ public class SpeechBaseController {
                 node.setManaged(true);
             }
         }
+    }
+
+    private Message findMessageAt(double screenX, double screenY) {
+        for (Map.Entry<Message, TextMessageCellController> entry :
+                messageCellCreator.getControllerCache().entrySet()) {
+            if (entry.getValue().isHit(screenX, screenY)) {
+                return entry.getKey();
+            }
+        }
+        return null;
+    }
+
+    private void selectRange(int start, int end) {
+        int low = Math.min(start, end);
+        int high = Math.max(start, end);
+
+        List<Message> items = messagesLV.getItems();
+        for (int i = low; i <= high; i++) {
+            if(!selectedMessages.contains(items.get(i)))
+                selectedMessages.add(items.get(i));
+            else
+                selectedMessages.remove(items.get(i));
+        }
+
+        updateAllMessageCellsSelection();
+    }
+
+    public List<Message> getSelectedMessages() {
+        return selectedMessages;
     }
 }

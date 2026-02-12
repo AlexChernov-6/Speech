@@ -169,4 +169,8 @@ public class MessageCellCreator implements Callback<ListView<Message>, ListCell<
     public Map<Message, TextMessageCellController> getControllerCache() {
         return controllerCache;
     }
+
+    public void clearCache() {
+        controllerCache.clear();
+    }
 }

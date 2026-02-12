@@ -10,6 +10,7 @@ import javafx.animation.Timeline;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.geometry.Insets;
+import javafx.geometry.Point2D;
 import javafx.geometry.Pos;
 import javafx.scene.control.Button;
 import javafx.scene.control.ContentDisplay;
@@ -71,6 +72,8 @@ public class TextMessageCellController {
             (TextMessageCellController.class.getResourceAsStream("/com/example/speech/image/double_check.png")));
     private static final Image loading = new Image(Objects.requireNonNull
             (TextMessageCellController.class.getResourceAsStream("/com/example/speech/image/clock.png")));
+
+    private String contentGPStyle = "";
 
     public GridPane initializeMessage(SpeechBaseController speechBaseController, Message message, boolean drawUserPhoto) {
         this.speechBaseController = speechBaseController;
@@ -178,6 +181,10 @@ public class TextMessageCellController {
             userInfoBtn.setText(user.getNameUser());
         }
 
+        contentGPStyle = contentGP.getStyle();
+
+        setSelected(speechBaseController.getSelectedMessages().contains(message));
+
         return contentGP;
     }
 
@@ -187,19 +194,12 @@ public class TextMessageCellController {
 
     public void setMouseListener() {
         contentGP.setOnMouseClicked(event -> {
-            if (speechBaseController.isSelectionModeActive()) {
-                if (event.getButton() == MouseButton.PRIMARY) {
-                    speechBaseController.toggleMessageSelection(message);
-                    event.consume();
-                }
-            }
             if (!speechBaseController.isSelectionModeActive() ||
                     event.getButton() == MouseButton.SECONDARY) {
                 if (event.getButton() == MouseButton.SECONDARY) {
                     WorkingWithAMessageListController controller = new WorkingWithAMessageListController();
                     controller.initializeShape(event.getSceneX(), event.getSceneY(), speechBaseController, message);
                     speechBaseController.getMessagesSP().getChildren().add(controller);
-
                     event.consume();
                 }
 
@@ -334,11 +334,25 @@ public class TextMessageCellController {
     public void setSelectionModeActive(boolean active) {
         selectSP.setVisible(active);
         if (!active) {
-            selectIV.setVisible(false); // ensure checkmark hidden when exiting mode
+            selectIV.setVisible(false);
         }
     }
 
     public void setSelected(boolean selected) {
         selectIV.setVisible(selected);
+        if(selected)
+            contentGP.setStyle("-fx-background-color: rgba(0,0,255,0.6);");
+        else
+            contentGP.setStyle(contentGPStyle);
+    }
+
+    public boolean isHit(double screenX, double screenY) {
+        if (rootMessageAP == null) return false;
+        Point2D local = rootMessageAP.screenToLocal(screenX, screenY);
+        return local != null && rootMessageAP.contains(local);
+    }
+
+    public AnchorPane getRootMessageAP() {
+        return rootMessageAP;
     }
 }
