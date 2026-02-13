@@ -11,23 +11,22 @@ import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
+import javafx.geometry.Point2D;
 import javafx.scene.Node;
 import javafx.scene.control.*;
 import javafx.scene.control.skin.VirtualFlow;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.MouseButton;
-import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.*;
 import javafx.scene.text.Text;
 import javafx.stage.Stage;
 import javafx.util.Duration;
-
-import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.util.*;
+import javafx.scene.control.IndexedCell;
 
 import static com.example.speech.util.HelpfulStylingClass.setupFullScreenListener;
 
@@ -97,8 +96,6 @@ public class SpeechBaseController {
 
     private Message lastPinnedMessage;
 
-    private List<Message> pinnedMessages;
-
     private ChannelUser selectedChannelUser;
 
     private int firstVisible;
@@ -123,8 +120,12 @@ public class SpeechBaseController {
         return dragSelecting;
     }
 
-    private Message[] messagesArray = new Message[4];
-    private boolean isDragStart = false;
+    private List<Message> baseSelection = new ArrayList<>();
+
+    private VirtualFlow<?> currentFlow;
+
+    private int lastProcessedDragIndex = -1;
+    private boolean dragStartSelected = false;
 
     public void initializeData(Stage stage, User currentUser) {
         this.stage = stage;
@@ -191,21 +192,18 @@ public class SpeechBaseController {
 
         messagesLV.skinProperty().addListener((obs, oldSkin, newSkin) -> {
             if (newSkin != null) {
+                try {
+                    Field field = newSkin.getClass().getDeclaredField("flow");
+                    field.setAccessible(true);
+                    currentFlow = (VirtualFlow<?>) field.get(newSkin);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
                 ScrollBar scrollBar = (ScrollBar) messagesLV.lookup(".scroll-bar:vertical");
                 if (scrollBar != null) {
                     scrollBar.valueProperty().addListener((observable, oldValue, newValue) -> {
-                        try {
-                            Field field = newSkin.getClass().getDeclaredField("flow");
-                            field.setAccessible(true);
-                            VirtualFlow<?> flow = (VirtualFlow<?>) field.get(newSkin);
-
-                            firstVisible = flow.getFirstVisibleCell().getIndex();
-
-                            if (flag)
-                                setPinnedMessagesHBVisible(firstVisible);
-                        } catch (Exception e) {
-                            e.printStackTrace();
-                        }
+                        firstVisible = currentFlow.getFirstVisibleCell().getIndex();
+                        if (flag) setPinnedMessagesHBVisible(firstVisible);
                     });
                 }
             }
@@ -219,14 +217,16 @@ public class SpeechBaseController {
 
         messagesLV.setOnMousePressed(event -> {
             if (event.getButton() == MouseButton.PRIMARY) {
-                messagesArray[3] = findMessageAt(event.getScreenX(), event.getScreenY());
-                if (messagesArray[3] != null) {
-                    dragStartIndex = messagesLV.getItems().indexOf(messagesArray[3]);
+                Message clickedMsg = findMessageAt(event.getScreenX(), event.getScreenY());
+                if (clickedMsg != null) {
+                    dragStartIndex = messagesLV.getItems().indexOf(clickedMsg);
+                    dragStartSelected = selectedMessages.contains(messagesLV.getItems().get(dragStartIndex));
                     dragStartX = event.getScreenX();
                     dragStartY = event.getScreenY();
                     dragSelecting = false;
-                    if(isSelectionModeActive())
-                        toggleMessageSelection(messagesArray[3]);
+                    lastProcessedDragIndex = -1;
+                } else {
+                    dragStartIndex = -1;
                 }
                 event.consume();
             }
@@ -234,37 +234,25 @@ public class SpeechBaseController {
 
         messagesLV.setOnMouseDragged(event -> {
             if (event.getButton() == MouseButton.PRIMARY && dragStartIndex != -1) {
-                double distance = Math.hypot(
-                        event.getScreenX() - dragStartX,
-                        event.getScreenY() - dragStartY
-                );
-
-                // Перетаскивание начинается только после превышения порога
+                double distance = Math.hypot(event.getScreenX() - dragStartX, event.getScreenY() - dragStartY);
                 if (!dragSelecting && distance > DRAG_DISTANCE_THRESHOLD) {
                     dragSelecting = true;
-                    // Убедимся, что режим выделения активен
+                    // Сохраняем текущее выделение как базовое
+                    baseSelection = new ArrayList<>(selectedMessages);
+                    // Устанавливаем начальный диапазон (только стартовый элемент)
+                    updateDragSelection(dragStartIndex, dragStartIndex);
                     if (!selectionModeActive) {
                         setSelectionModeActive(true);
-                        isDragStart = true;
-                    } else
-                        isDragStart = false;
+                    }
                 }
-
                 if (dragSelecting) {
-                    messagesArray[2] = findMessageAt(event.getScreenX(), event.getScreenY());
-                    if (messagesArray[2] != null && !messagesArray[2].equals(messagesArray[1])) {
-                        if(!messagesArray[2].equals(messagesArray[3]) || isDragStart) {
-                            toggleMessageSelection(messagesArray[2]);
-                            isDragStart = false;
+                    IndexedCell<Message> cell = findCellAt(event.getScreenX(), event.getScreenY());
+                    if (cell != null) {
+                        int currentIndex = cell.getIndex();
+                        if (currentIndex != lastProcessedDragIndex) {
+                            updateDragSelection(dragStartIndex, currentIndex);
+                            lastProcessedDragIndex = currentIndex;
                         }
-                        if(messagesArray[2].equals(messagesArray[0]) && messagesArray[1] != null
-                                && !messagesArray[1].equals(messagesArray[3])) {
-                            toggleMessageSelection(messagesArray[1]);
-                            messagesArray[3] = null;
-                        }
-                        if(messagesArray[1] != null)
-                            messagesArray[0] = messagesArray[1];
-                        messagesArray[1] = messagesArray[2];
                     }
                 }
                 event.consume();
@@ -273,10 +261,17 @@ public class SpeechBaseController {
 
         messagesLV.setOnMouseReleased(event -> {
             if (event.getButton() == MouseButton.PRIMARY) {
-                messagesArray[3] = null;
-                isDragStart = false;
+                if (!dragSelecting && dragStartIndex != -1) {
+                    Message clickedMsg = messagesLV.getItems().get(dragStartIndex);
+                    if (selectionModeActive)
+                        toggleMessageSelection(clickedMsg);
+                }
                 dragSelecting = false;
                 dragStartIndex = -1;
+                lastProcessedDragIndex = -1;
+                baseSelection.clear(); // очищаем после завершения
+                if(selectedMessages.isEmpty())
+                    setSelectionModeActive(false);
                 event.consume();
             }
         });
@@ -850,7 +845,11 @@ public class SpeechBaseController {
         } else {
             selectedMessages.add(message);
         }
-        updateMessageCellSelection(message);
+
+        TextMessageCellController controller = messageCellCreator.getControllerCache().get(message);
+        if (controller != null) {
+            controller.setSelected(selectedMessages.contains(message));
+        }
     }
 
     public boolean isMessageSelected(Message message) {
@@ -961,22 +960,82 @@ public class SpeechBaseController {
         return null;
     }
 
-    private void selectRange(int start, int end) {
+    private void selectRangeReplace(int start, int end) {
         int low = Math.min(start, end);
         int high = Math.max(start, end);
-
         List<Message> items = messagesLV.getItems();
+        selectedMessages.clear();
         for (int i = low; i <= high; i++) {
-            if(!selectedMessages.contains(items.get(i)))
-                selectedMessages.add(items.get(i));
-            else
-                selectedMessages.remove(items.get(i));
+            selectedMessages.add(items.get(i));
         }
-
-        updateAllMessageCellsSelection();
+        updateVisibleCellsSelection();
     }
 
     public List<Message> getSelectedMessages() {
         return selectedMessages;
+    }
+
+    private IndexedCell<Message> findCellAt(double screenX, double screenY) {
+        if (currentFlow == null) return null;
+        Point2D localPoint = messagesLV.screenToLocal(screenX, screenY);
+        if (localPoint == null) return null;
+        int first = currentFlow.getFirstVisibleCell().getIndex();
+        int last = currentFlow.getLastVisibleCell().getIndex();
+        for (int i = first; i <= last; i++) {
+            IndexedCell<?> cell = currentFlow.getCell(i);
+            if (cell != null && cell.getBoundsInParent().contains(localPoint)) {
+                return (IndexedCell<Message>) cell;
+            }
+        }
+        return null;
+    }
+
+    private void updateVisibleCellsSelection() {
+        if (currentFlow == null) return;
+        int first = currentFlow.getFirstVisibleCell().getIndex();
+        int last = currentFlow.getLastVisibleCell().getIndex();
+        for (int i = first; i <= last; i++) {
+            IndexedCell<?> cell = currentFlow.getCell(i);
+            if (cell != null) {
+                Message msg = (Message) cell.getItem();
+                TextMessageCellController controller = messageCellCreator.getControllerCache().get(msg);
+                if (controller != null) {
+                    controller.setSelected(selectedMessages.contains(msg));
+                }
+            }
+        }
+    }
+
+    private void updateDragSelection(int start, int end) {
+        if (start == end) {
+            Set<Message> newSelection = new HashSet<>(baseSelection);
+            Set<Message> currentSet = new HashSet<>(selectedMessages);
+            if (!newSelection.equals(currentSet)) {
+                selectedMessages.clear();
+                selectedMessages.addAll(newSelection);
+                updateVisibleCellsSelection();
+            }
+            return;
+        }
+        int low = Math.min(start, end);
+        int high = Math.max(start, end);
+        List<Message> items = messagesLV.getItems();
+
+        Set<Message> newSelection = new HashSet<>(baseSelection);
+        for (int i = low; i <= high; i++) {
+            Message msg = items.get(i);
+            if (dragStartSelected) {
+                newSelection.remove(msg);
+            } else {
+                newSelection.add(msg);
+            }
+        }
+
+        Set<Message> currentSet = new HashSet<>(selectedMessages);
+        if (!newSelection.equals(currentSet)) {
+            selectedMessages.clear();
+            selectedMessages.addAll(newSelection);
+            updateVisibleCellsSelection();
+        }
     }
 }
