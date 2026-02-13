@@ -124,6 +124,7 @@ public class SpeechBaseController {
     }
 
     private Message[] messagesArray = new Message[4];
+    private boolean isDragStart = false;
 
     public void initializeData(Stage stage, User currentUser) {
         this.stage = stage;
@@ -224,6 +225,8 @@ public class SpeechBaseController {
                     dragStartX = event.getScreenX();
                     dragStartY = event.getScreenY();
                     dragSelecting = false;
+                    if(isSelectionModeActive())
+                        toggleMessageSelection(messagesArray[3]);
                 }
                 event.consume();
             }
@@ -242,18 +245,21 @@ public class SpeechBaseController {
                     // Убедимся, что режим выделения активен
                     if (!selectionModeActive) {
                         setSelectionModeActive(true);
-                    }
+                        isDragStart = true;
+                    } else
+                        isDragStart = false;
                 }
 
                 if (dragSelecting) {
                     messagesArray[2] = findMessageAt(event.getScreenX(), event.getScreenY());
                     if (messagesArray[2] != null && !messagesArray[2].equals(messagesArray[1])) {
-                        if(messagesArray[2].equals(messagesArray[0]) && messagesArray[1] != null)
-                            toggleMessageSelection(messagesArray[1]);
-                        if(!messagesArray[2].equals(messagesArray[3])) {
+                        if(!messagesArray[2].equals(messagesArray[3]) || isDragStart) {
                             toggleMessageSelection(messagesArray[2]);
-                            messagesArray[3] = null;
+                            isDragStart = false;
                         }
+                        if(messagesArray[2].equals(messagesArray[0]) && messagesArray[1] != null
+                                && !messagesArray[1].equals(messagesArray[3]))
+                            toggleMessageSelection(messagesArray[1]);
                         if(messagesArray[1] != null)
                             messagesArray[0] = messagesArray[1];
                         messagesArray[1] = messagesArray[2];
@@ -265,7 +271,7 @@ public class SpeechBaseController {
 
         messagesLV.setOnMouseReleased(event -> {
             if (event.getButton() == MouseButton.PRIMARY) {
-                messagesArray[3] = null;
+                isDragStart = false;
                 dragSelecting = false;
                 dragStartIndex = -1;
                 event.consume();

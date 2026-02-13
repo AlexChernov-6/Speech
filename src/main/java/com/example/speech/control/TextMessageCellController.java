@@ -193,12 +193,12 @@ public class TextMessageCellController {
     }
 
     public void setMouseListener() {
-        rootMessageAP.setOnMousePressed(e -> {
+        /*rootMessageAP.setOnMousePressed(e -> {
             if(!speechBaseController.isDragSelecting() && speechBaseController.isSelectionModeActive()
                     && e.getButton() == MouseButton.PRIMARY) {
                 speechBaseController.toggleMessageSelection(message);
             }
-        });
+        });*/
 
         contentGP.setOnMouseClicked(event -> {
             if (!speechBaseController.isSelectionModeActive() ||
