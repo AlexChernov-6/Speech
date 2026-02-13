@@ -258,8 +258,10 @@ public class SpeechBaseController {
                             isDragStart = false;
                         }
                         if(messagesArray[2].equals(messagesArray[0]) && messagesArray[1] != null
-                                && !messagesArray[1].equals(messagesArray[3]))
+                                && !messagesArray[1].equals(messagesArray[3])) {
                             toggleMessageSelection(messagesArray[1]);
+                            messagesArray[3] = null;
+                        }
                         if(messagesArray[1] != null)
                             messagesArray[0] = messagesArray[1];
                         messagesArray[1] = messagesArray[2];
@@ -271,6 +273,7 @@ public class SpeechBaseController {
 
         messagesLV.setOnMouseReleased(event -> {
             if (event.getButton() == MouseButton.PRIMARY) {
+                messagesArray[3] = null;
                 isDragStart = false;
                 dragSelecting = false;
                 dragStartIndex = -1;
