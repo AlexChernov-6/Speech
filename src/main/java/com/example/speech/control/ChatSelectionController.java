@@ -6,6 +6,7 @@ import com.example.speech.service.ChannelUserService;
 import com.example.speech.service.MessageService;
 import javafx.animation.PauseTransition;
 import javafx.application.Platform;
+import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.*;
@@ -25,7 +26,7 @@ import static com.example.speech.control.WorkingWithAMessageListController.forwa
 
 public class ChatSelectionController extends Pane {
 
-    public ChatSelectionController(SpeechBaseController speechBaseController, List<Message> messages) {
+    public ChatSelectionController(SpeechBaseController speechBaseController, ObservableList<Message> messages) {
         StackPane stackPane = speechBaseController.getMessagesSP();
         this.setStyle("-fx-background-color: rgba(0, 0, 0, 0.6);");
 

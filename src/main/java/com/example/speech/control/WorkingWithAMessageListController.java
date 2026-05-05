@@ -3,6 +3,7 @@ package com.example.speech.control;
 import com.example.speech.model.Message;
 import com.example.speech.service.MessageService;
 import javafx.application.Platform;
+import javafx.collections.FXCollections;
 import javafx.geometry.Insets;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
@@ -148,7 +149,7 @@ public class WorkingWithAMessageListController extends Pane {
         forward.setPrefHeight(40);
         forward.setOnAction(e -> {
             messagesSP.getChildren().remove(this);
-            new ChatSelectionController(speechBaseController, List.of(message));
+            new ChatSelectionController(speechBaseController, FXCollections.observableArrayList(message));
         });
 
         CustomButton delete = new CustomButton(deleteI, "Удалить");

@@ -3,6 +3,8 @@ package com.example.speech.util;
 import javafx.geometry.Insets;
 import javafx.scene.Parent;
 import javafx.scene.control.Label;
+import javafx.scene.control.TextField;
+import javafx.scene.control.TextFormatter;
 import javafx.scene.image.*;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
@@ -62,5 +64,46 @@ public class HelpfulStylingClass {
             rootPane.setPadding(new Insets(0));
         else
             rootPane.setPadding(new Insets(13));
+    }
+
+    public static void applyPromptWithTF(TextField textField) {
+        String promptText = textField.getPromptText();
+
+        textField.focusedProperty().addListener((ob, oldV, newV) -> {
+            if(newV) {
+                if (promptText != null && !promptText.isEmpty()) {
+                    if (textField.getText().isEmpty()) {
+                        textField.setText(textField.getPromptText());
+                    } else {
+                        if (textField.getText().contains(promptText))
+                            textField.setText(textField.getText().replace(promptText, ""));
+                    }
+                }
+            }
+        });
+
+        textField.setTextFormatter(new TextFormatter<>(change -> {
+            String changeText = change.getText();
+            String changeControlNewText = change.getControlNewText();
+            String oldText = change.getControlText();
+
+            if(changeControlNewText.equals(promptText) || changeControlNewText.isEmpty()) {
+                textField.setStyle("-fx-text-fill: rgba(180,180,180);");
+                if(changeControlNewText.isEmpty())
+                    change.setText(promptText);
+                change.setCaretPosition(0);
+                change.setAnchor(0);
+                return change;
+            }
+
+            if(!changeText.isEmpty() && oldText.equals(promptText)) {
+                textField.setStyle("");
+                change.setRange(0, oldText.length());
+                change.setText(changeText);
+                return change;
+            }
+
+            return change;
+        }));
     }
 }

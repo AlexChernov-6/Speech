@@ -10,11 +10,16 @@ import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
+import javafx.collections.transformation.FilteredList;
 import javafx.fxml.FXML;
+import javafx.geometry.Bounds;
+import javafx.geometry.Insets;
 import javafx.geometry.Point2D;
+import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.control.*;
 import javafx.scene.control.skin.VirtualFlow;
+import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.MouseButton;
@@ -22,12 +27,15 @@ import javafx.scene.layout.*;
 import javafx.scene.text.Text;
 import javafx.stage.Stage;
 import javafx.util.Duration;
+
 import java.lang.reflect.Field;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.util.*;
+
 import javafx.scene.control.IndexedCell;
 
+import static com.example.speech.util.HelpfulStylingClass.applyPromptWithTF;
 import static com.example.speech.util.HelpfulStylingClass.setupFullScreenListener;
 
 public class SpeechBaseController {
@@ -39,6 +47,21 @@ public class SpeechBaseController {
 
     private final ChannelUserService channelUserService = new ChannelUserService();
     private final MessageService messageService = new MessageService();
+
+    private TextField searchFromChatTF;
+
+    private FilteredList<Message> filteredList;
+
+    private List<Node> hiddenList = new ArrayList<>();
+
+    private boolean searchModeActive = false;
+
+    private List<Message> resultList;
+
+    private int currInd = 0;
+
+    @FXML
+    private StackPane rightSP;
 
     @FXML
     private Label channelName, channelStatus;
@@ -102,7 +125,7 @@ public class SpeechBaseController {
 
     private boolean flag = true;
 
-    private List<Message> forwardMessages = new ArrayList<>();
+    private ObservableList<Message> forwardMessages = FXCollections.observableArrayList();
 
     private boolean selectionModeActive = false;
     private List<Message> selectedMessages = new ArrayList<>();
@@ -127,10 +150,12 @@ public class SpeechBaseController {
     private int lastProcessedDragIndex = -1;
     private boolean dragStartSelected = false;
 
+    private ObservableList<Message> messages = FXCollections.observableArrayList();
+
     public void initializeData(Stage stage, User currentUser) {
         this.stage = stage;
         this.currentUser = currentUser;
-        messagesLV.getItems().addListener((ListChangeListener<Message>) change -> {
+        messages.addListener((ListChangeListener<Message>) change -> {
             while (change.next()) {
                 if (change.wasAdded() || change.wasRemoved()) {
                     Platform.runLater(() -> {
@@ -141,6 +166,10 @@ public class SpeechBaseController {
                 }
             }
         });
+
+        filteredList = new FilteredList<>(messages, m -> true);
+
+        messagesLV.setItems(filteredList);
         setupFullScreenListener(stage, rootAnchorPane);
         initializeListViewChats();
         setupMessageTextAreaListener();
@@ -203,7 +232,7 @@ public class SpeechBaseController {
                 if (scrollBar != null) {
                     scrollBar.valueProperty().addListener((observable, oldValue, newValue) -> {
                         firstVisible = currentFlow.getFirstVisibleCell().getIndex();
-                        if (flag) setPinnedMessagesHBVisible(firstVisible);
+                        if (flag && !searchModeActive) setPinnedMessagesHBVisible(firstVisible);
                     });
                 }
             }
@@ -270,7 +299,7 @@ public class SpeechBaseController {
                 dragStartIndex = -1;
                 lastProcessedDragIndex = -1;
                 baseSelection.clear(); // очищаем после завершения
-                if(selectedMessages.isEmpty())
+                if (selectedMessages.isEmpty())
                     setSelectionModeActive(false);
                 event.consume();
             }
@@ -278,11 +307,10 @@ public class SpeechBaseController {
     }
 
     public void initializeListViewChats() {
-        chatsView.getItems().clear();
         chatsView.setFixedCellSize(60);
         chatsView.setCellFactory(lv -> new ListChannelsCellController());
-        List<ChannelUser> userChats = channelUserService.getAllChatsByUser(currentUser);
-        chatsView.getItems().addAll(userChats);
+        ObservableList<ChannelUser> userChats = FXCollections.observableArrayList(channelUserService.getAllChatsByUser(currentUser));
+        chatsView.getItems().setAll(userChats);
 
         chatsView.getSelectionModel().selectedItemProperty().addListener(
                 (observable, oldValue, newValue) -> {
@@ -297,7 +325,6 @@ public class SpeechBaseController {
     }
 
     public void loadChannelMessages(ChannelUser selectedChat) {
-        messagesLV.getItems().clear();
 
         selectedChatVB.setVisible(true);
 
@@ -308,12 +335,12 @@ public class SpeechBaseController {
 
         messageTA.setText("");
 
-        List<Message> messages = messageService.getAllMessageInChannel(
+        List<Message> messagesList = messageService.getAllMessageInChannel(
                 selectedChannelUser.getChannel().getChannelID()
         );
 
-        messagesLV.getItems().addAll(FXCollections.observableArrayList(messages).stream()
-                .filter(message -> !message.getDeletedByUsers().contains(Long.valueOf(currentUser.getIdUser()))).toList());
+        messages.setAll(messagesList.stream().filter(message ->
+                !message.getDeletedByUsers().contains(Long.valueOf(currentUser.getIdUser()))).toList());
 
         Platform.runLater(() -> {
             if (!messagesLV.getItems().isEmpty()) {
@@ -543,7 +570,7 @@ public class SpeechBaseController {
     public void setPinnedMessagesHBVisible(int firstVisibleIndex) {
         // Получаем ВСЕ закрепленные сообщения
         List<Message> allPinnedMessages = messagesLV.getItems().stream()
-                .filter(mes -> mes != null && Boolean.TRUE.equals(mes.getPinMessage()))
+                .filter(mes -> mes != null && mes.getPinMessage())
                 .sorted((m1, m2) -> m2.getMessageDatetime().compareTo(m1.getMessageDatetime()))
                 .toList();
 
@@ -582,13 +609,35 @@ public class SpeechBaseController {
 
     private void scrollToMessage(Message message) {
         Platform.runLater(() -> {
-            messagesLV.scrollTo(message);
-            PauseTransition pause = new PauseTransition(Duration.millis(100));
-            pause.setOnFinished(e -> {
+            if (isMessageFullyVisible(message)) {
                 messageCellCreator.getControllerCache(message).highlightMessageTemporarily();
-            });
-            pause.play();
+            } else {
+                messagesLV.scrollTo(message);
+                PauseTransition pause = new PauseTransition(Duration.millis(100));
+                pause.setOnFinished(e ->
+                        messageCellCreator.getControllerCache(message).highlightMessageTemporarily()
+                );
+                pause.play();
+            }
         });
+    }
+
+    private boolean isMessageFullyVisible(Message message) {
+        int index = messagesLV.getItems().indexOf(message);
+        if (index < 0) return false;
+
+        VirtualFlow<?> flow = (VirtualFlow<?>) messagesLV.lookup(".virtual-flow");
+        if (flow == null) return false;
+
+        ListCell<?> cell = (ListCell<?>) flow.getCell(index);
+        if (cell == null) return false;
+
+        Bounds cellBoundsInLV = messagesLV.sceneToLocal(
+                cell.localToScene(cell.getBoundsInLocal())
+        );
+
+        double viewportHeight = messagesLV.getHeight();
+        return cellBoundsInLV.getMinY() >= 0 && cellBoundsInLV.getMaxY() <= viewportHeight;
     }
 
     @FXML
@@ -678,8 +727,7 @@ public class SpeechBaseController {
         if (messageTA.isVisible())
             setPinnedMessagesHBVisible(firstVisible);
 
-        messagesLV.getItems().clear();
-        messagesLV.getItems().addAll(allMessages);
+        messages.setAll(allMessages);
 
         if (updateMessage != null) {
             updateMessageHB.setVisible(true);
@@ -820,7 +868,7 @@ public class SpeechBaseController {
         this.selectedChannelUser = selectedChannelUser;
     }
 
-    public void setForwardMessages(List<Message> forwardMessages) {
+    public void setForwardMessages(ObservableList<Message> forwardMessages) {
         this.forwardMessages = forwardMessages;
     }
 
@@ -905,8 +953,7 @@ public class SpeechBaseController {
             selectionForwardBtn.setOnAction(e -> {
                 System.out.println(selectedMessages.size());
                 System.out.println(forwardMessages.size());
-                forwardMessages.clear();
-                forwardMessages.addAll(selectedMessages);
+                forwardMessages.setAll(selectedMessages);
                 System.out.println(selectedMessages.size());
                 System.out.println(forwardMessages.size());
                 new ChatSelectionController(this, forwardMessages);
@@ -1037,5 +1084,173 @@ public class SpeechBaseController {
             selectedMessages.addAll(newSelection);
             updateVisibleCellsSelection();
         }
+    }
+
+    @FXML
+    private void actionSearchBtn() {
+        hiddenList.clear();
+        searchModeActive = true;
+        for (Node node : selectedChatVB.getChildren()) {
+            if (!(node instanceof ListView<?>) && node.isVisible()) {
+                node.setVisible(false);
+                if (node.getId() != null && (node.getId().equals("pinnedMessagesHB") || node.getId().equals("updateMessageHB")))
+                    node.setManaged(false);
+                hiddenList.add(node);
+            }
+        }
+
+        HBox topSearchModeHB = new HBox();
+        topSearchModeHB.setStyle("-fx-background-color: white;");
+        StackPane.setAlignment(topSearchModeHB, Pos.TOP_LEFT);
+        topSearchModeHB.setPrefHeight(40);
+        topSearchModeHB.setMaxHeight(40);
+        topSearchModeHB.setAlignment(Pos.CENTER_LEFT);
+        rightSP.getChildren().add(topSearchModeHB);
+
+        Button closeSearchModeBtn = new Button();
+        topSearchModeHB.getChildren().add(closeSearchModeBtn);
+
+        ImageView closeSearchModeIV = new ImageView(
+                new Image(Objects.requireNonNull(getClass().getResourceAsStream("/com/example/speech/image/arrow.png"))));
+        closeSearchModeIV.setFitWidth(15);
+        closeSearchModeIV.setFitHeight(15);
+        closeSearchModeIV.setPreserveRatio(true);
+
+        closeSearchModeBtn.setGraphic(closeSearchModeIV);
+
+        TextField searchFromChatTF = new TextField();
+        searchFromChatTF.setPromptText("Поиск...");
+        applyPromptWithTF(searchFromChatTF);
+        HBox.setHgrow(searchFromChatTF, Priority.ALWAYS);
+        topSearchModeHB.getChildren().add(searchFromChatTF);
+
+        Button searchContainsStrFromMessage = new Button();
+        topSearchModeHB.getChildren().add(searchContainsStrFromMessage);
+
+        ImageView searchModeIV = new ImageView(
+                new Image(Objects.requireNonNull(getClass().getResourceAsStream("/com/example/speech/image/imageSearchButton.png"))));
+        searchModeIV.setFitWidth(15);
+        searchModeIV.setFitHeight(15);
+        searchModeIV.setPreserveRatio(true);
+
+        searchContainsStrFromMessage.setGraphic(searchModeIV);
+
+        HBox bottomSearchModeHB = new HBox();
+        bottomSearchModeHB.setStyle("-fx-background-color: white;");
+        StackPane.setAlignment(bottomSearchModeHB, Pos.BOTTOM_LEFT);
+        bottomSearchModeHB.setPrefHeight(40);
+        bottomSearchModeHB.setMaxHeight(40);
+        bottomSearchModeHB.setAlignment(Pos.CENTER_LEFT);
+        rightSP.getChildren().add(bottomSearchModeHB);
+
+        ImageView listSearchModeIV = new ImageView(
+                new Image(Objects.requireNonNull(getClass().getResourceAsStream("/com/example/speech/image/task.png"))));
+        listSearchModeIV.setFitWidth(25);
+        listSearchModeIV.setFitHeight(25);
+        listSearchModeIV.setPreserveRatio(true);
+        bottomSearchModeHB.getChildren().add(listSearchModeIV);
+
+        TextField countResult = new TextField();
+        countResult.setDisable(true);
+        countResult.setAlignment(Pos.CENTER_LEFT);
+        HBox.setHgrow(countResult, Priority.ALWAYS);
+        bottomSearchModeHB.getChildren().add(countResult);
+
+        Button listOfBtn = new Button("Списком");
+        listOfBtn.setDisable(true);
+        bottomSearchModeHB.getChildren().add(listOfBtn);
+        listOfBtn.setOnAction(e -> {
+            //Вывод только нужных сообщений
+            if(listOfBtn.getText().equals("Списком")) {
+                filteredList.setPredicate(message -> (new String(message.getMessageContent(), StandardCharsets.UTF_8))
+                        .toLowerCase().contains(searchFromChatTF.getText().trim().toLowerCase()));
+                listOfBtn.setText("Чатом");
+            } else {
+                filteredList.setPredicate(message -> true);
+                listOfBtn.setText("Списком");
+                scrollToMessage(resultList.getLast());
+            }
+        });
+
+        VBox buttonsVB = new VBox(10);//Нужно скрывать местами
+        StackPane.setAlignment(buttonsVB, Pos.BOTTOM_RIGHT);
+        StackPane.setMargin(buttonsVB, new Insets(0, 10, 10 + 40, 0));
+        buttonsVB.setPrefWidth(40);
+        buttonsVB.setMaxWidth(40);
+        buttonsVB.setMaxHeight(Region.USE_PREF_SIZE);
+        rightSP.getChildren().add(buttonsVB);
+
+        Button upBtn = new Button();
+        buttonsVB.getChildren().add(upBtn);
+        upBtn.setDisable(true);
+
+        ImageView upIV = new ImageView(
+                new Image(Objects.requireNonNull(getClass().getResourceAsStream("/com/example/speech/image/up.png"))));
+        upIV.setFitWidth(15);
+        upIV.setFitHeight(15);
+        upIV.setPreserveRatio(true);
+
+        upBtn.setGraphic(upIV);
+
+        Button downBtn = new Button();
+        buttonsVB.getChildren().add(downBtn);
+        downBtn.setDisable(true);
+        downBtn.setOnAction(e -> {
+            //Кнопка вниз
+            currInd -= 1;
+            scrollToMessage(resultList.get(resultList.size() - currInd));
+            upBtn.setDisable(currInd == resultList.size());
+            downBtn.setDisable(currInd == 1);
+            countResult.setText(currInd + "/" + resultList.size());
+        });
+        upBtn.setOnAction(e -> {
+            //Кнопка вверх
+            currInd += 1;
+            scrollToMessage(resultList.get(resultList.size() - currInd));
+            upBtn.setDisable(currInd == resultList.size());
+            downBtn.setDisable(currInd == 1);
+            countResult.setText(currInd + "/" + resultList.size());
+        });
+
+        ImageView downIV = new ImageView(
+                new Image(Objects.requireNonNull(getClass().getResourceAsStream("/com/example/speech/image/down.png"))));
+        downIV.setFitWidth(15);
+        downIV.setFitHeight(15);
+        downIV.setPreserveRatio(true);
+
+        downBtn.setGraphic(downIV);
+
+
+        searchContainsStrFromMessage.setOnAction(e -> {
+            //Кнопка поиска вхождений подстроки в сообщения
+            if (searchFromChatTF.getText() != null && !searchFromChatTF.getText().isEmpty()) {
+                resultList = messages.stream().filter(message ->
+                        (new String(message.getMessageContent(), StandardCharsets.UTF_8)).toLowerCase().contains(searchFromChatTF.getText().trim().toLowerCase())).toList();
+
+                if (resultList.isEmpty()) {
+                    countResult.setText("Нету результатов");
+                    upBtn.setDisable(true);
+                    downBtn.setDisable(true);
+                    listOfBtn.setDisable(true);
+                } else {
+                    countResult.setText("1/" + resultList.size());
+                    listOfBtn.setDisable(false);
+                    scrollToMessage(resultList.getLast());
+                    currInd = 1;
+                    upBtn.setDisable(currInd == resultList.size());
+                    downBtn.setDisable(currInd == 1);
+                }
+            }
+        });
+
+        closeSearchModeBtn.setOnAction(e -> {
+            for (Node node : hiddenList) {
+                node.setVisible(true);
+                node.setManaged(true);
+            }
+            searchModeActive = false;
+            rightSP.getChildren().removeAll(topSearchModeHB, bottomSearchModeHB, buttonsVB);
+            filteredList.setPredicate(m -> true);
+        });
     }
 }
