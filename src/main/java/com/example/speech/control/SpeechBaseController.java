@@ -12,10 +12,7 @@ import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
 import javafx.fxml.FXML;
-import javafx.geometry.Bounds;
-import javafx.geometry.Insets;
-import javafx.geometry.Point2D;
-import javafx.geometry.Pos;
+import javafx.geometry.*;
 import javafx.scene.Node;
 import javafx.scene.control.*;
 import javafx.scene.control.skin.VirtualFlow;
@@ -50,8 +47,6 @@ public class SpeechBaseController {
     private final ChannelUserService channelUserService = new ChannelUserService();
     private final MessageService messageService = new MessageService();
 
-    private TextField searchFromChatTF;
-
     private FilteredList<Message> filteredList;
 
     private List<Node> hiddenList = new ArrayList<>();
@@ -61,6 +56,8 @@ public class SpeechBaseController {
     private List<Message> resultList;
 
     private int currInd = 0;
+
+    public ObservableList<File> selectedFile;
 
     @FXML
     private StackPane rightSP;
@@ -90,10 +87,6 @@ public class SpeechBaseController {
 
     private Long messageIdReplyTo;
 
-    @FXML
-    private StackPane textAreaSP;
-    @FXML
-    private Label promptTextTA;
     @FXML
     private ImageView HintIV;
     @FXML
@@ -157,6 +150,7 @@ public class SpeechBaseController {
     public void initializeData(Stage stage, User currentUser) {
         this.stage = stage;
         this.currentUser = currentUser;
+        applyPromptWithTF(messageTA);
         messages.addListener((ListChangeListener<Message>) change -> {
             while (change.next()) {
                 if (change.wasAdded() || change.wasRemoved()) {
@@ -196,18 +190,6 @@ public class SpeechBaseController {
         messagesLV.setCellFactory(messageCellCreator);
         messagesLV.getStyleClass().add("no-horizontal-scroll");
         stackPaneListener();
-
-        textAreaSP.widthProperty().addListener((ch, oldValue, newValue) -> {
-            promptTextTA.setPrefWidth(newValue.doubleValue());
-        });
-
-        messageTA.focusedProperty().addListener((ch, oldValue, newValue) -> {
-            String text = messageTA.getText();
-            if (!newValue && (text == null || text.isEmpty()))
-                textAreaSP.getChildren().add(promptTextTA);
-            else
-                textAreaSP.getChildren().remove(promptTextTA);
-        });
 
         updateMessageHB.setOnMouseClicked(event -> {
             if (event.getButton() == MouseButton.PRIMARY) {
@@ -367,13 +349,16 @@ public class SpeechBaseController {
             if (!hasVisibleText) {
                 sendVB.setVisible(false);
                 AnchorPane.setRightAnchor(emojiVB, 0.0);
-                AnchorPane.setRightAnchor(textAreaSP, 51.0);
+                AnchorPane.setRightAnchor(messageTA, 51.0);
             } else {
-                AnchorPane.setRightAnchor(textAreaSP, 102.0);
+                AnchorPane.setRightAnchor(messageTA, 102.0);
                 AnchorPane.setRightAnchor(emojiVB, 50.0);
                 sendVB.setVisible(true);
             }
-            messageTA.setPrefWidth(textAreaSP.getWidth());
+
+            if(newValue != null && !newValue.trim().isEmpty() && newValue.matches("^\\s\\n*\\s*$")) {
+                messageTA.setPadding(new Insets(0));
+            } else messageTA.setPadding(new Insets(7, 0, 0, 0));
 
             adjustTextAreaHeight(newValue);
         });
@@ -1310,15 +1295,26 @@ public class SpeechBaseController {
     @FXML
     private void actionAddFileBtn() {
         FileChooser fileChooser = new FileChooser();
-        fileChooser.setTitle("Open Resource File");
+        fileChooser.setTitle("Выбор файлов(не более 10)");
         fileChooser.getExtensionFilters().addAll(
                 new FileChooser.ExtensionFilter("Text Files", "*.txt"),
                 new FileChooser.ExtensionFilter("Image Files", "*.png", "*.jpg", "*.gif"),
-                new FileChooser.ExtensionFilter("Audio Files", "*.wav", "*.mp3", "*.aac"),
                 new FileChooser.ExtensionFilter("All Files", "*.*"));
-        List<File> selectedFile = fileChooser.showOpenMultipleDialog(rootAnchorPane.getScene().getWindow());
-        for(File f : selectedFile) {
-            System.out.println(f.getName());
-        }
+        if(selectedFile == null || selectedFile.isEmpty())
+            selectedFile = FXCollections.observableArrayList(fileChooser.showOpenMultipleDialog(rootAnchorPane.getScene().getWindow()));
+        else
+            selectedFile.addAll(fileChooser.showOpenMultipleDialog(rootAnchorPane.getScene().getWindow()));
+
+        ListView<File> fileListView = new ListView<>();
+        fileListView.setMaxHeight(80);
+        fileListView.setSelectionModel(null);
+        fileListView.setOrientation(Orientation.HORIZONTAL);
+        fileListView.getStyleClass().add("no-vertical-scroll");
+        fileListView.prefWidthProperty().bind(rightSP.widthProperty());
+        StackPane.setMargin(fileListView, new Insets(0, 0, 40, 0));
+        StackPane.setAlignment(fileListView, Pos.BOTTOM_CENTER);
+        fileListView.setCellFactory(f -> new FileCell(this));
+        fileListView.setItems(selectedFile);
+        rightSP.getChildren().add(fileListView);
     }
 }

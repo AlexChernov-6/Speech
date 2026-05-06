@@ -74,7 +74,7 @@ public class TextMessageCellController {
     private static final Image readIt = new Image(Objects.requireNonNull
             (TextMessageCellController.class.getResourceAsStream("/com/example/speech/image/double_check.png")));
     private static final Image loading = new Image(Objects.requireNonNull
-            (TextMessageCellController.class.getResourceAsStream("/com/example/speech/image/clock.png")));
+            (TextMessageCellController.class.getResourceAsStream("/com/example/speech/image/preview.gif")));
 
     private String contentGPStyle = "";
 

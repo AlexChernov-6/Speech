@@ -109,16 +109,9 @@
                                         prefWidth="50" onAction="#actionAddFileBtn"/>
                             </VBox>
 
-                            <StackPane fx:id="textAreaSP" prefHeight="40" AnchorPane.leftAnchor="50"
-                                       AnchorPane.topAnchor="0" AnchorPane.bottomAnchor="0" AnchorPane.rightAnchor="50">
-                                <TextArea fx:id="messageTA" style="-fx-font-size: 14px;" wrapText="true"/>
-                                <Label fx:id="promptTextTA" text="Сообщение..." style="-fx-font-size: 14px;"
-                                       mouseTransparent="true">
-                                    <padding>
-                                        <Insets left="10"/>
-                                    </padding>
-                                </Label>
-                            </StackPane>
+                            <TextArea fx:id="messageTA" promptText="Сообщение..." style="-fx-font-size: 16px;"
+                                      wrapText="true" prefHeight="40" AnchorPane.leftAnchor="50"
+                                      AnchorPane.topAnchor="0" AnchorPane.bottomAnchor="0" AnchorPane.rightAnchor="50"/>
 
                             <VBox fx:id="emojiVB" AnchorPane.rightAnchor="0" AnchorPane.bottomAnchor="0" prefWidth="50"
                                   alignment="CENTER"

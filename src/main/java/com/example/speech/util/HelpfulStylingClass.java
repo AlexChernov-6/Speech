@@ -5,6 +5,7 @@ import javafx.scene.Parent;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.scene.control.TextFormatter;
+import javafx.scene.control.TextInputControl;
 import javafx.scene.image.*;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
@@ -66,7 +67,7 @@ public class HelpfulStylingClass {
             rootPane.setPadding(new Insets(13));
     }
 
-    public static void applyPromptWithTF(TextField textField) {
+    public static void applyPromptWithTF(TextInputControl textField) {
         String promptText = textField.getPromptText();
 
         textField.focusedProperty().addListener((ob, oldV, newV) -> {
