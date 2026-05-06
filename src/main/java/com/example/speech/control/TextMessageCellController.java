@@ -3,10 +3,7 @@ package com.example.speech.control;
 import com.example.speech.model.Message;
 import com.example.speech.model.User;
 import com.example.speech.service.UserService;
-import javafx.animation.KeyFrame;
-import javafx.animation.KeyValue;
-import javafx.animation.PauseTransition;
-import javafx.animation.Timeline;
+import javafx.animation.*;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.geometry.Insets;
@@ -18,13 +15,15 @@ import javafx.scene.control.Label;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.MouseButton;
-import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.*;
+import javafx.scene.text.TextFlow;
 import javafx.util.Duration;
 
 import java.nio.charset.StandardCharsets;
 import java.time.format.DateTimeFormatter;
 import java.util.Objects;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static com.example.speech.control.WorkingWithAMessageListController.replyI;
 
@@ -33,7 +32,11 @@ public class TextMessageCellController {
     @FXML
     public ImageView userPhotoIV;
     @FXML
+    private StackPane highlightMessageTemporarilySP;
+    @FXML
     private Label messageLabel, timeLabel;
+    @FXML
+    private TextFlow contentTextFlow;
     @FXML
     private GridPane contentGP;
     @FXML
@@ -78,18 +81,25 @@ public class TextMessageCellController {
     public GridPane initializeMessage(SpeechBaseController speechBaseController, Message message, boolean drawUserPhoto) {
         this.speechBaseController = speechBaseController;
         this.message = message;
+        rootMessageAP.widthProperty().addListener((ob, oldV, newV) -> {
+            double newWidth = newV.doubleValue() - 150;
+            if (newWidth >= 200) {
+                contentGP.setMaxWidth(newWidth);
+                messageLabel.setMaxWidth(newWidth - 20);
+            }
+        });
         String messageContent = new String(message.getMessageContent(), StandardCharsets.UTF_8);
         userPhotoIV.setImage(message.getChannelUser().getUser().getPhotoImage());
         messageLabel.setText(messageContent);
         timeLabel.setText(message.getMessageDatetime().toLocalTime().format(DateTimeFormatter.ofPattern("HH:mm")));
-        if(message.getMessageStatus() != null && message.getMessageStatus().equals("отправлено"))
+        if (message.getMessageStatus() != null && message.getMessageStatus().equals("отправлено"))
             statusIV.setImage(shipped);
-        else if(message.getMessageStatus() != null && message.getMessageStatus().equals("прочитано"))
+        else if (message.getMessageStatus() != null && message.getMessageStatus().equals("прочитано"))
             statusIV.setImage(readIt);
         else
             statusIV.setImage(loading);
 
-        if (Objects.equals(message.getChannelUser().getUser().getIdUser(),speechBaseController.getCurrentUser()
+        if (Objects.equals(message.getChannelUser().getUser().getIdUser(), speechBaseController.getCurrentUser()
                 .getIdUser()))
             contentGP.getStyleClass().add("message-text-grid-pane-my");
         else {
@@ -106,7 +116,7 @@ public class TextMessageCellController {
 
         setMouseListener();
 
-        if(message.isModifiedMessage()) {
+        if (message.isModifiedMessage()) {
             columnInfo.setPrefWidth(100);
             columnInfo.setMinWidth(100);
             changeStatusLB.setVisible(true);
@@ -116,7 +126,7 @@ public class TextMessageCellController {
             columnInfo.setMinWidth(60);
         }
 
-        if(message.getMessageIdReplyTo() != null) {
+        if (message.getMessageIdReplyTo() != null) {
             Message replyMessage = speechBaseController.getMessageService().getRowById(message.getMessageIdReplyTo());
             replyRow.setPrefHeight(50);
             replyMessageBtn.setPrefHeight(45);
@@ -137,7 +147,7 @@ public class TextMessageCellController {
             nameLabel.getStyleClass().add("reply-user-name");
 
             Label messageLabel = new Label("Удаленное сообщение");
-            if(displayMessage.isEmpty()) {
+            if (displayMessage.isEmpty()) {
                 messageLabel.getStyleClass().add("reply-message-text");
                 messageLabel.setStyle("-fx-font-style: italic;");
             } else {
@@ -157,7 +167,7 @@ public class TextMessageCellController {
 
             replyMessageBtn.setOnAction(e -> {
                 Platform.runLater(() -> {
-                    if(replyMessage != null) {
+                    if (replyMessage != null) {
                         speechBaseController.getMessagesLV().scrollTo(replyMessage);
                         PauseTransition pause = new PauseTransition(Duration.millis(100));
                         pause.setOnFinished(event -> {
@@ -171,7 +181,7 @@ public class TextMessageCellController {
             });
         }
 
-        if(message.getForwardedFrom() != null) {
+        if (message.getForwardedFrom() != null) {
             UserService userService = new UserService();
             User user = userService.getRowById(message.getForwardedFrom());
             forwardRow.setPrefHeight(25);
@@ -228,114 +238,29 @@ public class TextMessageCellController {
     }
 
 
-
     public void highlightMessageTemporarily() {
-        String blueColor = "rgba(100, 149, 237, ";
+        Pane highlightPane = new Pane();
+        highlightPane.setStyle("-fx-background-color: rgba(100, 149, 237, 0.3)");
+        highlightPane.setOpacity(0.0);
+        highlightMessageTemporarilySP.getChildren().add(highlightPane);
 
-        Timeline highlightAnimation = new Timeline(
-                new KeyFrame(Duration.ZERO,
-                        new KeyValue(rootMessageAP.opacityProperty(), 1.0),
-                        new KeyValue(rootMessageAP.styleProperty(),
-                                " -fx-background-color: " + blueColor + "0.0);" +
-                                        " -fx-background-radius: 5px;" +
-                                        " -fx-border-color: transparent;" +
-                                        " -fx-border-width: 0;" +
-                                        " -fx-effect: none;")
-                ),
-
-                new KeyFrame(Duration.millis(250),
-                        new KeyValue(rootMessageAP.opacityProperty(), 1.0),
-                        new KeyValue(rootMessageAP.styleProperty(),
-                                " -fx-background-color: " + blueColor + "0.045);" + // 25% от пика
-                                        " -fx-background-radius: 5px;" +
-                                        " -fx-border-color: transparent;" +
-                                        " -fx-border-width: 0;" +
-                                        " -fx-effect: dropshadow(gaussian, " + blueColor + "0.02), 1, 0.1, 0, 0);") // ИСПРАВЛЕНО
-                ),
-
-                new KeyFrame(Duration.millis(500),
-                        new KeyValue(rootMessageAP.opacityProperty(), 1.0),
-                        new KeyValue(rootMessageAP.styleProperty(),
-                                " -fx-background-color: " + blueColor + "0.09);" + // 50% от пика
-                                        " -fx-background-radius: 5px;" +
-                                        " -fx-border-color: transparent;" +
-                                        " -fx-border-width: 0;" +
-                                        " -fx-effect: dropshadow(gaussian, " + blueColor + "0.04), 2, 0.15, 0, 0);") // ИСПРАВЛЕНО
-                ),
-
-                new KeyFrame(Duration.millis(750),
-                        new KeyValue(rootMessageAP.opacityProperty(), 1.0),
-                        new KeyValue(rootMessageAP.styleProperty(),
-                                " -fx-background-color: " + blueColor + "0.135);" + // 75% от пика
-                                        " -fx-background-radius: 5px;" +
-                                        " -fx-border-color: transparent;" +
-                                        " -fx-border-width: 0;" +
-                                        " -fx-effect: dropshadow(gaussian, " + blueColor + "0.06), 2.5, 0.18, 0, 0);") // ИСПРАВЛЕНО
-                ),
-
-                new KeyFrame(Duration.millis(1000),
-                        new KeyValue(rootMessageAP.opacityProperty(), 1.0),
-                        new KeyValue(rootMessageAP.styleProperty(),
-                                " -fx-background-color: " + blueColor + "0.18);" + // 100% пик
-                                        " -fx-background-radius: 5px;" +
-                                        " -fx-border-color: transparent;" +
-                                        " -fx-border-width: 0;" +
-                                        " -fx-effect: dropshadow(gaussian, " + blueColor + "0.08), 3, 0.2, 0, 0);") // ИСПРАВЛЕНО
-                ),
-
-                new KeyFrame(Duration.millis(1500),
-                        new KeyValue(rootMessageAP.opacityProperty(), 1.0),
-                        new KeyValue(rootMessageAP.styleProperty(),
-                                " -fx-background-color: " + blueColor + "0.18);" +
-                                        " -fx-background-radius: 5px;" +
-                                        " -fx-border-color: transparent;" +
-                                        " -fx-border-width: 0;" +
-                                        " -fx-effect: dropshadow(gaussian, " + blueColor + "0.08), 3, 0.2, 0, 0);") // ИСПРАВЛЕНО
-                ),
-
-                new KeyFrame(Duration.millis(2500),
-                        new KeyValue(rootMessageAP.opacityProperty(), 1.0),
-                        new KeyValue(rootMessageAP.styleProperty(),
-                                " -fx-background-color: " + blueColor + "0.135);" + // 75%
-                                        " -fx-background-radius: 5px;" +
-                                        " -fx-border-color: transparent;" +
-                                        " -fx-border-width: 0;" +
-                                        " -fx-effect: dropshadow(gaussian, " + blueColor + "0.06), 2.5, 0.18, 0, 0);") // ИСПРАВЛЕНО
-                ),
-
-                new KeyFrame(Duration.millis(3500),
-                        new KeyValue(rootMessageAP.opacityProperty(), 1.0),
-                        new KeyValue(rootMessageAP.styleProperty(),
-                                " -fx-background-color: " + blueColor + "0.09);" + // 50%
-                                        " -fx-background-radius: 5px;" +
-                                        " -fx-border-color: transparent;" +
-                                        " -fx-border-width: 0;" +
-                                        " -fx-effect: dropshadow(gaussian, " + blueColor + "0.04), 2, 0.15, 0, 0);") // ИСПРАВЛЕНО
-                ),
-
-                new KeyFrame(Duration.millis(4500),
-                        new KeyValue(rootMessageAP.opacityProperty(), 1.0),
-                        new KeyValue(rootMessageAP.styleProperty(),
-                                " -fx-background-color: " + blueColor + "0.045);" + // 25%
-                                        " -fx-background-radius: 5px;" +
-                                        " -fx-border-color: transparent;" +
-                                        " -fx-border-width: 0;" +
-                                        " -fx-effect: dropshadow(gaussian, " + blueColor + "0.02), 1, 0.1, 0, 0);") // ИСПРАВЛЕНО
-                ),
-
-                new KeyFrame(Duration.millis(6000),
-                        new KeyValue(rootMessageAP.opacityProperty(), 1.0),
-                        new KeyValue(rootMessageAP.styleProperty(),
-                                " -fx-background-color: transparent;" +
-                                        " -fx-background-radius: 0px;" +
-                                        " -fx-border-color: transparent;" +
-                                        " -fx-border-width: 0;" +
-                                        " -fx-effect: none;")
-                )
-        );
-
-        highlightAnimation.setCycleCount(1);
-        highlightAnimation.play();
+        FadeTransition fadeIn = new FadeTransition(Duration.millis(1000), highlightPane);
+        fadeIn.setToValue(1.0);
+        fadeIn.setOnFinished(e1 -> {
+            PauseTransition pauseTransition = new PauseTransition(Duration.millis(500));
+            pauseTransition.setOnFinished(e2 -> {
+                FadeTransition fadeOut = new FadeTransition(Duration.millis(2500), highlightPane);
+                fadeOut.setToValue(0.0);
+                fadeOut.setOnFinished(e3 -> {
+                    highlightMessageTemporarilySP.getChildren().remove(highlightPane);
+                });
+                pauseTransition.stop();
+                fadeOut.playFromStart();
+            });
+            fadeIn.stop();
+            pauseTransition.playFromStart();
+        });
+        fadeIn.play();
     }
 
     public void setSelectionModeActive(boolean active) {
@@ -347,7 +272,7 @@ public class TextMessageCellController {
 
     public void setSelected(boolean selected) {
         selectIV.setVisible(selected);
-        if(selected)
+        if (selected)
             contentGP.setStyle("-fx-background-color: rgba(0,0,255,0.6);");
         else
             contentGP.setStyle(contentGPStyle);
@@ -361,5 +286,70 @@ public class TextMessageCellController {
 
     public AnchorPane getRootMessageAP() {
         return rootMessageAP;
+    }
+
+    public void highlightText(String searchText) {
+        // Очищаем предыдущие выделения
+        contentTextFlow.getChildren().clear();
+
+        String fullText = messageLabel.getText();
+        if (searchText == null || searchText.isEmpty()) {
+            contentTextFlow.getChildren().add(createOrdinaryLabel(fullText));
+            return;
+        }
+
+        // Важно: (?iu) – CASE_INSENSITIVE + UNICODE_CASE для русских букв
+        Pattern pattern = Pattern.compile("(?iu)" + Pattern.quote(searchText));
+        Matcher matcher = pattern.matcher(fullText);
+
+        int lastEnd = 0;
+        boolean found = false;
+
+        while (matcher.find()) {
+            found = true;
+            int start = matcher.start();
+            int end = matcher.end();
+
+            // Обычный текст до совпадения
+            if (start > lastEnd) {
+                contentTextFlow.getChildren().add(
+                        createOrdinaryLabel(fullText.substring(lastEnd, start))
+                );
+            }
+
+            // Выделенный фрагмент (с оригинальным регистром из текста)
+            String highlightedPart = fullText.substring(start, end);
+            contentTextFlow.getChildren().add(createHighlightLabel(highlightedPart));
+
+            lastEnd = end;
+        }
+
+        // Остаток после последнего совпадения
+        if (lastEnd < fullText.length()) {
+            contentTextFlow.getChildren().add(
+                    createOrdinaryLabel(fullText.substring(lastEnd))
+            );
+        }
+
+        // Если ничего не найдено – весь текст обычным стилем
+        if (!found) {
+            contentTextFlow.getChildren().add(createOrdinaryLabel(fullText));
+        }
+    }
+
+    private Label createOrdinaryLabel(String text) {
+        Label label = new Label(text);
+        label.setStyle("-fx-font-size: 14px; -fx-padding: 0;");
+        label.setWrapText(true);
+        return label;
+    }
+
+    private Label createHighlightLabel(String text) {
+        Label label = new Label(text);
+        label.setStyle("-fx-font-size: 14px; -fx-padding: 0; " +
+                "-fx-background-color: rgba(225, 255, 0, 0.2); " +
+                "-fx-background-radius: 3;");
+        label.setWrapText(true);
+        return label;
     }
 }

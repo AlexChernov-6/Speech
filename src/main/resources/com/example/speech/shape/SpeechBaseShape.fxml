@@ -106,7 +106,7 @@
                                   alignment="CENTER"
                                   prefHeight="40" AnchorPane.topAnchor="0" style="-fx-background-color: white;">
                                 <Button styleClass="window-control-button, add-file-message-button" prefHeight="25"
-                                        prefWidth="50"/>
+                                        prefWidth="50" onAction="#actionAddFileBtn"/>
                             </VBox>
 
                             <StackPane fx:id="textAreaSP" prefHeight="40" AnchorPane.leftAnchor="50"

@@ -25,9 +25,11 @@ import javafx.scene.input.KeyCode;
 import javafx.scene.input.MouseButton;
 import javafx.scene.layout.*;
 import javafx.scene.text.Text;
+import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import javafx.util.Duration;
 
+import java.io.File;
 import java.lang.reflect.Field;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
@@ -427,7 +429,7 @@ public class SpeechBaseController {
             tempMessage.setChannelUser(selectedChat);
             tempMessage.setMessageStatus("загружается");
 
-            messagesLV.getItems().add(tempMessage);
+            messages.add(tempMessage);
 
             Platform.runLater(() -> {
                 messagesLV.scrollTo(messagesLV.getItems().size());
@@ -448,8 +450,7 @@ public class SpeechBaseController {
                         Platform.runLater(() -> {
                             int index = messagesLV.getItems().indexOf(tempMessage);
                             if (index >= 0) {
-                                messagesLV.getItems().set(index, savedMessage);
-                                messagesLV.refresh();
+                                messages.set(index, savedMessage);
                             }
                         });
                     }
@@ -459,7 +460,6 @@ public class SpeechBaseController {
                     Platform.runLater(() -> {
                         //Обработать неудачную отправку
                         tempMessage.setMessageStatus("ошибка отправки");
-                        messagesLV.refresh();
                     });
                 }
             }).start();
@@ -1126,6 +1126,10 @@ public class SpeechBaseController {
 
         Button searchContainsStrFromMessage = new Button();
         topSearchModeHB.getChildren().add(searchContainsStrFromMessage);
+        searchFromChatTF.setOnKeyPressed(e -> {
+            if(e.getCode() == KeyCode.ENTER)
+                searchContainsStrFromMessage.fire();
+        });
 
         ImageView searchModeIV = new ImageView(
                 new Image(Objects.requireNonNull(getClass().getResourceAsStream("/com/example/speech/image/imageSearchButton.png"))));
@@ -1159,21 +1163,10 @@ public class SpeechBaseController {
         Button listOfBtn = new Button("Списком");
         listOfBtn.setDisable(true);
         bottomSearchModeHB.getChildren().add(listOfBtn);
-        listOfBtn.setOnAction(e -> {
-            //Вывод только нужных сообщений
-            if(listOfBtn.getText().equals("Списком")) {
-                filteredList.setPredicate(message -> (new String(message.getMessageContent(), StandardCharsets.UTF_8))
-                        .toLowerCase().contains(searchFromChatTF.getText().trim().toLowerCase()));
-                listOfBtn.setText("Чатом");
-            } else {
-                filteredList.setPredicate(message -> true);
-                listOfBtn.setText("Списком");
-                scrollToMessage(resultList.getLast());
-            }
-        });
 
         VBox buttonsVB = new VBox(10);//Нужно скрывать местами
         StackPane.setAlignment(buttonsVB, Pos.BOTTOM_RIGHT);
+        buttonsVB.setVisible(false);
         StackPane.setMargin(buttonsVB, new Insets(0, 10, 10 + 40, 0));
         buttonsVB.setPrefWidth(40);
         buttonsVB.setMaxWidth(40);
@@ -1202,6 +1195,14 @@ public class SpeechBaseController {
             upBtn.setDisable(currInd == resultList.size());
             downBtn.setDisable(currInd == 1);
             countResult.setText(currInd + "/" + resultList.size());
+            Platform.runLater(() -> {
+                PauseTransition pauseTransition = new PauseTransition(Duration.millis(100));
+                pauseTransition.setOnFinished(e1-> {
+                    System.out.println("Показываем выделение");
+                    messageCellCreator.getControllerCache().get(resultList.get(resultList.size() - currInd)).highlightText(searchFromChatTF.getText());
+                });
+                pauseTransition.playFromStart();
+            });
         });
         upBtn.setOnAction(e -> {
             //Кнопка вверх
@@ -1210,6 +1211,14 @@ public class SpeechBaseController {
             upBtn.setDisable(currInd == resultList.size());
             downBtn.setDisable(currInd == 1);
             countResult.setText(currInd + "/" + resultList.size());
+            Platform.runLater(() -> {
+                PauseTransition pauseTransition = new PauseTransition(Duration.millis(100));
+                pauseTransition.setOnFinished(e1-> {
+                    System.out.println("Показываем выделение");
+                    messageCellCreator.getControllerCache().get(resultList.get(resultList.size() - currInd)).highlightText(searchFromChatTF.getText());
+                });
+                pauseTransition.playFromStart();
+            });
         });
 
         ImageView downIV = new ImageView(
@@ -1220,6 +1229,31 @@ public class SpeechBaseController {
 
         downBtn.setGraphic(downIV);
 
+        listOfBtn.setOnAction(e -> {
+            //Вывод только нужных сообщений
+            if(listOfBtn.getText().equals("Списком")) {
+                filteredList.setPredicate(message -> (new String(message.getMessageContent(), StandardCharsets.UTF_8))
+                        .toLowerCase().contains(searchFromChatTF.getText().trim().toLowerCase()));
+                listOfBtn.setText("Чатом");
+                countResult.setText("Всего записей: " + resultList.size());
+                buttonsVB.setVisible(false);
+            } else {
+                filteredList.setPredicate(message -> true);
+                listOfBtn.setText("Списком");
+                scrollToMessage(resultList.getLast());
+                currInd = 1;
+                countResult.setText(currInd + "/" + resultList.size());
+                buttonsVB.setVisible(true);
+                Platform.runLater(() -> {
+                    PauseTransition pauseTransition = new PauseTransition(Duration.millis(100));
+                    pauseTransition.setOnFinished(e1-> {
+                        System.out.println("Показываем выделение");
+                        messageCellCreator.getControllerCache().get(resultList.getLast()).highlightText(searchFromChatTF.getText());
+                    });
+                    pauseTransition.playFromStart();
+                });
+            }
+        });
 
         searchContainsStrFromMessage.setOnAction(e -> {
             //Кнопка поиска вхождений подстроки в сообщения
@@ -1232,13 +1266,23 @@ public class SpeechBaseController {
                     upBtn.setDisable(true);
                     downBtn.setDisable(true);
                     listOfBtn.setDisable(true);
+                    buttonsVB.setVisible(false);
                 } else {
                     countResult.setText("1/" + resultList.size());
+                    buttonsVB.setVisible(true);
                     listOfBtn.setDisable(false);
                     scrollToMessage(resultList.getLast());
                     currInd = 1;
                     upBtn.setDisable(currInd == resultList.size());
                     downBtn.setDisable(currInd == 1);
+                    Platform.runLater(() -> {
+                        PauseTransition pauseTransition = new PauseTransition(Duration.millis(100));
+                        pauseTransition.setOnFinished(e1-> {
+                            System.out.println("Показываем выделение");
+                            messageCellCreator.getControllerCache().get(resultList.getLast()).highlightText(searchFromChatTF.getText());
+                        });
+                        pauseTransition.playFromStart();
+                    });
                 }
             }
         });
@@ -1251,6 +1295,30 @@ public class SpeechBaseController {
             searchModeActive = false;
             rightSP.getChildren().removeAll(topSearchModeHB, bottomSearchModeHB, buttonsVB);
             filteredList.setPredicate(m -> true);
+            scrollToMessage(messages.getLast());
         });
+    }
+
+    public ObservableList<Message> getMessages() {
+        return messages;
+    }
+
+    public void setMessages(ObservableList<Message> messages) {
+        this.messages = messages;
+    }
+
+    @FXML
+    private void actionAddFileBtn() {
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Open Resource File");
+        fileChooser.getExtensionFilters().addAll(
+                new FileChooser.ExtensionFilter("Text Files", "*.txt"),
+                new FileChooser.ExtensionFilter("Image Files", "*.png", "*.jpg", "*.gif"),
+                new FileChooser.ExtensionFilter("Audio Files", "*.wav", "*.mp3", "*.aac"),
+                new FileChooser.ExtensionFilter("All Files", "*.*"));
+        List<File> selectedFile = fileChooser.showOpenMultipleDialog(rootAnchorPane.getScene().getWindow());
+        for(File f : selectedFile) {
+            System.out.println(f.getName());
+        }
     }
 }

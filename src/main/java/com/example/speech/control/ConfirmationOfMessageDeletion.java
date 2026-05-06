@@ -76,9 +76,8 @@ public class ConfirmationOfMessageDeletion extends Pane {
                     MESSAGE_SERVICE.update(message);
                 }
             }
-            speechBaseController.getMessagesLV().getItems().removeAll(messages);
+            speechBaseController.getMessages().removeAll(messages);
             speechBaseController.getMessagesSP().getChildren().remove(this);
-            speechBaseController.getMessagesLV().refresh();
             Platform.runLater(() -> {
                 if (speechBaseController.isSelectionModeActive())
                     speechBaseController.setSelectionModeActive(false);
