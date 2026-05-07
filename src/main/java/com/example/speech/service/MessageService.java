@@ -1,10 +1,12 @@
 package com.example.speech.service;
 
 import com.example.speech.model.Message;
+import com.example.speech.model.MessageContent;
 import com.example.speech.util.HibernateSessionFactory;
 import org.hibernate.Session;
 import org.hibernate.Transaction;
 
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 public class MessageService extends BaseService<Message> {
@@ -46,6 +48,53 @@ public class MessageService extends BaseService<Message> {
             }
             e.printStackTrace();
             throw new RuntimeException("Ошибка при откреплении сообщений", e);
+        }
+    }
+
+    public void updateMessageText(long messageId, String newText) {
+        Session session = HibernateSessionFactory.getSessionFactory().openSession();
+        try {
+            session.getTransaction().begin();
+            Message msg = session.find(Message.class, messageId);
+            if (msg == null) throw new RuntimeException("Сообщение не найдено");
+
+            // Очищаем старые вложения (orphanRemoval + cascade удалят их из БД)
+            msg.getMessageContent().clear();
+
+            // Добавляем новое текстовое вложение
+            MessageContent mc = new MessageContent();
+            mc.setMessageContentBytes(newText.getBytes(StandardCharsets.UTF_8));
+            msg.addMessageContent(mc);   // проставит обратную ссылку
+
+            msg.setModifiedMessage(true);
+            session.getTransaction().commit();
+        } catch (Exception e) {
+            if (session.getTransaction().isActive())
+                session.getTransaction().rollback();
+            throw e;
+        } finally {
+            session.close();
+        }
+    }
+
+    /**
+     * Удаляет сообщение вместе со всеми вложениями (каскад + orphanRemoval).
+     */
+    public void deleteMessage(long messageId) {
+        Session session = HibernateSessionFactory.getSessionFactory().openSession();
+        try {
+            session.getTransaction().begin();
+            Message msg = session.find(Message.class, messageId);
+            if (msg != null) {
+                session.remove(msg);   // Hibernate сам удалит все MessageContent
+            }
+            session.getTransaction().commit();
+        } catch (Exception e) {
+            if (session.getTransaction().isActive())
+                session.getTransaction().rollback();
+            throw e;
+        } finally {
+            session.close();
         }
     }
 }

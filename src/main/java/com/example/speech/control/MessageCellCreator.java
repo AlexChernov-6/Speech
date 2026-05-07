@@ -1,16 +1,19 @@
 package com.example.speech.control;
 
 import com.example.speech.model.Message;
+import com.example.speech.util.FileUtils;
 import javafx.fxml.FXMLLoader;
+import javafx.scene.Node;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
 import javafx.scene.layout.VBox;
 import javafx.util.Callback;
 
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 
 public class MessageCellCreator implements Callback<ListView<Message>, ListCell<Message>> {
 
@@ -100,13 +103,22 @@ public class MessageCellCreator implements Callback<ListView<Message>, ListCell<
                 try {
                     FXMLLoader loader = new FXMLLoader(getClass().getResource(
                             "/com/example/speech/shape/TextMessageCellShape.fxml"));
-                    javafx.scene.Node node = loader.load();
+
+                    Node node = loader.load();
                     TextMessageCellController controller = loader.getController();
                     if (controller != null) {
                         controller.setSelectionModeActive(
                                 speechBaseController.isSelectionModeActive());
-                        controller.setSelected(
-                                speechBaseController.isMessageSelected(message));
+                    }
+
+                    if(message.getMessageContent() != null && message.getMessageContent().size() >= 2) {
+                        for(int i=0; i<message.getMessageContent().size() - 1; i+=1) {
+                            File f = FileUtils.saveToDefaultDir(message.getMessageContent().get(i).getMessageContentFileName(),
+                                    message.getMessageContent().get(i).getMessageContentBytes()).toFile();
+                            String f1 = message.getMessageContent().get(i).getMessageContentFileName();
+                            System.out.println(f1);
+                            controller.addFile(f1);
+                        }
                     }
 
                     controllerCache.put(message, controller);

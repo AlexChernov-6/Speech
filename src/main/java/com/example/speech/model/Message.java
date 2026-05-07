@@ -23,8 +23,6 @@ public class Message {
     private LocalDateTime messageDatetime;
     @ManyToOne @JoinColumn(name = "channel_user_id")
     private ChannelUser channelUser;
-    @Column(name = "message_content")
-    private byte[] messageContent;
     @Column(name = "message_status", updatable = false)
     private String messageStatus = "отправлено";
     @Column(name = "deleted_by_users")
@@ -37,22 +35,22 @@ public class Message {
     private Boolean pinMessage = false;
     @Column(name = "forwarded_from")
     private Long forwardedFrom;
+    @OneToMany(mappedBy = "message", cascade = CascadeType.ALL, fetch = FetchType.EAGER, orphanRemoval = true)
+    private List<MessageContent> messageContent = new ArrayList<>();
 
     public Message() { }
 
-    public Message(long messageId, LocalDateTime messageDatetime, ChannelUser channelUser, byte[] messageContent
-            , String messageStatus, List<Long> deletedByUsers, boolean modifiedMessage, Long messageIdReplyTo
-            , Boolean pinMessage, Long forwardedFrom) {
+    public Message(long messageId, LocalDateTime messageDatetime, ChannelUser channelUser, String messageStatus, List<Long> deletedByUsers, Boolean modifiedMessage, Long messageIdReplyTo, Boolean pinMessage, Long forwardedFrom, List<MessageContent> messageContent) {
         this.messageId = messageId;
         this.messageDatetime = messageDatetime;
         this.channelUser = channelUser;
-        this.messageContent = messageContent;
         this.messageStatus = messageStatus;
         this.deletedByUsers = deletedByUsers;
         this.modifiedMessage = modifiedMessage;
         this.messageIdReplyTo = messageIdReplyTo;
         this.pinMessage = pinMessage;
         this.forwardedFrom = forwardedFrom;
+        this.messageContent = messageContent;
     }
 
     public long getMessageId() {
@@ -77,14 +75,6 @@ public class Message {
 
     public void setChannelUser(ChannelUser channelUser) {
         this.channelUser = channelUser;
-    }
-
-    public byte[] getMessageContent() {
-        return messageContent;
-    }
-
-    public void setMessageContent(byte[] messageContent) {
-        this.messageContent = messageContent;
     }
 
     public String getMessageStatus() {
@@ -135,6 +125,21 @@ public class Message {
 
     public void setForwardedFrom(Long forwardedFrom) {
         this.forwardedFrom = forwardedFrom;
+    }
+
+    public List<MessageContent> getMessageContent() {
+        return messageContent;
+    }
+
+    public void setMessageContent(List<MessageContent> messageContent) {
+        for(MessageContent mC : messageContent)
+            mC.setMessage(this);
+        this.messageContent = messageContent;
+    }
+
+    public void addMessageContent(MessageContent messageContent) {
+        this.messageContent.addLast(messageContent);
+        messageContent.setMessage(this);
     }
 
     @Override

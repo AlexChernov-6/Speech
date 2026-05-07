@@ -51,7 +51,12 @@ public class WorkingWithAMessageListController extends Pane {
         boolean isCurrentUserMessage = (Objects.equals(speechBaseController.getCurrentUser().getIdUser()
                 , message.getChannelUser().getUser().getIdUser()));
 
-        String contentMessage = new String(message.getMessageContent(), StandardCharsets.UTF_8);
+        String contentMessage;
+        if(!message.getMessageContent().isEmpty())
+            contentMessage = new String(message.getMessageContent().getLast().getMessageContentBytes(), StandardCharsets.UTF_8);
+        else {
+            contentMessage = "";
+        }
 
         StackPane messagesSP = speechBaseController.getMessagesSP();
         String channelName = speechBaseController.getChannelName().getText();

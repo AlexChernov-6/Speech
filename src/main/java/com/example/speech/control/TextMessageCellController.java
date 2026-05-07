@@ -19,6 +19,9 @@ import javafx.scene.layout.*;
 import javafx.scene.text.TextFlow;
 import javafx.util.Duration;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.nio.charset.StandardCharsets;
 import java.time.format.DateTimeFormatter;
 import java.util.Objects;
@@ -31,6 +34,8 @@ import static com.example.speech.control.WorkingWithAMessageListController.reply
 public class TextMessageCellController {
     @FXML
     public ImageView userPhotoIV;
+    @FXML
+    private VBox contentVB;
     @FXML
     private StackPane highlightMessageTemporarilySP;
     @FXML
@@ -76,7 +81,7 @@ public class TextMessageCellController {
     private static final Image loading = new Image(Objects.requireNonNull
             (TextMessageCellController.class.getResourceAsStream("/com/example/speech/image/preview.gif")));
 
-    private String contentGPStyle = "";
+    private String contentVBStyle = "";
 
     public GridPane initializeMessage(SpeechBaseController speechBaseController, Message message, boolean drawUserPhoto) {
         this.speechBaseController = speechBaseController;
@@ -84,13 +89,15 @@ public class TextMessageCellController {
         rootMessageAP.widthProperty().addListener((ob, oldV, newV) -> {
             double newWidth = newV.doubleValue() - 150;
             if (newWidth >= 200) {
-                contentGP.setMaxWidth(newWidth);
+                contentVB.setMaxWidth(newWidth);
                 messageLabel.setMaxWidth(newWidth - 20);
             }
         });
-        String messageContent = new String(message.getMessageContent(), StandardCharsets.UTF_8);
         userPhotoIV.setImage(message.getChannelUser().getUser().getPhotoImage());
-        messageLabel.setText(messageContent);
+        if (!message.getMessageContent().isEmpty()) {
+            String messageContent = new String(message.getMessageContent().getLast().getMessageContentBytes(), StandardCharsets.UTF_8);
+            messageLabel.setText(messageContent);
+        }
         timeLabel.setText(message.getMessageDatetime().toLocalTime().format(DateTimeFormatter.ofPattern("HH:mm")));
         if (message.getMessageStatus() != null && message.getMessageStatus().equals("отправлено"))
             statusIV.setImage(shipped);
@@ -101,18 +108,20 @@ public class TextMessageCellController {
 
         if (Objects.equals(message.getChannelUser().getUser().getIdUser(), speechBaseController.getCurrentUser()
                 .getIdUser()))
-            contentGP.getStyleClass().add("message-text-grid-pane-my");
+            contentVB.getStyleClass().add("message-text-grid-pane-my");
         else {
-            contentGP.getStyleClass().add("message-text-grid-pane-other");
+            contentVB.getStyleClass().add("message-text-grid-pane-other");
             timeStatusHB.getChildren().remove(statusIV);
             HBox.setMargin(timeLabel, new Insets(0, 0, 0, 0));
         }
 
+        timeStatusHB.minWidthProperty().bind(contentGP.widthProperty());
+
         if (!drawUserPhoto) {
             userPhotoIV.setVisible(false);
-            contentGP.setStyle("-fx-background-radius: 15px 15px 15px 15px; -fx-border-radius: 15px 15px 15px 15px;");
+            contentVB.setStyle("-fx-background-radius: 15px 15px 15px 15px; -fx-border-radius: 15px 15px 15px 15px;");
         } else
-            contentGP.setStyle("");
+            contentVB.setStyle("");
 
         setMouseListener();
 
@@ -137,7 +146,7 @@ public class TextMessageCellController {
             String messageContentReply = "";
             if (replyMessage != null) {
                 userName = replyMessage.getChannelUser().getUser().getNameUser();
-                messageContentReply = new String(replyMessage.getMessageContent(), StandardCharsets.UTF_8);
+                messageContentReply = new String(replyMessage.getMessageContent().getLast().getMessageContentBytes(), StandardCharsets.UTF_8);
             }
 
             String displayUserName = userName.length() > 20 ? userName.substring(0, 20) + "..." : userName;
@@ -191,26 +200,17 @@ public class TextMessageCellController {
             userInfoBtn.setText(user.getNameUser());
         }
 
-        contentGPStyle = contentGP.getStyle();
-
-        setSelected(speechBaseController.getSelectedMessages().contains(message));
+        contentVBStyle = contentVB.getStyle();
 
         return contentGP;
     }
 
     public void setMaxWidthGP(double v) {
-        contentGP.setMaxWidth(v - 50);
+        contentVB.setMaxWidth(v - 50);
     }
 
     public void setMouseListener() {
-        /*rootMessageAP.setOnMousePressed(e -> {
-            if(!speechBaseController.isDragSelecting() && speechBaseController.isSelectionModeActive()
-                    && e.getButton() == MouseButton.PRIMARY) {
-                speechBaseController.toggleMessageSelection(message);
-            }
-        });*/
-
-        contentGP.setOnMouseClicked(event -> {
+        contentVB.setOnMouseClicked(event -> {
             if (!speechBaseController.isSelectionModeActive() ||
                     event.getButton() == MouseButton.SECONDARY) {
                 if (event.getButton() == MouseButton.SECONDARY) {
@@ -224,7 +224,7 @@ public class TextMessageCellController {
                     speechBaseController.getHintIV().setImage(replyI);
                     speechBaseController.getHintLB().setText("В ответ " + message.getChannelUser().getUser().getNameUser());
                     speechBaseController.setContextPopUpBar(SpeechBaseController.ContextPopUpBar.REPLY_MESSAGE);
-                    speechBaseController.getContentUpdateMessageLB().setText(new String(message.getMessageContent(), StandardCharsets.UTF_8));
+                    speechBaseController.getContentUpdateMessageLB().setText(new String(message.getMessageContent().getLast().getMessageContentBytes(), StandardCharsets.UTF_8));
                     speechBaseController.getUpdateMessageHB().setVisible(true);
                     speechBaseController.getUpdateMessageHB().setManaged(true);
                     speechBaseController.setMessageIdReplyTo(message.getMessageId());
@@ -268,14 +268,6 @@ public class TextMessageCellController {
         if (!active) {
             selectIV.setVisible(false);
         }
-    }
-
-    public void setSelected(boolean selected) {
-        selectIV.setVisible(selected);
-        if (selected)
-            contentGP.setStyle("-fx-background-color: rgba(0,0,255,0.6);");
-        else
-            contentGP.setStyle(contentGPStyle);
     }
 
     public boolean isHit(double screenX, double screenY) {
@@ -351,5 +343,39 @@ public class TextMessageCellController {
                 "-fx-background-radius: 3;");
         label.setWrapText(true);
         return label;
+    }
+
+    public void addFile(String fileName) {
+        HBox fileHB = new HBox();
+        fileHB.setAlignment(Pos.CENTER_LEFT);
+        contentVB.getChildren().addFirst(fileHB);
+
+        ImageView fileImage = new ImageView();
+        fileImage.setFitHeight(40);
+        fileImage.setFitWidth(40);
+        fileHB.getChildren().add(fileImage);
+        String fileType = fileName.split("\\.")[1];
+        if (fileType.equals("txt")) {
+            fileImage.setImage(
+                    new Image(Objects.requireNonNull(getClass().getResourceAsStream("/com/example/speech/image/txt.png"))));
+        } else if (fileType.equals("png") || fileType.equals("jpg") || fileType.equals("gif")) {
+            fileImage.setImage(
+                    new Image(Objects.requireNonNull(getClass().getResourceAsStream("/com/example/speech/image/document.png"))));
+        } else {
+            fileImage.setImage(
+                    new Image(Objects.requireNonNull(getClass().getResourceAsStream("/com/example/speech/image/document.png"))));
+        }
+
+        VBox rightVB = new VBox(3);
+        rightVB.setAlignment(Pos.TOP_LEFT);
+        rightVB.setPadding(new Insets(10, 10, 10, 20));
+        fileHB.getChildren().add(rightVB);
+
+        Label nameFile = new Label(fileName);
+        nameFile.setStyle("-fx-font-size: 14px;");
+        rightVB.getChildren().add(nameFile);
+
+        Label sizeFile = new Label(fileName);
+        rightVB.getChildren().add(sizeFile);
     }
 }

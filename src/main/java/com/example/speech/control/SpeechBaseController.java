@@ -2,9 +2,12 @@ package com.example.speech.control;
 
 import com.example.speech.model.ChannelUser;
 import com.example.speech.model.Message;
+import com.example.speech.model.MessageContent;
 import com.example.speech.model.User;
 import com.example.speech.service.ChannelUserService;
+import com.example.speech.service.MessageContentService;
 import com.example.speech.service.MessageService;
+import com.example.speech.util.FileUtils;
 import javafx.animation.PauseTransition;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
@@ -27,8 +30,11 @@ import javafx.stage.Stage;
 import javafx.util.Duration;
 
 import java.io.File;
+import java.io.IOException;
 import java.lang.reflect.Field;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.util.*;
 
@@ -215,8 +221,10 @@ public class SpeechBaseController {
                 ScrollBar scrollBar = (ScrollBar) messagesLV.lookup(".scroll-bar:vertical");
                 if (scrollBar != null) {
                     scrollBar.valueProperty().addListener((observable, oldValue, newValue) -> {
-                        firstVisible = currentFlow.getFirstVisibleCell().getIndex();
-                        if (flag && !searchModeActive) setPinnedMessagesHBVisible(firstVisible);
+                        if(currentFlow.getFirstVisibleCell() != null) {
+                            firstVisible = currentFlow.getFirstVisibleCell().getIndex();
+                            if (flag && !searchModeActive) setPinnedMessagesHBVisible(firstVisible);
+                        }
                     });
                 }
             }
@@ -402,137 +410,192 @@ public class SpeechBaseController {
     }
 
     @FXML
-    private void handleSendMessage() {
+    private void handleSendMessage() throws IOException {
         String text = messageTA.getText().trim();
-        if (!text.isEmpty() && chatsView.getSelectionModel().getSelectedItem() != null && (!updateMessageHB.isVisible()
-                || contextPopUpBar == ContextPopUpBar.REPLY_MESSAGE)) {
+
+        // ----------------------- Обычная отправка -----------------------
+        if ((!text.isEmpty() || !selectedFile.isEmpty())
+                && chatsView.getSelectionModel().getSelectedItem() != null
+                && (!updateMessageHB.isVisible() || contextPopUpBar == ContextPopUpBar.REPLY_MESSAGE)) {
+
             ChannelUser selectedChat = chatsView.getSelectionModel().getSelectedItem();
 
-            Message tempMessage = new Message();
-            tempMessage.setMessageDatetime(LocalDateTime.now());
-            tempMessage.setMessageContent(text.getBytes(java.nio.charset.StandardCharsets.UTF_8));
-            tempMessage.setChannelUser(selectedChat);
-            tempMessage.setMessageStatus("загружается");
+            Message messageToSave = new Message();
+            List<MessageContent> contents = new ArrayList<>();
+            if(selectedFile != null && !selectedFile.isEmpty()) {
+                List<File> delFiles = new ArrayList<>();
+                FileUtils.copyFilesToDir(selectedFile);
+                for(File f : selectedFile) {
+                    MessageContent newMC = new MessageContent();
+                    newMC.setMessageContentBytes(FileUtils.readFileToByteArrayStream(f));
+                    newMC.setMessageContentFileName(f.getName());
+                    contents.add(newMC);
+                    delFiles.add(f);
+                }
+                selectedFile.removeAll(delFiles);
+            }
+            if(messageTA.getText() != null && !messageTA.getText().isEmpty() && !messageTA.getText().equals("Сообщение...")) {
+                MessageContent newMC = new MessageContent();
+                newMC.setMessageContentBytes(text.getBytes(StandardCharsets.UTF_8));
+                contents.addLast(newMC);
+            }
+            messageToSave.setMessageContent(contents);
+            messageToSave.setChannelUser(selectedChat);
+            messageToSave.setMessageDatetime(LocalDateTime.now());
+            if (updateMessageHB.isVisible() && contextPopUpBar == ContextPopUpBar.REPLY_MESSAGE) {
+                messageToSave.setMessageIdReplyTo(messageIdReplyTo);
+            }
 
-            messages.add(tempMessage);
-
-            Platform.runLater(() -> {
-                messagesLV.scrollTo(messagesLV.getItems().size());
-            });
-
+            messages.add(messageToSave);
+            Platform.runLater(() -> messagesLV.scrollTo(messagesLV.getItems().size()));
             messageTA.setText("");
 
             new Thread(() -> {
                 try {
-                    Message messageToSave = new Message();
-                    messageToSave.setMessageContent(text.getBytes(StandardCharsets.UTF_8));
-                    messageToSave.setChannelUser(selectedChat);
-                    if (updateMessageHB.isVisible() && contextPopUpBar == ContextPopUpBar.REPLY_MESSAGE)
-                        messageToSave.setMessageIdReplyTo(messageIdReplyTo);
                     boolean saved = messageService.save(messageToSave);
                     if (saved) {
                         Message savedMessage = messageService.getRowById(messageToSave.getMessageId());
                         Platform.runLater(() -> {
-                            int index = messagesLV.getItems().indexOf(tempMessage);
+                            int index = messages.indexOf(messageToSave);
                             if (index >= 0) {
                                 messages.set(index, savedMessage);
                             }
                         });
                     }
-                    updateVisibleChangeMessageHB();
                 } catch (Exception e) {
-                    e.printStackTrace();
-                    Platform.runLater(() -> {
-                        //Обработать неудачную отправку
-                        tempMessage.setMessageStatus("ошибка отправки");
-                    });
+
                 }
             }).start();
-        } else if (!text.isEmpty() && chatsView.getSelectionModel().getSelectedItem() != null && updateMessageHB.isVisible()
-                && contextPopUpBar == ContextPopUpBar.CHANGE_MESSAGE) {
-            if (!text.equals(new String(updateMessage.getMessageContent(), StandardCharsets.UTF_8))) {
-                updateMessage.setMessageContent(text.getBytes());
-                updateMessage.setModifiedMessage(true);
-                messageService.update(updateMessage);
-                messagesLV.refresh();
-                updateMessage = null;
-            }
+
             updateVisibleChangeMessageHB();
-        } else if (chatsView.getSelectionModel().getSelectedItem() != null
+            return;
+        }
+
+        // ----------------------- ИЗМЕНЕНИЕ СООБЩЕНИЯ -----------------------
+        if ((!text.isEmpty() || !selectedFile.isEmpty())
+                && chatsView.getSelectionModel().getSelectedItem() != null
+                && updateMessageHB.isVisible()
+                && contextPopUpBar == ContextPopUpBar.CHANGE_MESSAGE) {
+
+            String oldText = new String(
+                    updateMessage.getMessageContent().getLast().getMessageContentBytes(),
+                    StandardCharsets.UTF_8);
+
+            if (!text.equals(oldText)) {
+                // Сохраняем ID, чтобы не потерять после возможного обнуления updateMessage
+                final long msgId = updateMessage.getMessageId();
+                final Message messageToUpdate = updateMessage;   // ссылка для UI
+
+                // Локальное обновление для немедленного отклика
+                messageToUpdate.getMessageContent().clear();
+                MessageContent newContent = new MessageContent();
+                newContent.setMessageContentBytes(text.getBytes(StandardCharsets.UTF_8));
+                messageToUpdate.addMessageContent(newContent);
+                messageToUpdate.setModifiedMessage(true);
+                messagesLV.refresh();
+
+                // Асинхронное сохранение
+                new Thread(() -> {
+                    try {
+                        messageService.updateMessageText(msgId, text);
+                        Platform.runLater(() -> {
+                            // Успешно – обнуляем глобальную переменную, скрываем панель
+                            updateMessage = null;
+                            updateVisibleChangeMessageHB();
+                        });
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                        // Ошибка – откатываем UI к исходному состоянию
+                        Platform.runLater(() -> {
+                            // Загружаем актуальное состояние из БД (через сервис)
+                            Message fresh = messageService.getRowById(msgId);
+                            if (fresh != null) {
+                                // Находим сообщение в списке и обновляем его контент
+                                int idx = messages.indexOf(messageToUpdate);
+                                if (idx >= 0) {
+                                    messages.set(idx, fresh);
+                                } else {
+                                    // Если сообщение уже удалено, просто обновляем через lookup
+                                    // Но обычно оно ещё в списке
+                                    messagesLV.refresh();
+                                }
+                            } else {
+                                // Сообщение было удалено параллельно — убираем из списка
+                                messages.remove(messageToUpdate);
+                            }
+                            // updateMessage продолжает указывать на старый объект, его можно оставить для повторной попытки
+                            // Или сбросить, если хотим принудительно закрыть режим редактирования
+                        });
+                    }
+                }).start();
+
+                // Сразу после запуска потока не скрываем панель, она скроется при успехе
+                messageTA.setText("");   // очищаем поле ввода
+                return;   // не вызываем updateVisibleChangeMessageHB() сейчас
+            } else {
+                // Текст не изменился – просто выходим из режима редактирования
+                updateVisibleChangeMessageHB();
+            }
+        }
+
+        // ----------------------- Пересылка -----------------------
+        if (chatsView.getSelectionModel().getSelectedItem() != null
                 && updateMessageHB.isVisible()
                 && contextPopUpBar == ContextPopUpBar.FORWARD_MESSAGE) {
 
-            // Список временных сообщений, которые уже показаны в UI
             List<Message> tempMessages = new ArrayList<>();
 
             for (Message original : forwardMessages) {
+                // Копируем контент (последний элемент или все – зависит от логики)
+                MessageContent originalContent = original.getMessageContent().getLast();
+                MessageContent newContent = new MessageContent();
+                newContent.setMessageContentBytes(originalContent.getMessageContentBytes());
+                newContent.setMessageContentFileName(originalContent.getMessageContentFileName());
+
                 Message temp = new Message();
                 temp.setMessageDatetime(LocalDateTime.now());
-                temp.setMessageContent(original.getMessageContent());
+                temp.setMessageContent(List.of(newContent));  // временная коллекция
                 temp.setChannelUser(selectedChannelUser);
                 temp.setMessageStatus("загружается");
-                temp.setForwardedFrom(Long.valueOf(original.getChannelUser().getUser().getIdUser()));
+                temp.setForwardedFrom((long) original.getChannelUser().getUser().getIdUser());
 
-                messagesLV.getItems().add(temp);
-                tempMessages.add(temp); // запоминаем ссылку на временное сообщение
+                messages.add(temp);
+                tempMessages.add(temp);
             }
 
-            // Прокрутка вниз после добавления всех временных сообщений
-            Platform.runLater(() ->
-                    messagesLV.scrollTo(messagesLV.getItems().size())
-            );
+            Platform.runLater(() -> messagesLV.scrollTo(messagesLV.getItems().size()));
 
             new Thread(() -> {
                 for (int i = 0; i < forwardMessages.size(); i++) {
-                    Message original = forwardMessages.get(i);
                     Message tempMsg = tempMessages.get(i);
-
                     try {
-                        // ✅ 1. Создаём НОВЫЙ объект для вставки в БД
                         Message newMsg = new Message();
-                        newMsg.setMessageContent(original.getMessageContent());
+                        // Используем ТУ ЖЕ САМУЮ копию контента, что и во временном сообщении
+                        newMsg.addMessageContent(tempMsg.getMessageContent().getLast());
                         newMsg.setChannelUser(selectedChannelUser);
                         newMsg.setMessageDatetime(LocalDateTime.now());
                         newMsg.setMessageStatus("отправлено");
+                        newMsg.setForwardedFrom(tempMsg.getForwardedFrom());
 
-                        // ✅ 2. Устанавливаем поле forwardedFrom (ID отправителя оригинала)
-                        newMsg.setForwardedFrom(Long.valueOf(original.getChannelUser().getUser().getIdUser()));
-
-                        // ✅ 3. Сохраняем новый объект
-                        MessageService service = new MessageService();
-                        boolean saved = service.save(newMsg);
-
+                        boolean saved = new MessageService().save(newMsg);
                         if (saved) {
-                            // Получаем сохранённую сущность с присвоенным ID
-                            Message savedMsg = service.getRowById(newMsg.getMessageId());
-                            final Message finalSaved = savedMsg;
-
+                            Message savedMsg = new MessageService().getRowById(newMsg.getMessageId());
                             Platform.runLater(() -> {
-                                int idx = messagesLV.getItems().indexOf(tempMsg);
+                                int idx = messages.indexOf(tempMsg);
                                 if (idx >= 0) {
-                                    // Заменяем временное сообщение на сохранённое
-                                    messagesLV.getItems().set(idx, finalSaved);
-                                    messagesLV.refresh();
+                                    messages.set(idx, savedMsg);
                                 }
                             });
                         } else {
-                            // Ошибка сохранения
-                            Platform.runLater(() -> {
-                                tempMsg.setMessageStatus("ошибка отправки");
-                                messagesLV.refresh();
-                            });
+                            Platform.runLater(() -> tempMsg.setMessageStatus("ошибка отправки"));
                         }
                     } catch (Exception e) {
                         e.printStackTrace();
-                        Platform.runLater(() -> {
-                            tempMsg.setMessageStatus("ошибка отправки");
-                            messagesLV.refresh();
-                        });
+                        Platform.runLater(() -> tempMsg.setMessageStatus("ошибка отправки"));
                     }
                 }
             }).start();
 
-            // Скрываем панель пересылки
             updateVisibleChangeMessageHB();
         }
     }
@@ -585,11 +648,13 @@ public class SpeechBaseController {
         lastPinnedMessage = (nextPinnedMessage == null) ? allPinnedMessages.getFirst() : nextPinnedMessage;
         pinnedMessagesHB.setVisible(true);
         pinnedMessagesHB.setManaged(true);
-        String messageText = new String(lastPinnedMessage.getMessageContent(), StandardCharsets.UTF_8);
-        if (messageText.length() > 50) {
-            messageText = messageText.substring(0, 47) + "...";
+        if(!lastPinnedMessage.getMessageContent().isEmpty()) {
+            String messageText = new String(lastPinnedMessage.getMessageContent().getLast().getMessageContentBytes(), StandardCharsets.UTF_8);
+            if (messageText.length() > 50) {
+                messageText = messageText.substring(0, 47) + "...";
+            }
+            contentPinnedMessageLB.setText(messageText);
         }
-        contentPinnedMessageLB.setText(messageText);
     }
 
     private void scrollToMessage(Message message) {
@@ -665,8 +730,7 @@ public class SpeechBaseController {
             pinnedMessagesHB.setManaged(false);
         }
 
-        messagesLV.getItems().clear();
-        messagesLV.getItems().addAll(allPinnedMessages);
+        messages.setAll(allPinnedMessages);
 
         if (updateMessageHB.isVisible()) {
             updateMessageHB.setVisible(false);
@@ -880,9 +944,6 @@ public class SpeechBaseController {
         }
 
         TextMessageCellController controller = messageCellCreator.getControllerCache().get(message);
-        if (controller != null) {
-            controller.setSelected(selectedMessages.contains(message));
-        }
     }
 
     public boolean isMessageSelected(Message message) {
@@ -901,11 +962,6 @@ public class SpeechBaseController {
                 creator.getControllerCache().entrySet()) {
             TextMessageCellController controller = entry.getValue();
             controller.setSelectionModeActive(selectionModeActive);
-            if (selectionModeActive) {
-                controller.setSelected(selectedMessages.contains(entry.getKey()));
-            } else {
-                controller.setSelected(false);
-            }
         }
     }
 
@@ -913,16 +969,12 @@ public class SpeechBaseController {
     private void updateMessageCellSelection(Message message) {
         TextMessageCellController controller =
                 getMessageCellCreator().getControllerCache().get(message);
-        if (controller != null) {
-            controller.setSelected(selectedMessages.contains(message));
-        }
     }
 
     // Update only the selected state of all cells (mode unchanged)
     private void updateAllMessageCellsSelection() {
         for (Map.Entry<Message, TextMessageCellController> entry :
                 getMessageCellCreator().getControllerCache().entrySet()) {
-            entry.getValue().setSelected(selectedMessages.contains(entry.getKey()));
         }
     }
 
@@ -1031,9 +1083,6 @@ public class SpeechBaseController {
             if (cell != null) {
                 Message msg = (Message) cell.getItem();
                 TextMessageCellController controller = messageCellCreator.getControllerCache().get(msg);
-                if (controller != null) {
-                    controller.setSelected(selectedMessages.contains(msg));
-                }
             }
         }
     }
@@ -1217,7 +1266,7 @@ public class SpeechBaseController {
         listOfBtn.setOnAction(e -> {
             //Вывод только нужных сообщений
             if(listOfBtn.getText().equals("Списком")) {
-                filteredList.setPredicate(message -> (new String(message.getMessageContent(), StandardCharsets.UTF_8))
+                filteredList.setPredicate(message -> (new String(message.getMessageContent().getLast().getMessageContentBytes(), StandardCharsets.UTF_8))
                         .toLowerCase().contains(searchFromChatTF.getText().trim().toLowerCase()));
                 listOfBtn.setText("Чатом");
                 countResult.setText("Всего записей: " + resultList.size());
@@ -1244,7 +1293,7 @@ public class SpeechBaseController {
             //Кнопка поиска вхождений подстроки в сообщения
             if (searchFromChatTF.getText() != null && !searchFromChatTF.getText().isEmpty()) {
                 resultList = messages.stream().filter(message ->
-                        (new String(message.getMessageContent(), StandardCharsets.UTF_8)).toLowerCase().contains(searchFromChatTF.getText().trim().toLowerCase())).toList();
+                        (new String(message.getMessageContent().getLast().getMessageContentBytes(), StandardCharsets.UTF_8)).toLowerCase().contains(searchFromChatTF.getText().trim().toLowerCase())).toList();
 
                 if (resultList.isEmpty()) {
                     countResult.setText("Нету результатов");

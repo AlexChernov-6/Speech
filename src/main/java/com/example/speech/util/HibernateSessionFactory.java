@@ -22,6 +22,7 @@ public class HibernateSessionFactory {
                         .addAnnotatedClass(ChannelUser.class)
                         .addAnnotatedClass(ChannelType.class)
                         .addAnnotatedClass(Message.class)
+                        .addAnnotatedClass(MessageContent.class)
                         .buildSessionFactory();
             } catch (IOException e) {
                 System.err.println(e.getMessage());

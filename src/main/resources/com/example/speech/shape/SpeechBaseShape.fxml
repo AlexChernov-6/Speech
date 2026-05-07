@@ -72,7 +72,7 @@
                             </Button>
                         </HBox>
 
-                        <ListView fx:id="messagesLV" VBox.vgrow="ALWAYS"/>
+                        <ListView fx:id="messagesLV" VBox.vgrow="ALWAYS" style="-fx-background-color: transparent;"/>
 
                         <HBox fx:id="updateMessageHB" style="-fx-background-color: white; -fx-cursor: hand;"
                               prefHeight="40"

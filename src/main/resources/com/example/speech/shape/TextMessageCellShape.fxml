@@ -23,78 +23,79 @@
             <Image url="@../image/defaultChannel.jpg"/>
         </ImageView>
 
-        <GridPane fx:id="contentGP" AnchorPane.leftAnchor="70" AnchorPane.topAnchor="0" AnchorPane.bottomAnchor="0">
+        <VBox fx:id="contentVB" AnchorPane.leftAnchor="70" AnchorPane.topAnchor="0" AnchorPane.bottomAnchor="0">
             <padding>
                 <Insets left="10" top="7" bottom="7" right="10"/>
             </padding>
+            <GridPane fx:id="contentGP">
+                <rowConstraints>
+                    <RowConstraints prefHeight="0" minHeight="0" fx:id="forwardRow"/>
+                    <RowConstraints prefHeight="0" minHeight="0" fx:id="replyRow"/>
+                    <RowConstraints/>
+                    <RowConstraints prefHeight="20"/>
+                </rowConstraints>
+                <columnConstraints>
+                    <ColumnConstraints/>
+                    <ColumnConstraints prefWidth="100" minWidth="100" fx:id="columnInfo"/>
+                </columnConstraints>
+                <HBox.margin>
+                    <Insets left="10"/>
+                </HBox.margin>
 
-            <rowConstraints>
-                <RowConstraints prefHeight="0" minHeight="0" fx:id="forwardRow"/>
-                <RowConstraints prefHeight="0" minHeight="0" fx:id="replyRow"/>
-                <RowConstraints/>
-                <RowConstraints prefHeight="20"/>
-            </rowConstraints>
-            <columnConstraints>
-                <ColumnConstraints/>
-                <ColumnConstraints prefWidth="100" minWidth="100" fx:id="columnInfo"/>
-            </columnConstraints>
-            <HBox.margin>
-                <Insets left="10"/>
-            </HBox.margin>
-
-            <HBox fx:id="forwardHB" GridPane.columnSpan="2" visible="false" managed="false">
-                <Label text="Переслано от " prefHeight="15" style="-fx-text-fill: blue; -fx-font-size: 12px;"/>
-                <ImageView fx:id="userLogo" fitWidth="15" fitHeight="15" preserveRatio="true">
-                    <clip>
-                        <Circle radius="7.5" centerX="7.5" centerY="7.5"/>
-                    </clip>
-                    <HBox.margin>
-                        <Insets left="2" right="2"/>
-                    </HBox.margin>
-                </ImageView>
-                <Button fx:id="userInfoBtn" text="User Name" prefHeight="15"
-                        style="-fx-text-fill: blue; -fx-font-size: 12px; -fx-background-color: transparent;
+                <HBox fx:id="forwardHB" GridPane.columnSpan="2" visible="false" managed="false">
+                    <Label text="Переслано от " prefHeight="15" style="-fx-text-fill: blue; -fx-font-size: 12px;"/>
+                    <ImageView fx:id="userLogo" fitWidth="15" fitHeight="15" preserveRatio="true">
+                        <clip>
+                            <Circle radius="7.5" centerX="7.5" centerY="7.5"/>
+                        </clip>
+                        <HBox.margin>
+                            <Insets left="2" right="2"/>
+                        </HBox.margin>
+                    </ImageView>
+                    <Button fx:id="userInfoBtn" text="User Name" prefHeight="15"
+                            style="-fx-text-fill: blue; -fx-font-size: 12px; -fx-background-color: transparent;
                     -fx-cursor: hand; -fx-padding: 0px 0px 0px 0px;"/>
-                <GridPane.margin>
-                    <Insets bottom="5" top="3"/>
-                </GridPane.margin>
-            </HBox>
+                    <GridPane.margin>
+                        <Insets bottom="5" top="3"/>
+                    </GridPane.margin>
+                </HBox>
 
-            <Button fx:id="replyMessageBtn" prefHeight="0" visible="false" managed="false" GridPane.columnSpan="2"
-                    styleClass="reply-button" GridPane.rowIndex="1">
-                <GridPane.margin>
-                    <Insets bottom="5"/>
-                </GridPane.margin>
-            </Button>
+                <Button fx:id="replyMessageBtn" prefHeight="0" visible="false" managed="false" GridPane.columnSpan="2"
+                        styleClass="reply-button" GridPane.rowIndex="1">
+                    <GridPane.margin>
+                        <Insets bottom="5"/>
+                    </GridPane.margin>
+                </Button>
 
-            <TextFlow fx:id="contentTextFlow" GridPane.columnSpan="2" GridPane.rowIndex="2">
-                <padding>
-                    <Insets top="7"/>
-                </padding>
+                <TextFlow fx:id="contentTextFlow" GridPane.columnSpan="2" GridPane.rowIndex="2">
+                    <padding>
+                        <Insets top="7"/>
+                    </padding>
 
-                <Label fx:id="messageLabel" wrapText="true" style="-fx-font-size: 14px;" text="Content"/>
-            </TextFlow>
+                    <Label fx:id="messageLabel" wrapText="true" style="-fx-font-size: 14px;" text="Content"/>
+                </TextFlow>
 
-            <HBox fx:id="timeStatusHB" GridPane.rowIndex="3" GridPane.columnIndex="1" alignment="BOTTOM_RIGHT">
-                <Label text="изменено" visible="false" managed="false" fx:id="changeStatusLB"
-                       style="-fx-text-fill: gray; -fx-font-size: 10px;">
-                    <HBox.margin>
-                        <Insets right="5"/>
-                    </HBox.margin>
-                </Label>
+                <HBox fx:id="timeStatusHB" GridPane.rowIndex="3" GridPane.columnIndex="1" alignment="BOTTOM_RIGHT">
+                    <Label text="изменено" visible="false" managed="false" fx:id="changeStatusLB"
+                           style="-fx-text-fill: gray; -fx-font-size: 10px;">
+                        <HBox.margin>
+                            <Insets right="5"/>
+                        </HBox.margin>
+                    </Label>
 
-                <Label fx:id="timeLabel" style="-fx-text-fill: gray; -fx-font-size: 10px;" text="00:00">
-                    <HBox.margin>
-                        <Insets right="3"/>
-                    </HBox.margin>
-                </Label>
-                <ImageView fx:id="statusIV" fitHeight="13" fitWidth="13" preserveRatio="true">
-                    <HBox.margin>
-                        <Insets bottom="1.7"/>
-                    </HBox.margin>
-                </ImageView>
-            </HBox>
-        </GridPane>
+                    <Label fx:id="timeLabel" style="-fx-text-fill: gray; -fx-font-size: 10px;" text="00:00">
+                        <HBox.margin>
+                            <Insets right="3"/>
+                        </HBox.margin>
+                    </Label>
+                    <ImageView fx:id="statusIV" fitHeight="13" fitWidth="13" preserveRatio="true">
+                        <HBox.margin>
+                            <Insets bottom="1.7"/>
+                        </HBox.margin>
+                    </ImageView>
+                </HBox>
+            </GridPane>
+        </VBox>
 
         <StackPane AnchorPane.bottomAnchor="5" AnchorPane.rightAnchor="5" fx:id="selectSP" visible="false">
             <ImageView fitHeight="20" fitWidth="20" preserveRatio="true" fx:id="selectIV" visible="false">
