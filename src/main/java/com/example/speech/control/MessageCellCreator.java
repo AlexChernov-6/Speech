@@ -1,6 +1,7 @@
 package com.example.speech.control;
 
 import com.example.speech.model.Message;
+import com.example.speech.model.MessageContent;
 import com.example.speech.util.FileUtils;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Node;
@@ -111,15 +112,9 @@ public class MessageCellCreator implements Callback<ListView<Message>, ListCell<
                                 speechBaseController.isSelectionModeActive());
                     }
 
-                    if(message.getMessageContent() != null && message.getMessageContent().size() >= 2) {
-                        for(int i=0; i<message.getMessageContent().size() - 1; i+=1) {
-                            File f = FileUtils.saveToDefaultDir(message.getMessageContent().get(i).getMessageContentFileName(),
-                                    message.getMessageContent().get(i).getMessageContentBytes()).toFile();
-                            String f1 = message.getMessageContent().get(i).getMessageContentFileName();
-                            System.out.println(f1);
-                            controller.addFile(f1);
-                        }
-                    }
+                    if (message.getMessageContent() != null)
+                        for (int i = 0; i < message.getMessageContent().size(); i += 1)
+                            controller.addFile(message.getMessageContent().get(i));
 
                     controllerCache.put(message, controller);
 

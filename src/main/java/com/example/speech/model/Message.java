@@ -37,6 +37,8 @@ public class Message {
     private Long forwardedFrom;
     @OneToMany(mappedBy = "message", cascade = CascadeType.ALL, fetch = FetchType.EAGER, orphanRemoval = true)
     private List<MessageContent> messageContent = new ArrayList<>();
+    @Column(name = "message_string")
+    private String messageString;
 
     public Message() { }
 
@@ -131,15 +133,24 @@ public class Message {
         return messageContent;
     }
 
-    public void setMessageContent(List<MessageContent> messageContent) {
-        for(MessageContent mC : messageContent)
+    public void setMessageContent(List<MessageContent> mContent) {
+        messageContent.clear();
+        for(MessageContent mC : mContent)
             mC.setMessage(this);
-        this.messageContent = messageContent;
+        this.messageContent.addAll(mContent);
     }
 
     public void addMessageContent(MessageContent messageContent) {
         this.messageContent.addLast(messageContent);
         messageContent.setMessage(this);
+    }
+
+    public String getMessageString() {
+        return messageString;
+    }
+
+    public void setMessageString(String messageString) {
+        this.messageString = messageString;
     }
 
     @Override

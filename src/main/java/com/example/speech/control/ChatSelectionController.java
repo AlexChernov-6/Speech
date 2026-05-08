@@ -79,9 +79,7 @@ public class ChatSelectionController extends Pane {
                         if(messages.size() > 1)
                             speechBaseController.getContentUpdateMessageLB().setText(messages.size() + " пересланных сообщения");
                         else
-                            speechBaseController.getContentUpdateMessageLB().setText(
-                                    new String(messages.getFirst().getMessageContent().getLast().getMessageContentBytes()
-                                    , StandardCharsets.UTF_8));
+                            speechBaseController.getContentUpdateMessageLB().setText(messages.getFirst().getMessageString());
 
                         if(senders.size() == 1)
                             speechBaseController.getHintLB().setText(senders.getFirst());

@@ -1,8 +1,12 @@
 package com.example.speech.control;
 
 import com.example.speech.model.Message;
+import com.example.speech.model.MessageContent;
 import com.example.speech.model.User;
+import com.example.speech.service.MessageContentService;
 import com.example.speech.service.UserService;
+import com.example.speech.util.FileUtils;
+import com.example.speech.util.ImageUtils;
 import javafx.animation.*;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
@@ -12,6 +16,7 @@ import javafx.geometry.Pos;
 import javafx.scene.control.Button;
 import javafx.scene.control.ContentDisplay;
 import javafx.scene.control.Label;
+import javafx.scene.control.ProgressIndicator;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.MouseButton;
@@ -19,11 +24,16 @@ import javafx.scene.layout.*;
 import javafx.scene.text.TextFlow;
 import javafx.util.Duration;
 
+import java.awt.*;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.format.DateTimeFormatter;
+import java.util.List;
 import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -55,11 +65,7 @@ public class TextMessageCellController {
     @FXML
     private ColumnConstraints columnInfo;
     @FXML
-    private RowConstraints replyRow;
-    @FXML
     private Button replyMessageBtn;
-    @FXML
-    private RowConstraints forwardRow;
     @FXML
     private HBox forwardHB;
     @FXML
@@ -81,8 +87,6 @@ public class TextMessageCellController {
     private static final Image loading = new Image(Objects.requireNonNull
             (TextMessageCellController.class.getResourceAsStream("/com/example/speech/image/preview.gif")));
 
-    private String contentVBStyle = "";
-
     public GridPane initializeMessage(SpeechBaseController speechBaseController, Message message, boolean drawUserPhoto) {
         this.speechBaseController = speechBaseController;
         this.message = message;
@@ -94,10 +98,10 @@ public class TextMessageCellController {
             }
         });
         userPhotoIV.setImage(message.getChannelUser().getUser().getPhotoImage());
-        if (!message.getMessageContent().isEmpty()) {
-            String messageContent = new String(message.getMessageContent().getLast().getMessageContentBytes(), StandardCharsets.UTF_8);
-            messageLabel.setText(messageContent);
-        }
+        if (message.getMessageString() != null && !message.getMessageString().isEmpty())
+            messageLabel.setText(message.getMessageString());
+        else messageLabel.setManaged(false);
+
         timeLabel.setText(message.getMessageDatetime().toLocalTime().format(DateTimeFormatter.ofPattern("HH:mm")));
         if (message.getMessageStatus() != null && message.getMessageStatus().equals("отправлено"))
             statusIV.setImage(shipped);
@@ -137,7 +141,6 @@ public class TextMessageCellController {
 
         if (message.getMessageIdReplyTo() != null) {
             Message replyMessage = speechBaseController.getMessageService().getRowById(message.getMessageIdReplyTo());
-            replyRow.setPrefHeight(50);
             replyMessageBtn.setPrefHeight(45);
             replyMessageBtn.setVisible(true);
             replyMessageBtn.setManaged(true);
@@ -146,7 +149,7 @@ public class TextMessageCellController {
             String messageContentReply = "";
             if (replyMessage != null) {
                 userName = replyMessage.getChannelUser().getUser().getNameUser();
-                messageContentReply = new String(replyMessage.getMessageContent().getLast().getMessageContentBytes(), StandardCharsets.UTF_8);
+                messageContentReply = replyMessage.getMessageString();
             }
 
             String displayUserName = userName.length() > 20 ? userName.substring(0, 20) + "..." : userName;
@@ -193,14 +196,11 @@ public class TextMessageCellController {
         if (message.getForwardedFrom() != null) {
             UserService userService = new UserService();
             User user = userService.getRowById(message.getForwardedFrom());
-            forwardRow.setPrefHeight(25);
             forwardHB.setVisible(true);
             forwardHB.setManaged(true);
             userLogo.setImage(user.getPhotoImage());
             userInfoBtn.setText(user.getNameUser());
         }
-
-        contentVBStyle = contentVB.getStyle();
 
         return contentGP;
     }
@@ -224,7 +224,7 @@ public class TextMessageCellController {
                     speechBaseController.getHintIV().setImage(replyI);
                     speechBaseController.getHintLB().setText("В ответ " + message.getChannelUser().getUser().getNameUser());
                     speechBaseController.setContextPopUpBar(SpeechBaseController.ContextPopUpBar.REPLY_MESSAGE);
-                    speechBaseController.getContentUpdateMessageLB().setText(new String(message.getMessageContent().getLast().getMessageContentBytes(), StandardCharsets.UTF_8));
+                    speechBaseController.getContentUpdateMessageLB().setText(message.getMessageString());
                     speechBaseController.getUpdateMessageHB().setVisible(true);
                     speechBaseController.getUpdateMessageHB().setManaged(true);
                     speechBaseController.setMessageIdReplyTo(message.getMessageId());
@@ -242,6 +242,7 @@ public class TextMessageCellController {
         Pane highlightPane = new Pane();
         highlightPane.setStyle("-fx-background-color: rgba(100, 149, 237, 0.3)");
         highlightPane.setOpacity(0.0);
+        highlightPane.setMouseTransparent(true);
         highlightMessageTemporarilySP.getChildren().add(highlightPane);
 
         FadeTransition fadeIn = new FadeTransition(Duration.millis(1000), highlightPane);
@@ -345,37 +346,204 @@ public class TextMessageCellController {
         return label;
     }
 
-    public void addFile(String fileName) {
+    public void addFile(MessageContent mC) {
+        // Контейнер для строки файла
         HBox fileHB = new HBox();
         fileHB.setAlignment(Pos.CENTER_LEFT);
-        contentVB.getChildren().addFirst(fileHB);
+        fileHB.setPickOnBounds(true);
+        contentVB.getChildren().add(2, fileHB);
 
-        ImageView fileImage = new ImageView();
+        fileHB.setOnMouseEntered(e -> {
+            fileHB.setStyle("-fx-background-color: rgba(150, 150, 170, 0.3); -fx-background-radius: 10;");
+        });
+        fileHB.setOnMouseExited(e -> {
+            fileHB.setStyle("");
+        });
+
+        // Левая часть: иконка + прогресс
+        StackPane stackPane = new StackPane();
+        stackPane.setMaxWidth(40);
+        stackPane.setMaxHeight(40);
+        fileHB.getChildren().add(stackPane);
+        stackPane.setMouseTransparent(true);
+
+        // Иконка файла по умолчанию
+        ImageView fileImage = new ImageView(
+                new Image(Objects.requireNonNull(getClass().getResourceAsStream("/com/example/speech/image/doc.png"))));
         fileImage.setFitHeight(40);
         fileImage.setFitWidth(40);
-        fileHB.getChildren().add(fileImage);
-        String fileType = fileName.split("\\.")[1];
-        if (fileType.equals("txt")) {
-            fileImage.setImage(
-                    new Image(Objects.requireNonNull(getClass().getResourceAsStream("/com/example/speech/image/txt.png"))));
-        } else if (fileType.equals("png") || fileType.equals("jpg") || fileType.equals("gif")) {
-            fileImage.setImage(
-                    new Image(Objects.requireNonNull(getClass().getResourceAsStream("/com/example/speech/image/document.png"))));
+        stackPane.getChildren().add(fileImage);
+        fileImage.setMouseTransparent(true);
+
+        // Расширение файла для отображения на иконке
+        String fileName = mC.getMessageContentFileName();
+        String fileType;
+        int dotIndex = fileName.lastIndexOf('.');
+        if (dotIndex > 0 && dotIndex < fileName.length() - 1) {
+            fileType = fileName.substring(dotIndex + 1).toLowerCase();
         } else {
-            fileImage.setImage(
-                    new Image(Objects.requireNonNull(getClass().getResourceAsStream("/com/example/speech/image/document.png"))));
+            fileType = "";
         }
 
+        Label fileNameLB = new Label(fileType);
+        fileNameLB.setMaxWidth(40);
+        fileNameLB.setPrefWidth(40);
+        fileNameLB.setStyle("-fx-text-fill: white; -fx-font-size: 14; -fx-font-weight: bold;");
+        fileNameLB.setAlignment(Pos.CENTER);
+        fileNameLB.setMouseTransparent(true);
+        StackPane.setAlignment(fileNameLB, Pos.TOP_CENTER);
+        StackPane.setMargin(fileNameLB, new Insets(20, 0, 0, 0));
+        stackPane.getChildren().add(fileNameLB);
+
+        // Индикатор загрузки
+        ProgressIndicator progressIndicator = new ProgressIndicator(0);
+        StackPane.setAlignment(progressIndicator, Pos.CENTER);
+        progressIndicator.setPrefWidth(40);
+        progressIndicator.setPrefHeight(40);
+        stackPane.getChildren().add(progressIndicator);
+        progressIndicator.setVisible(true);
+        progressIndicator.setMouseTransparent(true);
+
+        // Правая часть: имя файла и статус
         VBox rightVB = new VBox(3);
         rightVB.setAlignment(Pos.TOP_LEFT);
         rightVB.setPadding(new Insets(10, 10, 10, 20));
         fileHB.getChildren().add(rightVB);
+        rightVB.setMouseTransparent(true);
 
-        Label nameFile = new Label(fileName);
-        nameFile.setStyle("-fx-font-size: 14px;");
-        rightVB.getChildren().add(nameFile);
+        Label nameLabel = new Label(fileName);
+        nameLabel.setStyle("-fx-font-size: 14px;");
+        rightVB.getChildren().add(nameLabel);
+        nameLabel.setMouseTransparent(true);
 
-        Label sizeFile = new Label(fileName);
-        rightVB.getChildren().add(sizeFile);
+        Label statusLabel = new Label();
+        rightVB.getChildren().add(statusLabel);
+        statusLabel.setMouseTransparent(true);
+
+        // Проверяем, существует ли файл локально
+        Path localFile = FileUtils.DEFAULT_STORAGE_DIR.resolve(fileName);
+        System.out.println("Проверяем наличие файла: " + localFile.toAbsolutePath());
+        if (Files.exists(localFile)) {
+            // Файл уже на диске – не обращаемся к БД
+            progressIndicator.setVisible(false);
+            statusLabel.setText("файл на устройстве");
+
+            // Для картинок сразу показываем превью
+            if (fileType.equals("png") || fileType.equals("jpg") || fileType.equals("gif")) {
+                fileNameLB.setVisible(false);
+                try {
+                    fileImage.setImage(new Image(new FileInputStream(localFile.toFile())));
+                } catch (FileNotFoundException e) {
+                    fileNameLB.setVisible(true);
+                    fileNameLB.setText(fileType);
+                    System.err.println("Ошибка загрузки превью: " + e.getMessage());
+                }
+            }
+
+            fileHB.setOnMousePressed(e -> {
+                if (e.getButton() == MouseButton.PRIMARY) {
+                    String fileType2;
+                    File file = localFile.toFile();
+                    int dotIndex2 = file.getName().lastIndexOf('.');
+                    if (dotIndex2 > 0 && dotIndex2 < file.getName().length() - 1) {
+                        fileType2 = file.getName().substring(dotIndex2 + 1).toLowerCase();
+                    } else {
+                        fileType2 = "";
+                    }
+
+                    if (fileType2.equals("png") || fileType2.equals("jpg") || fileType2.equals("gif")) {
+                        try {
+                            ImageUtils.viewingImages(speechBaseController.getMessagesSP()
+                                    , List.of(new Image(new FileInputStream(file))));
+                        } catch (FileNotFoundException ex) {
+                            throw new RuntimeException(ex);
+                        }
+                    } else {
+                        if (Desktop.isDesktopSupported()) {
+                            Desktop desktop = Desktop.getDesktop();
+                            if (file.exists()) {
+                                try {
+                                    desktop.open(file);
+                                } catch (IOException e1) {
+
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        } else {
+            // Файла нет – запускаем асинхронную загрузку из БД
+            MessageContentService contentService = new MessageContentService();
+            FileUtils.SaveResult result = FileUtils.saveToDefaultDirAsync(
+                    fileName,
+                    () -> contentService.getContentBytes(mC.getMessageContentId()) // ленивая загрузка байтов
+            );
+
+            progressIndicator.progressProperty().bind(result.progressProperty());
+
+            // Отслеживаем прогресс
+            result.progressProperty().addListener((obs, oldV, newV) -> {
+                if (newV.doubleValue() >= 1.0) {
+                    // Завершено
+                    Platform.runLater(() -> {
+                        progressIndicator.setVisible(false);
+                        statusLabel.setText("загрузка завершена");
+                        System.out.println(fileName + " успешно загружен!");
+                        // Показываем превью, если картинка
+                        if (fileType.equals("png") || fileType.equals("jpg") || fileType.equals("gif")) {
+                            fileNameLB.setVisible(false);
+                            try {
+                                fileImage.setImage(new Image(new FileInputStream(localFile.toFile())));
+                            } catch (FileNotFoundException e) {
+                                fileNameLB.setVisible(true);
+                                fileNameLB.setText(fileType);
+                                System.err.println(e.getMessage());
+                            }
+                        }
+
+                        fileHB.setOnMousePressed(e -> {
+                            if (e.getButton() == MouseButton.PRIMARY) {
+                                System.out.println("Нажато на HB");
+                                String fileType2;
+                                File file = result.getResultNow().toFile();
+                                int dotIndex2 = file.getName().lastIndexOf('.');
+                                if (dotIndex2 > 0 && dotIndex2 < file.getName().length() - 1) {
+                                    fileType2 = file.getName().substring(dotIndex2 + 1).toLowerCase();
+                                } else {
+                                    fileType2 = "";
+                                }
+
+                                if (fileType2.equals("png") || fileType2.equals("jpg") || fileType2.equals("gif")) {
+                                    try {
+                                        ImageUtils.viewingImages(speechBaseController.getMessagesSP()
+                                                , List.of(new Image(new FileInputStream(file))));
+                                    } catch (FileNotFoundException ex) {
+                                        throw new RuntimeException(ex);
+                                    }
+                                } else {
+                                    if (Desktop.isDesktopSupported()) {
+                                        Desktop desktop = Desktop.getDesktop();
+                                        if (file.exists()) {
+                                            try {
+                                                desktop.open(file);
+                                            } catch (IOException e1) {
+
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        });
+                    });
+                } else {
+                    // Обновляем процент
+                    Platform.runLater(() ->
+                            statusLabel.setText(String.format("Загрузка: %.0f%%", newV.doubleValue() * 100))
+                    );
+                }
+            });
+            // Запускаем запись (start уже вызывается в saveToDefaultDirAsync)
+        }
     }
 }

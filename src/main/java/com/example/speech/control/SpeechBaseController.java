@@ -50,6 +50,8 @@ public class SpeechBaseController {
     @FXML
     private ListView<ChannelUser> chatsView;
 
+    private ListView<File> fileListView;
+
     private final ChannelUserService channelUserService = new ChannelUserService();
     private final MessageService messageService = new MessageService();
 
@@ -317,42 +319,38 @@ public class SpeechBaseController {
     }
 
     public void loadChannelMessages(ChannelUser selectedChat) {
-
         selectedChatVB.setVisible(true);
-
         channelName.setText(selectedChat.getChannel().getChannelName());
         channelStatus.setText(selectedChat.getChannel().getChannelCountUser() == 2 ?
                 channelUserService.getInterlocutorStatus(selectedChat.getChannel(), selectedChat.getUser()) :
                 String.format("Число участников: %d", selectedChat.getChannel().getChannelCountUser()));
-
         messageTA.setText("");
-
-        List<Message> messagesList = messageService.getAllMessageInChannel(
-                selectedChannelUser.getChannel().getChannelID()
-        );
-
-        messages.setAll(messagesList.stream().filter(message ->
-                !message.getDeletedByUsers().contains(Long.valueOf(currentUser.getIdUser()))).toList());
-
-        Platform.runLater(() -> {
-            if (!messagesLV.getItems().isEmpty()) {
-                messagesLV.scrollTo(messagesLV.getItems().size());
-            }
-        });
-
         messageCellCreator.clearCache();
-        //long startTime = System.currentTimeMillis();
-        //Заменить на конечный скрол
-        //long endTime = System.currentTimeMillis();
-        //long duration = endTime - startTime;
-        //System.out.println("Время выполнения: " + duration + " мс");
+
+        new Thread(() -> {
+            List<Message> messagesList = messageService.getAllMessageInChannel(
+                    selectedChannelUser.getChannel().getChannelID());
+            List<Message> filtered = messagesList.stream()
+                    .filter(message -> !message.getDeletedByUsers()
+                            .contains(Long.valueOf(currentUser.getIdUser())))
+                    .toList();
+
+            // Обновление UI
+            Platform.runLater(() -> {
+                messages.setAll(filtered);
+                if (!messagesLV.getItems().isEmpty()) {
+                    messagesLV.scrollTo(messagesLV.getItems().size());
+                }
+            });
+        }).start();
     }
 
     private void setupMessageTextAreaListener() {
         messageTA.textProperty().addListener((observable, oldValue, newValue) -> {
             boolean hasVisibleText = newValue != null &&
                     !newValue.trim().isEmpty() &&
-                    !newValue.matches("^[\\n\\r\\s]*$");
+                    !newValue.matches("^[\\n\\r\\s]*$") &&
+                    !newValue.equals("Сообщение...");
 
             if (!hasVisibleText) {
                 sendVB.setVisible(false);
@@ -363,10 +361,6 @@ public class SpeechBaseController {
                 AnchorPane.setRightAnchor(emojiVB, 50.0);
                 sendVB.setVisible(true);
             }
-
-            if(newValue != null && !newValue.trim().isEmpty() && newValue.matches("^\\s\\n*\\s*$")) {
-                messageTA.setPadding(new Insets(0));
-            } else messageTA.setPadding(new Insets(7, 0, 0, 0));
 
             adjustTextAreaHeight(newValue);
         });
@@ -414,7 +408,7 @@ public class SpeechBaseController {
         String text = messageTA.getText().trim();
 
         // ----------------------- Обычная отправка -----------------------
-        if ((!text.isEmpty() || !selectedFile.isEmpty())
+        if (((!text.isEmpty() && !text.equals("Сообщение...")) || (selectedFile != null && !selectedFile.isEmpty()))
                 && chatsView.getSelectionModel().getSelectedItem() != null
                 && (!updateMessageHB.isVisible() || contextPopUpBar == ContextPopUpBar.REPLY_MESSAGE)) {
 
@@ -424,21 +418,25 @@ public class SpeechBaseController {
             List<MessageContent> contents = new ArrayList<>();
             if(selectedFile != null && !selectedFile.isEmpty()) {
                 List<File> delFiles = new ArrayList<>();
-                FileUtils.copyFilesToDir(selectedFile);
                 for(File f : selectedFile) {
-                    MessageContent newMC = new MessageContent();
-                    newMC.setMessageContentBytes(FileUtils.readFileToByteArrayStream(f));
-                    newMC.setMessageContentFileName(f.getName());
-                    contents.add(newMC);
+                    if(f.length() <= 2 * 1024 * 1024) {
+                        MessageContent newMC = new MessageContent();
+                        newMC.setMessageContentBytes(FileUtils.readFileToByteArrayStream(f));
+                        newMC.setMessageContentFileName(f.getName());
+                        contents.add(newMC);
+                    }
                     delFiles.add(f);
                 }
+                contents = contents.stream()
+                        .sorted((f1, f2) -> f1.getMessageContentBytes().length - f2.getMessageContentBytes().length)
+                        .limit(10)
+                        .toList();
+                if(contents.size() != selectedFile.size())
+                    System.out.println("Часть сообщений не будет отправлена");
                 selectedFile.removeAll(delFiles);
             }
-            if(messageTA.getText() != null && !messageTA.getText().isEmpty() && !messageTA.getText().equals("Сообщение...")) {
-                MessageContent newMC = new MessageContent();
-                newMC.setMessageContentBytes(text.getBytes(StandardCharsets.UTF_8));
-                contents.addLast(newMC);
-            }
+            if(!text.equals("Сообщение..."))
+                messageToSave.setMessageString(text);
             messageToSave.setMessageContent(contents);
             messageToSave.setChannelUser(selectedChat);
             messageToSave.setMessageDatetime(LocalDateTime.now());
@@ -468,6 +466,7 @@ public class SpeechBaseController {
             }).start();
 
             updateVisibleChangeMessageHB();
+            messagesLV.refresh();
             return;
         }
 
@@ -477,9 +476,7 @@ public class SpeechBaseController {
                 && updateMessageHB.isVisible()
                 && contextPopUpBar == ContextPopUpBar.CHANGE_MESSAGE) {
 
-            String oldText = new String(
-                    updateMessage.getMessageContent().getLast().getMessageContentBytes(),
-                    StandardCharsets.UTF_8);
+            String oldText = updateMessage.getMessageString();
 
             if (!text.equals(oldText)) {
                 // Сохраняем ID, чтобы не потерять после возможного обнуления updateMessage
@@ -488,52 +485,26 @@ public class SpeechBaseController {
 
                 // Локальное обновление для немедленного отклика
                 messageToUpdate.getMessageContent().clear();
-                MessageContent newContent = new MessageContent();
-                newContent.setMessageContentBytes(text.getBytes(StandardCharsets.UTF_8));
-                messageToUpdate.addMessageContent(newContent);
+                messageToUpdate.setMessageString(text);
                 messageToUpdate.setModifiedMessage(true);
-                messagesLV.refresh();
 
                 // Асинхронное сохранение
                 new Thread(() -> {
                     try {
-                        messageService.updateMessageText(msgId, text);
+                        messageService.update(messageToUpdate);
                         Platform.runLater(() -> {
                             // Успешно – обнуляем глобальную переменную, скрываем панель
                             updateMessage = null;
                             updateVisibleChangeMessageHB();
                         });
                     } catch (Exception e) {
-                        e.printStackTrace();
-                        // Ошибка – откатываем UI к исходному состоянию
-                        Platform.runLater(() -> {
-                            // Загружаем актуальное состояние из БД (через сервис)
-                            Message fresh = messageService.getRowById(msgId);
-                            if (fresh != null) {
-                                // Находим сообщение в списке и обновляем его контент
-                                int idx = messages.indexOf(messageToUpdate);
-                                if (idx >= 0) {
-                                    messages.set(idx, fresh);
-                                } else {
-                                    // Если сообщение уже удалено, просто обновляем через lookup
-                                    // Но обычно оно ещё в списке
-                                    messagesLV.refresh();
-                                }
-                            } else {
-                                // Сообщение было удалено параллельно — убираем из списка
-                                messages.remove(messageToUpdate);
-                            }
-                            // updateMessage продолжает указывать на старый объект, его можно оставить для повторной попытки
-                            // Или сбросить, если хотим принудительно закрыть режим редактирования
-                        });
+
                     }
                 }).start();
 
-                // Сразу после запуска потока не скрываем панель, она скроется при успехе
-                messageTA.setText("");   // очищаем поле ввода
-                return;   // не вызываем updateVisibleChangeMessageHB() сейчас
+                messageTA.setText("");
+                return;
             } else {
-                // Текст не изменился – просто выходим из режима редактирования
                 updateVisibleChangeMessageHB();
             }
         }
@@ -554,6 +525,7 @@ public class SpeechBaseController {
 
                 Message temp = new Message();
                 temp.setMessageDatetime(LocalDateTime.now());
+                temp.setMessageString(original.getMessageString());
                 temp.setMessageContent(List.of(newContent));  // временная коллекция
                 temp.setChannelUser(selectedChannelUser);
                 temp.setMessageStatus("загружается");
@@ -649,7 +621,7 @@ public class SpeechBaseController {
         pinnedMessagesHB.setVisible(true);
         pinnedMessagesHB.setManaged(true);
         if(!lastPinnedMessage.getMessageContent().isEmpty()) {
-            String messageText = new String(lastPinnedMessage.getMessageContent().getLast().getMessageContentBytes(), StandardCharsets.UTF_8);
+            String messageText = lastPinnedMessage.getMessageString();
             if (messageText.length() > 50) {
                 messageText = messageText.substring(0, 47) + "...";
             }
@@ -1266,8 +1238,8 @@ public class SpeechBaseController {
         listOfBtn.setOnAction(e -> {
             //Вывод только нужных сообщений
             if(listOfBtn.getText().equals("Списком")) {
-                filteredList.setPredicate(message -> (new String(message.getMessageContent().getLast().getMessageContentBytes(), StandardCharsets.UTF_8))
-                        .toLowerCase().contains(searchFromChatTF.getText().trim().toLowerCase()));
+                filteredList.setPredicate(message -> message.getMessageString().toLowerCase()
+                        .contains(searchFromChatTF.getText().trim().toLowerCase()));
                 listOfBtn.setText("Чатом");
                 countResult.setText("Всего записей: " + resultList.size());
                 buttonsVB.setVisible(false);
@@ -1293,7 +1265,7 @@ public class SpeechBaseController {
             //Кнопка поиска вхождений подстроки в сообщения
             if (searchFromChatTF.getText() != null && !searchFromChatTF.getText().isEmpty()) {
                 resultList = messages.stream().filter(message ->
-                        (new String(message.getMessageContent().getLast().getMessageContentBytes(), StandardCharsets.UTF_8)).toLowerCase().contains(searchFromChatTF.getText().trim().toLowerCase())).toList();
+                        message.getMessageString().toLowerCase().contains(searchFromChatTF.getText().trim().toLowerCase())).toList();
 
                 if (resultList.isEmpty()) {
                     countResult.setText("Нету результатов");
@@ -1344,26 +1316,67 @@ public class SpeechBaseController {
     @FXML
     private void actionAddFileBtn() {
         FileChooser fileChooser = new FileChooser();
-        fileChooser.setTitle("Выбор файлов(не более 10)");
+        fileChooser.setTitle("Выбор файлов (не более 10)");
         fileChooser.getExtensionFilters().addAll(
-                new FileChooser.ExtensionFilter("Text Files", "*.txt"),
                 new FileChooser.ExtensionFilter("Image Files", "*.png", "*.jpg", "*.gif"),
-                new FileChooser.ExtensionFilter("All Files", "*.*"));
-        if(selectedFile == null || selectedFile.isEmpty())
-            selectedFile = FXCollections.observableArrayList(fileChooser.showOpenMultipleDialog(rootAnchorPane.getScene().getWindow()));
-        else
-            selectedFile.addAll(fileChooser.showOpenMultipleDialog(rootAnchorPane.getScene().getWindow()));
+                new FileChooser.ExtensionFilter("Text Files", "*.txt"),
+                new FileChooser.ExtensionFilter("All Files", "*.*")
+        );
 
-        ListView<File> fileListView = new ListView<>();
-        fileListView.setMaxHeight(80);
-        fileListView.setSelectionModel(null);
-        fileListView.setOrientation(Orientation.HORIZONTAL);
-        fileListView.getStyleClass().add("no-vertical-scroll");
-        fileListView.prefWidthProperty().bind(rightSP.widthProperty());
-        StackPane.setMargin(fileListView, new Insets(0, 0, 40, 0));
-        StackPane.setAlignment(fileListView, Pos.BOTTOM_CENTER);
-        fileListView.setCellFactory(f -> new FileCell(this));
-        fileListView.setItems(selectedFile);
-        rightSP.getChildren().add(fileListView);
+        List<File> chosenFiles = fileChooser.showOpenMultipleDialog(rootAnchorPane.getScene().getWindow());
+        if (chosenFiles == null || chosenFiles.isEmpty()) return;
+
+        // Инициализируем список и UI при первом добавлении
+        if (selectedFile == null) {
+            selectedFile = FXCollections.observableArrayList();
+            fileListView = new ListView<>();
+            fileListView.setMaxHeight(60);
+            fileListView.setVisible(false);
+            fileListView.setManaged(false);
+            fileListView.setSelectionModel(null);
+            fileListView.setOrientation(Orientation.HORIZONTAL);
+            fileListView.getStyleClass().add("no-vertical-scroll");
+            fileListView.prefWidthProperty().bind(rightSP.widthProperty());
+            StackPane.setMargin(fileListView, new Insets(0, 0, 40, 0));
+            StackPane.setAlignment(fileListView, Pos.BOTTOM_CENTER);
+            fileListView.setCellFactory(f -> new FileCell(this));
+            fileListView.setItems(selectedFile);
+            rightSP.getChildren().add(fileListView);
+
+            // Слушатель размера списка
+            selectedFile.addListener((ListChangeListener<File>) change -> {
+                while (change.next()) { /* приводим изменение в актуальное состояние */ }
+                int size = selectedFile.size();
+                Platform.runLater(() -> {
+                    if (size > 0) {
+                        AnchorPane.setRightAnchor(messageTA, 102.0);
+                        AnchorPane.setRightAnchor(emojiVB, 50.0);
+                        sendVB.setVisible(true);
+                        if (fileListView != null) {
+                            fileListView.setVisible(true);
+                            fileListView.setManaged(true);
+                        }
+                    } else {
+                        AnchorPane.setRightAnchor(messageTA, 51.0);
+                        AnchorPane.setRightAnchor(emojiVB, 0.0);
+                        sendVB.setVisible(false);
+                        if (fileListView != null) {
+                            fileListView.setVisible(false);
+                            fileListView.setManaged(false);
+                        }
+                    }
+                });
+            });
+        }
+
+        selectedFile.addAll(chosenFiles);
+
+        // Копируем в локальную папку сразу после выбора
+        try {
+            FileUtils.copyFilesToDir(chosenFiles);
+        } catch (IOException e) {
+            e.printStackTrace();
+            // можно показать Alert
+        }
     }
 }

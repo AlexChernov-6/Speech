@@ -12,6 +12,7 @@ public class MessageContent {
     @Column(name = "message_content_id")
     private long messageContentId;
     @Column(name = "message_content_bytes")
+    @Basic(fetch = FetchType.LAZY)
     private byte[] messageContentBytes;
     @Column(name = "message_content_file_name")
     private String messageContentFileName;

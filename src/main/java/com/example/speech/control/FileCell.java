@@ -2,6 +2,7 @@ package com.example.speech.control;
 
 import com.example.speech.util.ImageUtils;
 import javafx.collections.ObservableList;
+import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
@@ -17,15 +18,21 @@ import java.util.Objects;
 
 public class FileCell extends ListCell<File> {
     private final StackPane rootSP;
-    private final ImageView imageView;
     private final Label fileNameLB;
+    private final ImageView imageView;
 
     private File file;
 
     public FileCell(SpeechBaseController speechBaseController) {
         setOnMouseClicked(e -> {
             if (e.getButton() == MouseButton.PRIMARY) {
-                String fileType = file.getName().split("\\.")[1];
+                String fileType;
+                int dotIndex = file.getName().lastIndexOf('.');
+                if (dotIndex > 0 && dotIndex < file.getName().length() - 1) {
+                    fileType = file.getName().substring(dotIndex + 1).toLowerCase();
+                } else {
+                    fileType = "";
+                }
                 if (fileType.equals("png") || fileType.equals("jpg") || fileType.equals("gif")) {
                     ImageUtils.viewingImages(speechBaseController.getMessagesSP()
                             , speechBaseController.selectedFile.stream()
@@ -50,7 +57,7 @@ public class FileCell extends ListCell<File> {
                                 // 3. Открываем файл в программе по умолчанию
                                 desktop.open(file);
                             } catch (IOException e1) {
-                                e1.printStackTrace();
+
                             }
                         }
                     }
@@ -59,28 +66,28 @@ public class FileCell extends ListCell<File> {
         });
 
         rootSP = new StackPane();
-        rootSP.setMaxHeight(80);
-        rootSP.setMaxWidth(80);
+        rootSP.setMaxHeight(60);
+        rootSP.setMaxWidth(60);
 
-        imageView = new ImageView();
-        imageView.setFitHeight(60);
-        imageView.setFitWidth(60);
+        imageView = new ImageView(
+                new Image(Objects.requireNonNull(getClass().getResourceAsStream("/com/example/speech/image/doc.png"))));
+        imageView.setFitHeight(40);
+        imageView.setFitWidth(40);
         StackPane.setAlignment(imageView, Pos.BOTTOM_CENTER);
         rootSP.getChildren().add(imageView);
 
         fileNameLB = new Label();
-        fileNameLB.setMaxWidth(80);
-        fileNameLB.setPrefWidth(80);
+        fileNameLB.setMaxWidth(60);
+        fileNameLB.setPrefWidth(60);
         fileNameLB.setVisible(false);
-        fileNameLB.setStyle("-fx-background-color: rgba(75, 75, 75, 0.3); -fx-text-fill: white; -fx-font-size: 10; -fx-font-weight: bold;");
+        fileNameLB.setStyle("-fx-text-fill: white; -fx-font-size: 14; -fx-font-weight: bold;");
         fileNameLB.setAlignment(Pos.CENTER);
         fileNameLB.setMouseTransparent(true);
-        StackPane.setAlignment(fileNameLB, Pos.CENTER);
+        StackPane.setAlignment(fileNameLB, Pos.TOP_CENTER);
+        StackPane.setMargin(fileNameLB, new Insets(30, 0, 0, 0));
         rootSP.getChildren().add(fileNameLB);
 
         Button delBtn = new Button();
-        delBtn.setMaxHeight(10);
-        delBtn.setMaxWidth(10);
         delBtn.getStyleClass().add("image-btn");
         StackPane.setAlignment(delBtn, Pos.TOP_RIGHT);
         delBtn.setOnAction(e -> {
@@ -107,25 +114,25 @@ public class FileCell extends ListCell<File> {
             setGraphic(null);
             setText(null);
         } else {
-            String fileType = file.getName().split("\\.")[1];
-            if (fileType.equals("txt")) {
-                imageView.setImage(
-                        new Image(Objects.requireNonNull(getClass().getResourceAsStream("/com/example/speech/image/txt.png"))));
-                fileNameLB.setVisible(true);
-                fileNameLB.setText(file.getName());
-            } else if (fileType.equals("png") || fileType.equals("jpg") || fileType.equals("gif")) {
+            String fileType;
+            int dotIndex = file.getName().lastIndexOf('.');
+            if (dotIndex > 0 && dotIndex < file.getName().length() - 1) {
+                fileType = file.getName().substring(dotIndex + 1).toLowerCase();
+            } else {
+                fileType = "";
+            }
+            if (fileType.equals("png") || fileType.equals("jpg") || fileType.equals("gif")) {
+                fileNameLB.setVisible(false);
                 try {
                     imageView.setImage(new Image(new FileInputStream(file)));
                 } catch (FileNotFoundException e) {
-                    imageView.setImage(
-                            new Image(Objects.requireNonNull(getClass().getResourceAsStream("/com/example/speech/image/document.png"))));
+                    fileNameLB.setVisible(true);
+                    fileNameLB.setText(fileType);
                     System.err.println(e.getMessage());
                 }
             } else {
-                imageView.setImage(
-                        new Image(Objects.requireNonNull(getClass().getResourceAsStream("/com/example/speech/image/document.png"))));
                 fileNameLB.setVisible(true);
-                fileNameLB.setText(file.getName());
+                fileNameLB.setText(fileType);
             }
             setGraphic(rootSP);
         }

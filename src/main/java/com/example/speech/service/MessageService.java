@@ -51,32 +51,6 @@ public class MessageService extends BaseService<Message> {
         }
     }
 
-    public void updateMessageText(long messageId, String newText) {
-        Session session = HibernateSessionFactory.getSessionFactory().openSession();
-        try {
-            session.getTransaction().begin();
-            Message msg = session.find(Message.class, messageId);
-            if (msg == null) throw new RuntimeException("Сообщение не найдено");
-
-            // Очищаем старые вложения (orphanRemoval + cascade удалят их из БД)
-            msg.getMessageContent().clear();
-
-            // Добавляем новое текстовое вложение
-            MessageContent mc = new MessageContent();
-            mc.setMessageContentBytes(newText.getBytes(StandardCharsets.UTF_8));
-            msg.addMessageContent(mc);   // проставит обратную ссылку
-
-            msg.setModifiedMessage(true);
-            session.getTransaction().commit();
-        } catch (Exception e) {
-            if (session.getTransaction().isActive())
-                session.getTransaction().rollback();
-            throw e;
-        } finally {
-            session.close();
-        }
-    }
-
     /**
      * Удаляет сообщение вместе со всеми вложениями (каскад + orphanRemoval).
      */

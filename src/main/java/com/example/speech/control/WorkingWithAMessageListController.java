@@ -53,7 +53,7 @@ public class WorkingWithAMessageListController extends Pane {
 
         String contentMessage;
         if(!message.getMessageContent().isEmpty())
-            contentMessage = new String(message.getMessageContent().getLast().getMessageContentBytes(), StandardCharsets.UTF_8);
+            contentMessage = message.getMessageString();
         else {
             contentMessage = "";
         }
