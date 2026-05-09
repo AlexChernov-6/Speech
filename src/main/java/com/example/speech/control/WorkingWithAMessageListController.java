@@ -2,6 +2,7 @@ package com.example.speech.control;
 
 import com.example.speech.model.Message;
 import com.example.speech.service.MessageService;
+import com.example.speech.util.FileUtils;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.geometry.Insets;
@@ -17,6 +18,7 @@ import javafx.scene.layout.Pane;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 
+import java.io.File;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Objects;
@@ -52,17 +54,23 @@ public class WorkingWithAMessageListController extends Pane {
                 , message.getChannelUser().getUser().getIdUser()));
 
         String contentMessage;
-        if(!message.getMessageContent().isEmpty())
+        if (message.getMessageString() != null && !message.getMessageString().isEmpty())
             contentMessage = message.getMessageString();
-        else {
+        else if (message.getMessageContent() != null && !message.getMessageContent().isEmpty()) {
+            int countContents = message.getMessageContent().size();
+            if (countContents == 1)
+                contentMessage = String.format("%d вложение", countContents);
+            else if (countContents >= 2 && countContents <= 4)
+                contentMessage = String.format("%d вложения", countContents);
+            else
+                contentMessage = String.format("%d вложений", countContents);
+        } else
             contentMessage = "";
-        }
 
         StackPane messagesSP = speechBaseController.getMessagesSP();
         String channelName = speechBaseController.getChannelName().getText();
         ListView<Message> messagesLV = speechBaseController.getMessagesLV();
         TextArea messageTA = speechBaseController.getMessageTA();
-        Long currentUserId = Long.valueOf(speechBaseController.getCurrentUser().getIdUser());
         HBox updateMessageHB = speechBaseController.getUpdateMessageHB();
         Label contentUpdateMessageLB = speechBaseController.getContentUpdateMessageLB();
         ImageView HintIV = speechBaseController.getHintIV();
@@ -176,12 +184,18 @@ public class WorkingWithAMessageListController extends Pane {
             speechBaseController.toggleMessageSelection(message);
         });
 
-        if(isCurrentUserMessage) {
+        if (isCurrentUserMessage) {
             CustomButton change = new CustomButton(changeI, "Изменить");
             change.setPrefWidth(vBoxWidth);
             change.setPrefHeight(40);
             change.setOnAction(e -> {
-                messageTA.setText(contentMessage);
+                if (message.getMessageString() != null && !message.getMessageString().isEmpty())
+                    messageTA.setText(message.getMessageString());
+                if (message.getMessageContent() != null && !message.getMessageContent().isEmpty())
+                    speechBaseController.selectedFile.setAll(message.getMessageContent().stream()
+                            .map(messageContent -> {
+                                return FileUtils.getFileFromDefaultDir(messageContent.getMessageContentFileName());
+                            }).toList());
                 HintIV.setImage(changeI);
                 HintLB.setText("Редактирование");
                 speechBaseController.setContextPopUpBar(ContextPopUpBar.CHANGE_MESSAGE);

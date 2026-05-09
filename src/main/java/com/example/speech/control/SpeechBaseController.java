@@ -232,6 +232,46 @@ public class SpeechBaseController {
             }
         });
 
+        selectedFile = FXCollections.observableArrayList();
+        fileListView = new ListView<>();
+        fileListView.setMaxHeight(60);
+        fileListView.setVisible(false);
+        fileListView.setManaged(false);
+        fileListView.setSelectionModel(null);
+        fileListView.setOrientation(Orientation.HORIZONTAL);
+        fileListView.getStyleClass().add("no-vertical-scroll");
+        fileListView.prefWidthProperty().bind(rightSP.widthProperty());
+        StackPane.setMargin(fileListView, new Insets(0, 0, 40, 0));
+        StackPane.setAlignment(fileListView, Pos.BOTTOM_CENTER);
+        fileListView.setCellFactory(f -> new FileCell(this));
+        fileListView.setItems(selectedFile);
+        rightSP.getChildren().add(fileListView);
+
+        // Слушатель размера списка
+        selectedFile.addListener((ListChangeListener<File>) change -> {
+            while (change.next()) { /* приводим изменение в актуальное состояние */ }
+            int size = selectedFile.size();
+            Platform.runLater(() -> {
+                if (size > 0) {
+                    AnchorPane.setRightAnchor(messageTA, 102.0);
+                    AnchorPane.setRightAnchor(emojiVB, 50.0);
+                    sendVB.setVisible(true);
+                    if (fileListView != null) {
+                        fileListView.setVisible(true);
+                        fileListView.setManaged(true);
+                    }
+                } else {
+                    AnchorPane.setRightAnchor(messageTA, 51.0);
+                    AnchorPane.setRightAnchor(emojiVB, 0.0);
+                    sendVB.setVisible(false);
+                    if (fileListView != null) {
+                        fileListView.setVisible(false);
+                        fileListView.setManaged(false);
+                    }
+                }
+            });
+        });
+
         messagesLV.setOnKeyPressed(event -> {
             if (event.getCode() == KeyCode.ESCAPE && isSelectionModeActive()) {
                 setSelectionModeActive(false);
@@ -477,15 +517,39 @@ public class SpeechBaseController {
                 && contextPopUpBar == ContextPopUpBar.CHANGE_MESSAGE) {
 
             String oldText = updateMessage.getMessageString();
+            List<File> oldMessageContentList = updateMessage.getMessageContent().stream()
+                    .map(mC -> FileUtils.getFileFromDefaultDir(mC.getMessageContentFileName()))
+                    .sorted((f1, f2) -> f1.getName().compareTo(f2.getName()))
+                    .toList();
 
-            if (!text.equals(oldText)) {
+            List<File> newMessageContentList = selectedFile.stream()
+                    .sorted((f1, f2) -> f1.getName().compareTo(f2.getName()))
+                    .toList();
+
+            boolean newContent = false;
+
+            if(oldMessageContentList.size() != newMessageContentList.size())
+                newContent = true;
+            else {
+                for (int i = 0; i < oldMessageContentList.size(); i++) {
+                    if(oldMessageContentList.get(i) != newMessageContentList.get(i)) {
+                        newContent = true;
+                        System.out.println("Файл: " + oldMessageContentList.get(i).getName() + " != файлу: " + newMessageContentList.get(i).getName());
+                        break;
+                    }
+                }
+            }
+
+            if (!text.equals(oldText) || newContent) {
                 // Сохраняем ID, чтобы не потерять после возможного обнуления updateMessage
-                final long msgId = updateMessage.getMessageId();
                 final Message messageToUpdate = updateMessage;   // ссылка для UI
 
                 // Локальное обновление для немедленного отклика
-                messageToUpdate.getMessageContent().clear();
-                messageToUpdate.setMessageString(text);
+                if(newContent) {
+                    messageToUpdate.getMessageContent().clear();//Реализовать логику обновления сообщения при изменении файлов
+                }
+                if(!text.equals(oldText))
+                    messageToUpdate.setMessageString(text);
                 messageToUpdate.setModifiedMessage(true);
 
                 // Асинхронное сохранение
@@ -1325,49 +1389,6 @@ public class SpeechBaseController {
 
         List<File> chosenFiles = fileChooser.showOpenMultipleDialog(rootAnchorPane.getScene().getWindow());
         if (chosenFiles == null || chosenFiles.isEmpty()) return;
-
-        // Инициализируем список и UI при первом добавлении
-        if (selectedFile == null) {
-            selectedFile = FXCollections.observableArrayList();
-            fileListView = new ListView<>();
-            fileListView.setMaxHeight(60);
-            fileListView.setVisible(false);
-            fileListView.setManaged(false);
-            fileListView.setSelectionModel(null);
-            fileListView.setOrientation(Orientation.HORIZONTAL);
-            fileListView.getStyleClass().add("no-vertical-scroll");
-            fileListView.prefWidthProperty().bind(rightSP.widthProperty());
-            StackPane.setMargin(fileListView, new Insets(0, 0, 40, 0));
-            StackPane.setAlignment(fileListView, Pos.BOTTOM_CENTER);
-            fileListView.setCellFactory(f -> new FileCell(this));
-            fileListView.setItems(selectedFile);
-            rightSP.getChildren().add(fileListView);
-
-            // Слушатель размера списка
-            selectedFile.addListener((ListChangeListener<File>) change -> {
-                while (change.next()) { /* приводим изменение в актуальное состояние */ }
-                int size = selectedFile.size();
-                Platform.runLater(() -> {
-                    if (size > 0) {
-                        AnchorPane.setRightAnchor(messageTA, 102.0);
-                        AnchorPane.setRightAnchor(emojiVB, 50.0);
-                        sendVB.setVisible(true);
-                        if (fileListView != null) {
-                            fileListView.setVisible(true);
-                            fileListView.setManaged(true);
-                        }
-                    } else {
-                        AnchorPane.setRightAnchor(messageTA, 51.0);
-                        AnchorPane.setRightAnchor(emojiVB, 0.0);
-                        sendVB.setVisible(false);
-                        if (fileListView != null) {
-                            fileListView.setVisible(false);
-                            fileListView.setManaged(false);
-                        }
-                    }
-                });
-            });
-        }
 
         selectedFile.addAll(chosenFiles);
 

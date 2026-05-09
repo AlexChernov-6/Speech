@@ -149,7 +149,17 @@ public class TextMessageCellController {
             String messageContentReply = "";
             if (replyMessage != null) {
                 userName = replyMessage.getChannelUser().getUser().getNameUser();
-                messageContentReply = replyMessage.getMessageString();
+                if(replyMessage.getMessageString() != null && !replyMessage.getMessageString().isEmpty())
+                    messageContentReply = replyMessage.getMessageString();
+                else {
+                    int countContents = replyMessage.getMessageContent().size();
+                    if(countContents == 1)
+                        messageContentReply = String.format("%d вложение", countContents);
+                    else if(countContents >= 2 && countContents <= 4)
+                        messageContentReply = String.format("%d вложения", countContents);
+                    else
+                        messageContentReply = String.format("%d вложений", countContents);
+                }
             }
 
             String displayUserName = userName.length() > 20 ? userName.substring(0, 20) + "..." : userName;

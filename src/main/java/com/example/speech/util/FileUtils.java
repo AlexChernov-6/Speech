@@ -63,6 +63,15 @@ public final class FileUtils {
         }
     }
 
+    public static File getFileFromDefaultDir(String fileName) {
+        Path filePath = DEFAULT_STORAGE_DIR.resolve(fileName);
+
+        if (Files.exists(filePath))
+            return filePath.toFile();
+
+        return null;
+    }
+
     public static SaveResult saveToDefaultDirAsync(String fileName, byte[] data) {
         SaveResult result = new SaveResult(fileName, data);
         result.start();
