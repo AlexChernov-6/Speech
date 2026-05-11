@@ -1,6 +1,8 @@
 package com.example.speech.control;
 
 import com.example.speech.model.Message;
+import com.example.speech.model.MessageContent;
+import com.example.speech.service.MessageContentService;
 import com.example.speech.service.MessageService;
 import com.example.speech.util.FileUtils;
 import javafx.application.Platform;
@@ -19,7 +21,11 @@ import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 
 import java.io.File;
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
@@ -45,7 +51,7 @@ public class WorkingWithAMessageListController extends Pane {
     private static final Image changeI = new Image(Objects.requireNonNull
             (WorkingWithAMessageListController.class.getResourceAsStream("/com/example/speech/image/change.png")));
 
-    private final Clipboard clipboard = Clipboard.getSystemClipboard();
+    public final static Clipboard CLIPBOARD = Clipboard.getSystemClipboard();
     private final ClipboardContent content = new ClipboardContent();
     private final MessageService messageService = new MessageService();
 
@@ -121,9 +127,7 @@ public class WorkingWithAMessageListController extends Pane {
             updateMessageHB.setManaged(true);
             speechBaseController.setMessageIdReplyTo(message.getMessageId());
             messagesSP.getChildren().remove(this);
-            Platform.runLater(() -> {
-                messageTA.requestFocus();
-            });
+            Platform.runLater(messageTA::requestFocus);
         });
 
         CustomButton pin;
@@ -133,7 +137,14 @@ public class WorkingWithAMessageListController extends Pane {
                 messagesSP.getChildren().remove(this);
                 message.setPinMessage(false);
                 messageService.update(message);
-                speechBaseController.setPinnedMessagesHBVisible(messagesLV.getItems().size());
+                if (!speechBaseController.flag)
+                    speechBaseController.updatePinnedMessagesList();
+                else {
+                    if (speechBaseController.firstVisible == 0)
+                        speechBaseController.setPinnedMessagesHBVisible(messagesLV.getItems().size());
+                    else
+                        speechBaseController.setPinnedMessagesHBVisible(speechBaseController.firstVisible);
+                }
             });
         } else {
             pin = new CustomButton(pinI, "Закрепить");
@@ -141,7 +152,10 @@ public class WorkingWithAMessageListController extends Pane {
                 messagesSP.getChildren().remove(this);
                 message.setPinMessage(true);
                 messageService.update(message);
-                speechBaseController.setPinnedMessagesHBVisible(messagesLV.getItems().size());
+                if (speechBaseController.firstVisible == 0)
+                    speechBaseController.setPinnedMessagesHBVisible(messagesLV.getItems().size());
+                else
+                    speechBaseController.setPinnedMessagesHBVisible(speechBaseController.firstVisible);
             });
         }
         pin.setPrefWidth(vBoxWidth);
@@ -152,8 +166,35 @@ public class WorkingWithAMessageListController extends Pane {
         copy.setPrefWidth(vBoxWidth);
         copy.setPrefHeight(40);
         copy.setOnAction(e -> {
-            content.putString(contentMessage);
-            clipboard.setContent(content);
+            if (message.getMessageString() != null && !message.getMessageString().isEmpty())
+                content.putString(contentMessage);
+
+            if(message.getMessageContent() != null && !message.getMessageContent().isEmpty()) {
+                List<File> filesToCopy = new ArrayList<>();
+                for (MessageContent mc : message.getMessageContent()) {
+                    String fileName = mc.getMessageContentFileName();
+                    Path localFile = FileUtils.DEFAULT_STORAGE_DIR.resolve(fileName);
+
+                    if (!Files.exists(localFile)) {
+                        byte[] bytes = mc.getMessageContentBytes();
+                        if (bytes != null) {
+                            try {
+                                FileUtils.saveToDefaultDir(fileName, bytes);
+                            } catch (IOException e1) {
+                                e1.printStackTrace();
+                                continue;
+                            }
+                        }
+                    }
+                    filesToCopy.add(localFile.toFile());
+                }
+
+                if (!filesToCopy.isEmpty()) {
+                    content.putFiles(filesToCopy);
+                }
+            }
+
+            CLIPBOARD.setContent(content);
             messagesSP.getChildren().remove(this);
         });
 

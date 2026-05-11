@@ -78,6 +78,10 @@ public class ConfirmationOfMessageDeletion extends Pane {
             }
             speechBaseController.getMessages().removeAll(messages);
             speechBaseController.getMessagesSP().getChildren().remove(this);
+            if(speechBaseController.flag)
+                speechBaseController.setPinnedMessagesHBVisible(speechBaseController.firstVisible);
+            else
+                speechBaseController.updatePinnedMessagesList();
             Platform.runLater(() -> {
                 if (speechBaseController.isSelectionModeActive())
                     speechBaseController.setSelectionModeActive(false);
@@ -135,6 +139,9 @@ public class ConfirmationOfMessageDeletion extends Pane {
         unpinnedButton.setOnAction(e -> {
             MESSAGE_SERVICE.unpinAllMessageInChannel(speechBaseController.getSelectedChannelUser().getChannel()
                     .getChannelID());
+            speechBaseController.getMessages().stream()
+                    .filter(Message::getPinMessage)
+                    .forEach(msg -> msg.setPinMessage(false));
             speechBaseController.hideTheListOfPinnedMessages();
             stackPane.getChildren().remove(this);
         });

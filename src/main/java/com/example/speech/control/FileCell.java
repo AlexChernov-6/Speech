@@ -25,7 +25,7 @@ public class FileCell extends ListCell<File> {
 
     public FileCell(SpeechBaseController speechBaseController) {
         setOnMouseClicked(e -> {
-            if (e.getButton() == MouseButton.PRIMARY) {
+            if (e.getButton() == MouseButton.PRIMARY && file != null) {
                 String fileType;
                 int dotIndex = file.getName().lastIndexOf('.');
                 if (dotIndex > 0 && dotIndex < file.getName().length() - 1) {

@@ -74,8 +74,7 @@
 
                         <ListView fx:id="messagesLV" VBox.vgrow="ALWAYS"/>
 
-                        <HBox fx:id="updateMessageHB" style="-fx-background-color: white; -fx-cursor: hand;"
-                              prefHeight="40"
+                        <HBox fx:id="updateMessageHB" style="-fx-background-color: white; -fx-cursor: hand;" prefHeight="40"
                               visible="false" managed="false">
                             <ImageView fx:id="HintIV" fitHeight="20" fitWidth="20" preserveRatio="true">
                                 <HBox.margin>

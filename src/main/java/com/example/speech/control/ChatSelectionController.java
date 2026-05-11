@@ -78,8 +78,23 @@ public class ChatSelectionController extends Pane {
                         }
                         if(messages.size() > 1)
                             speechBaseController.getContentUpdateMessageLB().setText(messages.size() + " пересланных сообщения");
-                        else
-                            speechBaseController.getContentUpdateMessageLB().setText(messages.getFirst().getMessageString());
+                        else {
+                            String contentMessage;
+                            Message message = messages.getFirst();
+                            if (message.getMessageString() != null && !message.getMessageString().isEmpty())
+                                contentMessage = message.getMessageString();
+                            else if (message.getMessageContent() != null && !message.getMessageContent().isEmpty()) {
+                                int countContents = message.getMessageContent().size();
+                                if (countContents == 1)
+                                    contentMessage = String.format("%d вложение", countContents);
+                                else if (countContents >= 2 && countContents <= 4)
+                                    contentMessage = String.format("%d вложения", countContents);
+                                else
+                                    contentMessage = String.format("%d вложений", countContents);
+                            } else
+                                contentMessage = "";
+                            speechBaseController.getContentUpdateMessageLB().setText(contentMessage);
+                        }
 
                         if(senders.size() == 1)
                             speechBaseController.getHintLB().setText(senders.getFirst());

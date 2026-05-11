@@ -80,6 +80,8 @@ public class TextMessageCellController {
     private SpeechBaseController speechBaseController;
     private Message message;
 
+    private Pane highlightPane;
+
     private static final Image shipped = new Image(Objects.requireNonNull
             (TextMessageCellController.class.getResourceAsStream("/com/example/speech/image/check.png")));
     private static final Image readIt = new Image(Objects.requireNonNull
@@ -235,6 +237,20 @@ public class TextMessageCellController {
                     speechBaseController.getHintLB().setText("В ответ " + message.getChannelUser().getUser().getNameUser());
                     speechBaseController.setContextPopUpBar(SpeechBaseController.ContextPopUpBar.REPLY_MESSAGE);
                     speechBaseController.getContentUpdateMessageLB().setText(message.getMessageString());
+                    String contentMessage;
+                    if (message.getMessageString() != null && !message.getMessageString().isEmpty())
+                        contentMessage = message.getMessageString();
+                    else if (message.getMessageContent() != null && !message.getMessageContent().isEmpty()) {
+                        int countContents = message.getMessageContent().size();
+                        if (countContents == 1)
+                            contentMessage = String.format("%d вложение", countContents);
+                        else if (countContents >= 2 && countContents <= 4)
+                            contentMessage = String.format("%d вложения", countContents);
+                        else
+                            contentMessage = String.format("%d вложений", countContents);
+                    } else
+                        contentMessage = "";
+                    speechBaseController.getContentUpdateMessageLB().setText(contentMessage);
                     speechBaseController.getUpdateMessageHB().setVisible(true);
                     speechBaseController.getUpdateMessageHB().setManaged(true);
                     speechBaseController.setMessageIdReplyTo(message.getMessageId());
@@ -249,11 +265,13 @@ public class TextMessageCellController {
 
 
     public void highlightMessageTemporarily() {
-        Pane highlightPane = new Pane();
-        highlightPane.setStyle("-fx-background-color: rgba(100, 149, 237, 0.3)");
-        highlightPane.setOpacity(0.0);
-        highlightPane.setMouseTransparent(true);
-        highlightMessageTemporarilySP.getChildren().add(highlightPane);
+        if(highlightPane == null) {
+            highlightPane = new Pane();
+            highlightPane.setStyle("-fx-background-color: rgba(100, 149, 237, 0.3)");
+            highlightPane.setOpacity(0.0);
+            highlightPane.setMouseTransparent(true);
+            highlightMessageTemporarilySP.getChildren().add(highlightPane);
+        }
 
         FadeTransition fadeIn = new FadeTransition(Duration.millis(1000), highlightPane);
         fadeIn.setToValue(1.0);
@@ -262,9 +280,6 @@ public class TextMessageCellController {
             pauseTransition.setOnFinished(e2 -> {
                 FadeTransition fadeOut = new FadeTransition(Duration.millis(2500), highlightPane);
                 fadeOut.setToValue(0.0);
-                fadeOut.setOnFinished(e3 -> {
-                    highlightMessageTemporarilySP.getChildren().remove(highlightPane);
-                });
                 pauseTransition.stop();
                 fadeOut.playFromStart();
             });
@@ -432,7 +447,6 @@ public class TextMessageCellController {
 
         // Проверяем, существует ли файл локально
         Path localFile = FileUtils.DEFAULT_STORAGE_DIR.resolve(fileName);
-        System.out.println("Проверяем наличие файла: " + localFile.toAbsolutePath());
         if (Files.exists(localFile)) {
             // Файл уже на диске – не обращаемся к БД
             progressIndicator.setVisible(false);
@@ -446,7 +460,6 @@ public class TextMessageCellController {
                 } catch (FileNotFoundException e) {
                     fileNameLB.setVisible(true);
                     fileNameLB.setText(fileType);
-                    System.err.println("Ошибка загрузки превью: " + e.getMessage());
                 }
             }
 
@@ -499,7 +512,6 @@ public class TextMessageCellController {
                     Platform.runLater(() -> {
                         progressIndicator.setVisible(false);
                         statusLabel.setText("загрузка завершена");
-                        System.out.println(fileName + " успешно загружен!");
                         // Показываем превью, если картинка
                         if (fileType.equals("png") || fileType.equals("jpg") || fileType.equals("gif")) {
                             fileNameLB.setVisible(false);
@@ -555,5 +567,8 @@ public class TextMessageCellController {
             });
             // Запускаем запись (start уже вызывается в saveToDefaultDirAsync)
         }
+    }
+    public void setSelected(boolean selected) {
+        selectIV.setVisible(selected);
     }
 }
