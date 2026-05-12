@@ -5,6 +5,7 @@ import jakarta.persistence.*;
 import javafx.scene.image.Image;
 
 import java.time.LocalDate;
+import java.util.Objects;
 
 @Entity
 @Table(name = "users", schema = "public")
@@ -120,5 +121,17 @@ public class User {
 
     public void setStatusUser(String statusUser) {
         this.statusUser = statusUser;
+    }
+
+    @Override
+    public boolean equals(Object object) {
+        if (object == null || getClass() != object.getClass()) return false;
+        User user = (User) object;
+        return Objects.equals(idUser, user.idUser);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(idUser);
     }
 }

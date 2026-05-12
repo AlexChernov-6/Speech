@@ -1,6 +1,8 @@
 package com.example.speech.model;
 
+import com.example.speech.util.ImageConverter;
 import jakarta.persistence.*;
+import javafx.scene.image.Image;
 
 @Entity
 @Table(name = "channels", schema = "public")
@@ -17,15 +19,34 @@ public class Channel {
     private int channelCountUser;
     @ManyToOne @JoinColumn(name = "channel_type_id")
     private ChannelType channelType;
+    @Column
+    private String channel_name_unique;
+
+    @Transient
+    private Image photoChannel;
+
+
+    public Image getPhotoImage() {
+        if (photoChannel == null && channelLogo != null) {
+            try {
+                photoChannel = ImageConverter.convertBytesToImage(channelLogo);
+            } catch (Exception e) {
+                System.err.println( e.getMessage());
+                photoChannel = ImageConverter.getDefaultImage();
+            }
+        }
+        return photoChannel != null ? photoChannel : ImageConverter.getDefaultImage();
+    }
 
     public Channel() { }
 
-    public Channel(int channelID, String channelName, byte[] channelLogo, int channelCountUser, ChannelType channelType) {
+    public Channel(int channelID, String channelName, byte[] channelLogo, int channelCountUser, ChannelType channelType, String channel_name_unique) {
         this.channelID = channelID;
         this.channelName = channelName;
         this.channelLogo = channelLogo;
         this.channelCountUser = channelCountUser;
         this.channelType = channelType;
+        this.channel_name_unique = channel_name_unique;
     }
 
     public int getChannelID() {
@@ -66,5 +87,13 @@ public class Channel {
 
     public void setChannelType(ChannelType channelType) {
         this.channelType = channelType;
+    }
+
+    public String getChannel_name_unique() {
+        return channel_name_unique;
+    }
+
+    public void setChannel_name_unique(String channel_name_unique) {
+        this.channel_name_unique = channel_name_unique;
     }
 }

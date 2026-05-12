@@ -25,6 +25,7 @@ import javafx.scene.input.Clipboard;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.MouseButton;
 import javafx.scene.layout.*;
+import javafx.scene.text.Font;
 import javafx.scene.text.Text;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
@@ -50,9 +51,15 @@ public class SpeechBaseController {
     private User currentUser;
 
     @FXML
-    private ListView<ChannelUser> chatsView;
+    public ListView<ChannelUser> chatsView;
+
+    public ObservableList<ChannelUser> userChats;
 
     private ListView<File> fileListView;
+
+    private HBox topSearchModeHB;
+
+    private SearchChannelWindow searchChannelWindow;
 
     private final ChannelUserService channelUserService = new ChannelUserService();
     private final MessageService messageService = new MessageService();
@@ -72,6 +79,10 @@ public class SpeechBaseController {
     private Button unpinnedAllMessagesBtn;
 
     public ObservableList<File> selectedFile;
+
+    private HBox bottomSearchModeHB;
+
+    private VBox buttonsVB;
 
     @FXML
     private StackPane rightSP;
@@ -188,15 +199,14 @@ public class SpeechBaseController {
         messagesSP.widthProperty().addListener((ch, oldValue, newValue) -> {
             double newWidth = newValue.doubleValue() - 300;
 
-            if (newWidth <= 400) {
-                AnchorPane.setLeftAnchor(selectedChatVB, 5.0);
-                leftVB.setVisible(false);
-                chatsView.setVisible(false);
-            }
-            if (newWidth >= 400) {
-                AnchorPane.setLeftAnchor(selectedChatVB, 300.0);
+            if (newWidth <= 450) {
+                if (selectedChatVB.isVisible()) {
+                    AnchorPane.setLeftAnchor(rightSP, 5.0);
+                    leftVB.setVisible(false);
+                }
+            } else {
+                AnchorPane.setLeftAnchor(rightSP, 300.0);
                 leftVB.setVisible(true);
-                chatsView.setVisible(true);
             }
 
             messagesLV.setPrefWidth(newWidth);
@@ -269,7 +279,7 @@ public class SpeechBaseController {
                         fileListView.setManaged(true);
                     }
                 } else {
-                    if(messageTA != null && (messageTA.getText() == null || messageTA.getText().isEmpty() || messageTA.getText().equals("Сообщение..."))) {
+                    if (messageTA != null && (messageTA.getText() == null || messageTA.getText().isEmpty() || messageTA.getText().equals("Сообщение..."))) {
                         AnchorPane.setRightAnchor(messageTA, 51.0);
                         AnchorPane.setRightAnchor(emojiVB, 0.0);
                         sendVB.setVisible(false);
@@ -366,21 +376,15 @@ public class SpeechBaseController {
 
     public void initializeListViewChats() {
         chatsView.setFixedCellSize(60);
-        chatsView.setCellFactory(lv -> new ListChannelsCellController());
-        ObservableList<ChannelUser> userChats = FXCollections.observableArrayList(channelUserService.getAllChatsByUser(currentUser));
-        chatsView.getItems().setAll(userChats);
+        chatsView.setCellFactory(lv -> new ListChannelsCellController(this));
+        userChats = FXCollections.observableArrayList(channelUserService.getAllChatsByUser(currentUser));
+        chatsView.setItems(userChats);
 
         chatsView.getSelectionModel().selectedItemProperty().addListener(
                 (observable, oldValue, newValue) -> {
                     if (newValue != null) {
                         selectedChannelUser = newValue;
-                        hideTheListOfPinnedMessages();
                         loadChannelMessages(newValue);
-                        if (firstVisible == 0)
-                            setPinnedMessagesHBVisible(messagesLV.getItems().size());
-                        else
-                            setPinnedMessagesHBVisible(firstVisible);
-                        setSelectionModeActive(false);
                     }
                 });
     }
@@ -388,11 +392,34 @@ public class SpeechBaseController {
     public void loadChannelMessages(ChannelUser selectedChat) {
         selectedChatVB.setVisible(true);
         channelName.setText(selectedChat.getChannel().getChannelName());
-        channelStatus.setText(selectedChat.getChannel().getChannelCountUser() == 2 ?
+        channelStatus.setText(selectedChat.getChannel().getChannelType().getChannelTypeId() == 3 ?
                 channelUserService.getInterlocutorStatus(selectedChat.getChannel(), selectedChat.getUser()) :
                 String.format("Число участников: %d", selectedChat.getChannel().getChannelCountUser()));
         messageTA.setText("");
         messageCellCreator.clearCache();
+
+        hideTheListOfPinnedMessages();
+
+        if (searchModeActive) {
+            for (Node node : hiddenList) {
+                node.setVisible(true);
+                node.setManaged(true);
+            }
+            searchModeActive = false;
+            rightSP.getChildren().removeAll(topSearchModeHB, bottomSearchModeHB, buttonsVB);
+            filteredList.setPredicate(m -> true);
+            messagesLV.scrollTo(messages.getLast());
+        }
+
+        updateVisibleChangeMessageHB();
+
+        if (pinnedMessagesHB.isVisible()) {
+            pinnedMessagesHB.setVisible(false);
+            pinnedMessagesHB.setManaged(false);
+        }
+        lastPinnedMessage = null;
+
+        setSelectionModeActive(false);
 
         new Thread(() -> {
             List<Message> messagesList = messageService.getAllMessageInChannel(
@@ -408,6 +435,10 @@ public class SpeechBaseController {
                 if (!messagesLV.getItems().isEmpty()) {
                     messagesLV.scrollTo(messagesLV.getItems().size());
                 }
+                if (firstVisible == 0)
+                    setPinnedMessagesHBVisible(messagesLV.getItems().size());
+                else
+                    setPinnedMessagesHBVisible(firstVisible);
             });
         }).start();
     }
@@ -439,10 +470,11 @@ public class SpeechBaseController {
 
         int setMinHeightByCountLines = countLinesNewValue * 20;
 
-        if (countLinesNewValue > countLinesOldValue)
+        if (countLinesNewValue > countLinesOldValue) {
             messageAnchor.setMinHeight(Math.min(setMinHeightByCountLines, 200));
-        if (countLinesNewValue < countLinesOldValue)
-            messageAnchor.setMinHeight(Math.min(Math.max(setMinHeightByCountLines, 40), 200));
+        } else if (countLinesNewValue < countLinesOldValue) {
+            messageAnchor.setMinHeight(Math.max(40, Math.min(setMinHeightByCountLines, 200)));
+        }
 
         if (newValue == null || newValue.trim().isEmpty()) {
             messageAnchor.setMinHeight(40);
@@ -452,23 +484,28 @@ public class SpeechBaseController {
         countLinesOldValue = countLinesNewValue;
     }
 
-    public int countTextAreaLines(TextArea original) {
-        String text = original.getText();
+    public int countTextAreaLines(TextArea textArea) {
+        String text = textArea.getText();
         if (text == null || text.trim().isEmpty()) {
             return 1;
         }
 
-        double textHeight = getTextHeightFromTextArea(original);
+        Text helper = new Text(text);
+        helper.setFont(textArea.getFont());
 
-        return (int) Math.max(1, Math.round(textHeight / 20)) + 1;
-    }
+        double textAreaWidth = textArea.getWidth();
+        double leftPadding = textArea.getPadding().getLeft();
+        double rightPadding = textArea.getPadding().getRight();
+        double maxWidth = Math.max(textAreaWidth - leftPadding - rightPadding - 5, 50);
+        helper.setWrappingWidth(maxWidth);
 
-    private double getTextHeightFromTextArea(TextArea textArea) {
-        Text textNode = (Text) textArea.lookup(".text");
-        if (textNode != null) {
-            return textNode.getLayoutBounds().getHeight();
-        }
-        return 20;
+        double textHeight = helper.getLayoutBounds().getHeight();
+
+        Font font = textArea.getFont();
+        double lineHeight = font.getSize() * 1.6;
+
+        int lines = (int) Math.ceil(textHeight / lineHeight);
+        return Math.max(1, lines);
     }
 
     @FXML
@@ -1057,11 +1094,7 @@ public class SpeechBaseController {
             selectionForwardBtn = new Button("ПЕРЕСЛАТЬ");
             selectionForwardBtn.getStyleClass().add("login-button");
             selectionForwardBtn.setOnAction(e -> {
-                System.out.println(selectedMessages.size());
-                System.out.println(forwardMessages.size());
                 forwardMessages.setAll(selectedMessages);
-                System.out.println(selectedMessages.size());
-                System.out.println(forwardMessages.size());
                 new ChatSelectionController(this, forwardMessages);
                 setSelectionModeActive(false);
             });
@@ -1097,8 +1130,10 @@ public class SpeechBaseController {
         } else {
             channelStateAP.getChildren().removeAll(selectionForwardBtn, selectionDeleteBtn, selectionCancelBtn);
             for (Node node : channelStateAP.getChildren()) {
-                node.setVisible(true);
-                node.setManaged(true);
+                if(node.getId() != null && !node.equals(backBtn) && !node.equals(countPinnedMessages)) {
+                    node.setVisible(true);
+                    node.setManaged(true);
+                }
             }
         }
     }
@@ -1212,7 +1247,7 @@ public class SpeechBaseController {
             }
         }
 
-        HBox topSearchModeHB = new HBox();
+        topSearchModeHB = new HBox();
         topSearchModeHB.setStyle("-fx-background-color: white;");
         StackPane.setAlignment(topSearchModeHB, Pos.TOP_LEFT);
         topSearchModeHB.setPrefHeight(40);
@@ -1252,7 +1287,7 @@ public class SpeechBaseController {
 
         searchContainsStrFromMessage.setGraphic(searchModeIV);
 
-        HBox bottomSearchModeHB = new HBox();
+        bottomSearchModeHB = new HBox();
         bottomSearchModeHB.setStyle("-fx-background-color: white;");
         StackPane.setAlignment(bottomSearchModeHB, Pos.BOTTOM_LEFT);
         bottomSearchModeHB.setPrefHeight(40);
@@ -1277,7 +1312,7 @@ public class SpeechBaseController {
         listOfBtn.setDisable(true);
         bottomSearchModeHB.getChildren().add(listOfBtn);
 
-        VBox buttonsVB = new VBox(10);//Нужно скрывать местами
+        buttonsVB = new VBox(10);//Нужно скрывать местами
         StackPane.setAlignment(buttonsVB, Pos.BOTTOM_RIGHT);
         buttonsVB.setVisible(false);
         StackPane.setMargin(buttonsVB, new Insets(0, 10, 10 + 40, 0));
@@ -1408,7 +1443,7 @@ public class SpeechBaseController {
             searchModeActive = false;
             rightSP.getChildren().removeAll(topSearchModeHB, bottomSearchModeHB, buttonsVB);
             filteredList.setPredicate(m -> true);
-            scrollToMessage(messages.getLast());
+            messagesLV.scrollTo(messages.getLast());
         });
     }
 
@@ -1435,12 +1470,10 @@ public class SpeechBaseController {
 
         selectedFile.addAll(chosenFiles);
 
-        // Копируем в локальную папку сразу после выбора
         try {
             FileUtils.copyFilesToDir(chosenFiles);
         } catch (IOException e) {
             e.printStackTrace();
-            // можно показать Alert
         }
     }
 
@@ -1471,5 +1504,13 @@ public class SpeechBaseController {
             message.setMessageString(null);
 
         message.setMessageContent(contents);
+    }
+
+    @FXML
+    private void showSearchChannelWindow() {
+        if (searchChannelWindow == null)
+            searchChannelWindow = new SearchChannelWindow(this);
+
+        searchChannelWindow.show();
     }
 }

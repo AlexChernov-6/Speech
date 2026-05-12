@@ -35,4 +35,14 @@ public class ChannelUserService extends BaseService<ChannelUser> {
                     .uniqueResult();
         }
     }
+
+    public ChannelUser getChannelUserByUserIdAndChannelId(long userId, long channelId) {
+        String queryHQL = "from ChannelUser where user.idUser = :USER_ID and channel.channelID = :CHANNEL_ID";
+        try (Session session = HibernateSessionFactory.getSessionFactory().openSession()) {
+            return session.createQuery(queryHQL, ChannelUser.class)
+                    .setParameter("USER_ID", userId)
+                    .setParameter("CHANNEL_ID", channelId)
+                    .uniqueResult();
+        }
+    }
 }

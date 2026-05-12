@@ -54,7 +54,7 @@ public class ChatSelectionController extends Pane {
         ListView<ChannelUser> chatsView = new ListView<>();
         chatsView.setFixedCellSize(60);
         chatsView.setCellFactory(lv -> {
-            ListChannelsCellController cellController = new ListChannelsCellController();
+            ListChannelsCellController cellController = new ListChannelsCellController(speechBaseController);
             cellController.notVisibleDelBtn();
             return cellController;
         });

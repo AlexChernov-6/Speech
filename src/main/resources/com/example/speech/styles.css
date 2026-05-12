@@ -329,3 +329,18 @@
 .paging-btn:hover {
     -fx-background-color: rgba(245,245,245,0.7);
 }
+
+.search-list-view {
+
+}
+
+.search-text-field {
+    -fx-background-radius: 12;
+    -fx-background-color: rgba(70, 70, 70);
+    -fx-border-radius: 12;
+    -fx-border-weight: 0.5;
+    -fx-border-color: rgba(120, 120, 120);
+    -fx-text-fill: white;
+    -fx-font-size: 22;
+    -fx-padding: 10 5;
+}

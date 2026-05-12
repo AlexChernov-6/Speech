@@ -11,8 +11,10 @@ public class ListChannelsCellController extends ListCell<ChannelUser> {
 
     private final Parent root;
     private final ChannelCellController controller;
+    private final SpeechBaseController speechBaseController;
 
-    public ListChannelsCellController() {
+    public ListChannelsCellController(SpeechBaseController speechBaseController) {
+        this.speechBaseController = speechBaseController;
         try {
             FXMLLoader loader = new FXMLLoader(getClass()
                     .getResource("/com/example/speech/shape/ChannelCellShape.fxml"));
@@ -39,7 +41,7 @@ public class ListChannelsCellController extends ListCell<ChannelUser> {
             setGraphic(null);
         } else {
             try {
-                controller.initialize(channelUser);
+                controller.initialize(channelUser, speechBaseController);
                 setGraphic(root);
 
                 // Установите высоту ячейки

@@ -168,7 +168,7 @@ public class ImageConverter {
 
     public static Image getDefaultImage() {
         try {
-            String possiblePaths = "/com/example/speech/image/defaultChannel.jpg";
+            String possiblePaths = "/com/example/speech/image/defaultChannel.png";
 
             return new Image(Objects.requireNonNull(ImageConverter.class.getResourceAsStream(possiblePaths)));
         } catch (Exception e) {

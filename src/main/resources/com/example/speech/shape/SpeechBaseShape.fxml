@@ -23,7 +23,8 @@
             <AnchorPane>
                 <VBox fx:id="leftVB" prefWidth="300" AnchorPane.leftAnchor="0" AnchorPane.topAnchor="0"
                       AnchorPane.bottomAnchor="0" alignment="TOP_CENTER">
-                    <Button text="Найти или начать беседу" prefWidth="280" prefHeight="30" styleClass="login-button"/>
+                    <Button text="Найти или начать беседу" prefWidth="280" prefHeight="30" styleClass="login-button"
+                            onAction="#showSearchChannelWindow"/>
                     <ListView fx:id="chatsView" prefWidth="280" VBox.vgrow="ALWAYS" styleClass="list-view">
                         <padding>
                             <Insets left="10" right="10" top="10" bottom="5"/>

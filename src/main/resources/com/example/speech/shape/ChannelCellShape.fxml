@@ -23,7 +23,7 @@
             <clip>
                 <Circle radius="22.5" centerX="22.5" centerY="22.5"/>
             </clip>
-            <Image url="@../image/defaultChannel.jpg"/>
+            <Image url="@../image/defaultChannel.png"/>
         </ImageView>
     </StackPane>
 

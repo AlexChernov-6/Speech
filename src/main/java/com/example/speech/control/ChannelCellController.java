@@ -19,11 +19,17 @@ public class ChannelCellController {
     private Button deleteChanelBtn;
     private ChannelUserService channelUserService = new ChannelUserService();
 
-    public void initialize(ChannelUser channelUser) {
-        if (channelUser.getUser().getPhotoUser() != null && channelUser.getUser().getPhotoUser().length > 0)
-            channelPhotoIV.setImage(channelUser.getUser().getPhotoImage());
+    private SpeechBaseController speechBaseController;
+    private ChannelUser channelUser;
+
+    public void initialize(ChannelUser channelUser, SpeechBaseController speechBaseController) {
+        this.speechBaseController = speechBaseController;
+        this.channelUser = channelUser;
+
+        if (channelUser.getChannel().getChannelLogo() != null && channelUser.getChannel().getChannelLogo().length > 0)
+            channelPhotoIV.setImage(channelUser.getChannel().getPhotoImage());
         channelNameLb.setText(channelUser.getChannel().getChannelName());
-        stateLb.setText(channelUser.getChannel().getChannelCountUser() == 2 ?
+        stateLb.setText(channelUser.getChannel().getChannelType().getChannelTypeId() == 3 ?
                 channelUserService.getInterlocutorStatus(channelUser.getChannel(), channelUser.getUser()) :
                 String.format("Число участников: %d", channelUser.getChannel().getChannelCountUser()));
         rootContainer.setOnMouseEntered(event -> {
@@ -37,7 +43,8 @@ public class ChannelCellController {
 
     @FXML
     private void onDeleteChanelBtn() {
-
+        new ChannelUserService().delete(channelUser);
+        speechBaseController.userChats.remove(channelUser);
     }
 
     public void notVisibleDelBtn() {
