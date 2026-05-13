@@ -344,3 +344,9 @@
     -fx-font-size: 22;
     -fx-padding: 10 5;
 }
+
+.emoji-label {
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+    -fx-text-fill: rgba(200, 200, 200);
+}

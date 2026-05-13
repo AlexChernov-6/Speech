@@ -8,6 +8,7 @@ import com.example.speech.service.ChannelUserService;
 import com.example.speech.service.MessageContentService;
 import com.example.speech.service.MessageService;
 import com.example.speech.util.FileUtils;
+import com.example.speech.util.HelpfulClass;
 import javafx.animation.PauseTransition;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
@@ -43,6 +44,7 @@ import java.util.*;
 
 import javafx.scene.control.IndexedCell;
 
+import static com.example.speech.control.EntranceController.EMOJI_LIST;
 import static com.example.speech.util.HelpfulStylingClass.applyPromptWithTF;
 import static com.example.speech.util.HelpfulStylingClass.setupFullScreenListener;
 
@@ -121,11 +123,9 @@ public class SpeechBaseController {
     @FXML
     private AnchorPane channelStateAP;
     @FXML
-    private HBox pinnedMessagesHB, channelStateHB;
+    private HBox pinnedMessagesHB;
     @FXML
     private Label contentPinnedMessageLB;
-    @FXML
-    private VBox channelStateVB;
 
     private ContextPopUpBar contextPopUpBar;
 
@@ -144,6 +144,8 @@ public class SpeechBaseController {
     private Message lastPinnedMessage;
 
     private ChannelUser selectedChannelUser;
+
+    private ScrollPane emojiSP;
 
     public int firstVisible;
 
@@ -176,6 +178,7 @@ public class SpeechBaseController {
 
     private ObservableList<Message> messages = FXCollections.observableArrayList();
 
+
     public void initializeData(Stage stage, User currentUser) {
         this.stage = stage;
         this.currentUser = currentUser;
@@ -192,21 +195,9 @@ public class SpeechBaseController {
             }
         });
 
-        ImageView sendButtonIV = new ImageView(//вынести в метод
-                new Image(Objects.requireNonNull(getClass().getResourceAsStream("/com/example/speech/image/imageSendButton.png"))));
-        sendButtonIV.setFitHeight(20);
-        sendButtonIV.setFitWidth(20);
-        sendButtonIV.setPreserveRatio(true);
+        HelpfulClass.setImageWithButton(sendMessageBtn, "imageSendButton.png");
 
-        sendMessageBtn.setGraphic(sendButtonIV);
-
-        ImageView emojiIV = new ImageView(//вынести в метод
-                new Image(Objects.requireNonNull(getClass().getResourceAsStream("/com/example/speech/image/imageEmojiButton.png"))));
-        emojiIV.setFitHeight(20);
-        emojiIV.setFitWidth(20);
-        emojiIV.setPreserveRatio(true);
-
-        emojiBtn.setGraphic(emojiIV);
+        HelpfulClass.setImageWithButton(emojiBtn, "imageEmojiButton.png");
 
         filteredList = new FilteredList<>(messages, m -> true);
 
@@ -418,6 +409,8 @@ public class SpeechBaseController {
 
         hideTheListOfPinnedMessages();
 
+        hideEmojiWindow();
+
         if (searchModeActive) {
             for (Node node : hiddenList) {
                 node.setVisible(true);
@@ -469,7 +462,7 @@ public class SpeechBaseController {
                     !newValue.equals("Сообщение...");
 
             if (!hasVisibleText) {
-                if(selectedFile == null || selectedFile.isEmpty()) {
+                if (selectedFile == null || selectedFile.isEmpty()) {
                     sendMessageBtn.setVisible(false);
                     AnchorPane.setRightAnchor(emojiBtn, 0.0);
                     AnchorPane.setRightAnchor(messageTA, 51.0);
@@ -487,7 +480,7 @@ public class SpeechBaseController {
     private void adjustTextAreaHeight(String newValue) {
         int countLinesNewValue = countTextAreaLines(messageTA);
 
-        int setMinHeightByCountLines = countLinesNewValue * 20;
+        int setMinHeightByCountLines = Math.max(countLinesNewValue, 2) * 20;
 
         if (countLinesNewValue > countLinesOldValue) {
             messageAnchor.setMinHeight(Math.min(setMinHeightByCountLines, 200));
@@ -1143,7 +1136,7 @@ public class SpeechBaseController {
         } else {
             channelStateAP.getChildren().removeAll(selectionForwardBtn, selectionDeleteBtn, selectionCancelBtn);
             for (Node node : channelStateAP.getChildren()) {
-                if(node.getId() != null && !node.equals(backBtn) && !node.equals(countPinnedMessages)) {
+                if (node.getId() != null && !node.equals(backBtn) && !node.equals(countPinnedMessages)) {
                     node.setVisible(true);
                     node.setManaged(true);
                 }
@@ -1529,59 +1522,130 @@ public class SpeechBaseController {
 
     @FXML
     private void openEmojiWindow() {
+        if (emojiSP == null)
+            createEmojiWidow();
+        if (emojiSP.isVisible())
+            hideEmojiWindow();
+        else
+            showEmojiWindow();
+    }
+
+    private void createEmojiWidow() {
         Insets allHidden = new Insets(40, 0, 0, 40);
         Insets bottomHidden = new Insets(80, 0, 0, 40);
         Insets topHidden = new Insets(40, 0, 0, 80);
-        Insets allVisible = new Insets(80, 0, 0, 80);
+        Insets allVisible = new Insets(74, 0, 0, 78);
 
-        ScrollPane emojiSP = new ScrollPane();
+        emojiSP = new ScrollPane();
         emojiSP.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
         emojiSP.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
-        emojiSP.setMaxWidth(260);
-        emojiSP.maxHeightProperty().bind(rightSP.heightProperty().subtract(40 + 40));
-        StackPane.setMargin(emojiSP, allHidden);
+        emojiSP.setMaxWidth(220);
+        emojiSP.setVisible(false);
+        if (pinnedMessagesHB.isVisible()) {
+            if (!updateMessageHB.isVisible()) {
+                StackPane.setMargin(emojiSP, bottomHidden);
+                emojiSP.maxHeightProperty().bind(rightSP.heightProperty().subtract(80 + 40));
+            } else {
+                StackPane.setMargin(emojiSP, allVisible);
+                emojiSP.maxHeightProperty().bind(rightSP.heightProperty().subtract(74 + 78));
+            }
+        } else {
+            if (!updateMessageHB.isVisible()) {
+                StackPane.setMargin(emojiSP, allHidden);
+                emojiSP.maxHeightProperty().bind(rightSP.heightProperty().subtract(40 + 40));
+            } else {
+                StackPane.setMargin(emojiSP, topHidden);
+                emojiSP.maxHeightProperty().bind(rightSP.heightProperty().subtract(40 + 80));
+            }
+        }
         StackPane.setAlignment(emojiSP, Pos.TOP_RIGHT);
+        emojiSP.visibleProperty().addListener((ob, oldV, newV) -> {
+            if (newV)
+                HelpfulClass.setImageWithButton(emojiBtn, "imageEmojiButtonBlue.png");
+            else
+                HelpfulClass.setImageWithButton(emojiBtn, "imageEmojiButton.png");
+        });
 
         VBox emojiVB = new VBox(5);
         emojiVB.setStyle("-fx-background-color: rgba(245, 245, 245);");
         emojiVB.setMaxWidth(260);
+        emojiVB.setAlignment(Pos.TOP_RIGHT);
         emojiVB.maxHeightProperty().bind(emojiSP.heightProperty());
         emojiSP.setContent(emojiVB);
-        emojiVB.visibleProperty().addListener((ob, oldV, newV) -> {
-            if(newV) {
-                this.emojiBtn.setStyle("-fx-background-color: red;");
-            }
-            else {
-                this.emojiBtn.setStyle("");
-
-            }
-        });
-
-        emojiBtn.setOnAction(e -> {
-            rightSP.getChildren().remove(emojiSP);
-            emojiBtn.setOnAction(e1 -> {
-                openEmojiWindow();
-            });
-        });
 
         pinnedMessagesHB.visibleProperty().addListener((ob, oldV, newV) -> {
-            if(newV) {
-                if(!updateMessageHB.isVisible()) {
+            if (newV) {
+                if (!updateMessageHB.isVisible()) {
+                    StackPane.setMargin(emojiSP, bottomHidden);
+                    emojiSP.maxHeightProperty().bind(rightSP.heightProperty().subtract(80 + 40));
+                } else {
+                    StackPane.setMargin(emojiSP, allVisible);
+                    emojiSP.maxHeightProperty().bind(rightSP.heightProperty().subtract(74 + 78));
+                }
+            } else {
+                if (!updateMessageHB.isVisible()) {
+                    StackPane.setMargin(emojiSP, allHidden);
+                    emojiSP.maxHeightProperty().bind(rightSP.heightProperty().subtract(40 + 40));
+                } else {
+                    StackPane.setMargin(emojiSP, topHidden);
+                    emojiSP.maxHeightProperty().bind(rightSP.heightProperty().subtract(40 + 80));
+                }
+            }
+        });
+
+        updateMessageHB.visibleProperty().addListener((ob, oldV, newV) -> {
+            if (newV) {
+                if (!pinnedMessagesHB.isVisible()) {
+                    StackPane.setMargin(emojiSP, topHidden);
+                    emojiSP.maxHeightProperty().bind(rightSP.heightProperty().subtract(40 + 80));
+                } else {
+                    StackPane.setMargin(emojiSP, allVisible);
+                    emojiSP.maxHeightProperty().bind(rightSP.heightProperty().subtract(74 + 78));
+                }
+            } else {
+                if (!pinnedMessagesHB.isVisible()) {
+                    StackPane.setMargin(emojiSP, allHidden);
+                    emojiSP.maxHeightProperty().bind(rightSP.heightProperty().subtract(40 + 40));
+                } else {
                     StackPane.setMargin(emojiSP, bottomHidden);
                     emojiSP.maxHeightProperty().bind(rightSP.heightProperty().subtract(80 + 40));
                 }
-            } else {
-                if(!updateMessageHB.isVisible()) {
-                    StackPane.setMargin(emojiSP, allHidden);
-                    emojiSP.maxHeightProperty().bind(rightSP.heightProperty().subtract(40 + 40));
-                }
             }
         });
+
+        Label frequentlyUsed = new Label("Доступные эмодзи");
+        frequentlyUsed.getStyleClass().add("emoji-label");
+        emojiVB.getChildren().add(frequentlyUsed);
+
+        TilePane pane = new TilePane();
+        pane.setHgap(5);
+        pane.setVgap(5);
+        pane.setPrefColumns(4);
+        emojiVB.getChildren().add(pane);
+
+        for(String emojiChar : EMOJI_LIST) {
+            Button emojiBtn = new Button(emojiChar);
+            emojiBtn.setStyle("-fx-background-color: transparent; -fx-cursor: hand; -fx-font-size: 19px;");
+            emojiBtn.setOnAction(e -> {
+                if(messageTA.getText().equals("Сообщение..."))
+                    messageTA.setText(emojiChar);
+                else
+                    messageTA.setText(messageTA.getText() + emojiChar);
+            });
+
+            pane.getChildren().add(emojiBtn);
+        }
 
         rightSP.getChildren().add(emojiSP);
     }
 
-    private void createEmojiWidow() {
+    private void showEmojiWindow() {
+        if(emojiSP != null)
+            emojiSP.setVisible(true);
+    }
 
+    private void hideEmojiWindow() {
+        if(emojiSP != null)
+            emojiSP.setVisible(false);
     }
 }

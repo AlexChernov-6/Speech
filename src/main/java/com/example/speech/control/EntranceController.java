@@ -19,7 +19,7 @@ import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import java.io.IOException;
 import java.sql.SQLException;
-import java.util.Map;
+import java.util.*;
 
 import static com.example.speech.util.HelpfulStylingClass.setupFullScreenListener;
 import static com.example.speech.util.HelpfulValidationClass.updateStyleValidation;
@@ -50,6 +50,9 @@ public class EntranceController extends Application {
 
     private UserService userService = new UserService();
 
+    public static final List<String> EMOJI_LIST = List.of(
+            "😀","😃","😄","😁","😆","😅","😂","🤣","😊","😇","🙂","🙃","😉","😌","😍","😘","😗","😙","😚","😋","😛","😝","😜","🤓","😎","😏","😒","😞","😔","😟","😕","🙁","😣","😖","😫","😩","😢","😭","😤","😠","😡","😳","😱","😨","😰","😥","😓","🤗","🤔","🤥","😶","😐","😑","😬","🙄","😯","😦","😧","😮","😲","😴","🤤","😪","😵","🤐","🤢","🤧","😷","🤒","🤕","🤑","🤠","😈","👿","👹","👺","🤡","💩","👻","💀","👽","👾","🤖","🎃","😺","😸","😹","😻","😼","😽","🙀","😿","😾","👐","🤝","🙏","💅","🤳","💪","👂","👃","👀","👅","👄","💋"
+    );
     public void initializeData(Stage stage) {
         this.stage = stage;
         //Добавляем обработчик состояния окна(fullScreen или нет)

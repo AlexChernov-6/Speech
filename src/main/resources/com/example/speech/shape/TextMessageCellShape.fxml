@@ -13,14 +13,11 @@
 <StackPane maxHeight="600" fx:id="highlightMessageTemporarilySP" xmlns:fx="http://javafx.com/fxml"
            fx:controller="com.example.speech.control.TextMessageCellController">
     <AnchorPane fx:id="rootMessageAP">
-
-
         <ImageView fx:id="userPhotoIV" fitHeight="45" fitWidth="45" preserveRatio="true" AnchorPane.leftAnchor="10"
                    AnchorPane.bottomAnchor="0">
             <clip>
                 <Circle radius="22.5" centerX="22.5" centerY="22.5"/>
             </clip>
-            <Image url="@../image/defaultChannel.jpg"/>
         </ImageView>
 
         <VBox fx:id="contentVB" AnchorPane.leftAnchor="70" AnchorPane.topAnchor="0" AnchorPane.bottomAnchor="0">

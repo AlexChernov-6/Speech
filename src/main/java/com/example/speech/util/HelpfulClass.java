@@ -2,8 +2,11 @@ package com.example.speech.util;
 
 import com.example.speech.control.EntranceController;
 import com.example.speech.service.UserService;
+import javafx.scene.control.Button;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
 
-import java.awt.*;
+import java.awt.Desktop;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
@@ -69,5 +72,15 @@ public class HelpfulClass {
         variables.put("userName", userName);
         variables.put("resetLink", resetLink);
         return loadTemplate("lost-password.html", variables);
+    }
+
+    public static void setImageWithButton(Button btn, String imageName) {
+        ImageView buttonImage = new ImageView(//вынести в метод
+                new Image(Objects.requireNonNull(HelpfulClass.class.getResourceAsStream("/com/example/speech/image/" + imageName))));
+        buttonImage.setFitHeight(20);
+        buttonImage.setFitWidth(20);
+        buttonImage.setPreserveRatio(true);
+
+        btn.setGraphic(buttonImage);
     }
 }
