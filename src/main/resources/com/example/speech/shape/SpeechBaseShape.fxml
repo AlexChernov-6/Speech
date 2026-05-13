@@ -6,6 +6,7 @@
 
 <?import javafx.scene.image.ImageView?>
 
+<?import javafx.scene.image.Image?>
 <AnchorPane fx:id="rootAnchorPane" stylesheets="@../styles.css" styleClass="root-pane"
             xmlns:fx="http://javafx.com/fxml/1"
             xmlns="http://javafx.com/javafx/17.0.12" fx:controller="com.example.speech.control.SpeechBaseController">
@@ -75,7 +76,8 @@
 
                         <ListView fx:id="messagesLV" VBox.vgrow="ALWAYS"/>
 
-                        <HBox fx:id="updateMessageHB" style="-fx-background-color: white; -fx-cursor: hand;" prefHeight="40"
+                        <HBox fx:id="updateMessageHB" style="-fx-background-color: white; -fx-cursor: hand;"
+                              prefHeight="40"
                               visible="false" managed="false">
                             <ImageView fx:id="HintIV" fitHeight="20" fitWidth="20" preserveRatio="true">
                                 <HBox.margin>
@@ -100,8 +102,7 @@
                         </HBox>
 
                         <AnchorPane fx:id="messageAnchor" style="-fx-background-color: rgba(255,255,255,0.5);"
-                                    prefHeight="40"
-                                    maxHeight="40">
+                                    prefHeight="40" maxHeight="40">
                             <VBox AnchorPane.leftAnchor="0" AnchorPane.bottomAnchor="0" prefWidth="50"
                                   alignment="CENTER"
                                   prefHeight="40" AnchorPane.topAnchor="0" style="-fx-background-color: white;">
@@ -113,21 +114,13 @@
                                       wrapText="true" prefHeight="40" AnchorPane.leftAnchor="50"
                                       AnchorPane.topAnchor="0" AnchorPane.bottomAnchor="0" AnchorPane.rightAnchor="50"/>
 
-                            <VBox fx:id="emojiVB" AnchorPane.rightAnchor="0" AnchorPane.bottomAnchor="0" prefWidth="50"
-                                  alignment="CENTER"
-                                  prefHeight="40" style="-fx-background-color: white;" AnchorPane.topAnchor="0">
-                                <Button styleClass="window-control-button, emoji-button" prefHeight="25"
-                                        prefWidth="50"/>
-                            </VBox>
+                            <Button onAction="#openEmojiWindow" prefHeight="40" prefWidth="50" minHeight="40" minWidth="50"
+                                    AnchorPane.rightAnchor="0" AnchorPane.bottomAnchor="0" AnchorPane.topAnchor="0" fx:id="emojiBtn"/>
 
-                            <VBox fx:id="sendVB" AnchorPane.rightAnchor="0" AnchorPane.bottomAnchor="0"
-                                  AnchorPane.topAnchor="0"
-                                  prefWidth="50" prefHeight="40" alignment="CENTER" visible="false"
-                                  style="-fx-background-color: white;">
-                                <Button styleClass="window-control-button, send-message-button" prefHeight="25"
-                                        prefWidth="50"
-                                        onAction="#handleSendMessage"/>
-                            </VBox>
+                            <Button AnchorPane.rightAnchor="0" AnchorPane.bottomAnchor="0" AnchorPane.topAnchor="0"
+                                    prefHeight="40" prefWidth="50" minHeight="40" minWidth="50" visible="false"
+                                    onAction="#handleSendMessage"
+                                    fx:id="sendMessageBtn"/>
                         </AnchorPane>
                     </VBox>
                 </StackPane>
