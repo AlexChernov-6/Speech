@@ -199,7 +199,7 @@ public class SearchChannelWindow extends VBox {
                 selectedObject = newV;
 
                 if (selectedObject instanceof Channel) {
-                    joinChannelBtn.setText("Вступить в " + ((Channel) selectedObject).getChannel_name_unique());
+                    joinChannelBtn.setText("Вступить в " + ((Channel) selectedObject).getChannel_name_unique());//подписывать на канал изменения
                     joinChannelBtn.setOnAction(e -> {
                         ChannelUser oldChannelUser = channelUserService.getChannelUserByUserIdAndChannelId(
                                 speechBaseController.getCurrentUser().getIdUser(), ((Channel) selectedObject).getChannelID());

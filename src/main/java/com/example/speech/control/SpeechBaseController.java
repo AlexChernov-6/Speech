@@ -205,6 +205,15 @@ public class SpeechBaseController {
         setupFullScreenListener(stage, rootAnchorPane);
         initializeListViewChats();
         setupMessageTextAreaListener();
+
+        MessageListener messageListener = new MessageListener("jdbc:postgresql://localhost:5432/speechdb"
+                , currentUser.getNameUser(), currentUser.getPasswordUser(),
+                messageID -> { System.out.println("Получено новое сообщение с ID: " + messageID); }, userChats);
+
+        Thread listenerThread = new Thread(messageListener, "pg-listener");
+        listenerThread.setDaemon(true);
+        listenerThread.start();
+
         messagesSP.widthProperty().addListener((ch, oldValue, newValue) -> {
             double newWidth = newValue.doubleValue() - 300;
 
