@@ -37,6 +37,16 @@
                style="-fx-text-fill: gray; -fx-font-size: 10px;"/>
     </VBox>
 
+    <VBox spacing="5" prefWidth="27">
+        <HBox.margin>
+            <Insets left="10" right="10"/>
+        </HBox.margin>
+        <Label fx:id="timeLastMessageLB"
+               style="-fx-text-fill: gray; -fx-font-size: 10px;"/>
+        <Label fx:id="countUnreadMessages" visible="false"
+               style="-fx-text-fill: white; -fx-font-size: 10px; -fx-font-weight: bold; -fx-background-color: blue; -fx-background-radius: 30; -fx-padding: 2 7"/>
+    </VBox>
+
     <Button fx:id="deleteChanelBtn" prefWidth="40" prefHeight="15"  styleClass="window-control-button, close-button"
             onAction="#onDeleteChanelBtn" visible="false" style="-fx-background-radius: 10px; -fx-border-radius: 10px"/>
 

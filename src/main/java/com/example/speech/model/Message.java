@@ -6,10 +6,7 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.GenerationTime;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 
 @Entity
 @Table(name = "messages", schema = "public")
@@ -23,8 +20,8 @@ public class Message {
     private LocalDateTime messageDatetime;
     @ManyToOne @JoinColumn(name = "channel_user_id")
     private ChannelUser channelUser;
-    @Column(name = "message_status", updatable = false)
-    private String messageStatus = "отправлено";
+    @Column(name = "message_status")
+    private String messageStatus;
     @Column(name = "deleted_by_users")
     private List<Long> deletedByUsers;
     @Column(name = "modified_message", columnDefinition = "boolean default false")
@@ -39,6 +36,9 @@ public class Message {
     private List<MessageContent> messageContent = new ArrayList<>();
     @Column(name = "message_string")
     private String messageString;
+
+    @OneToMany(mappedBy = "message", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<UserMessageRead> readByUsers = new HashSet<>();
 
     public Message() { }
 
@@ -151,6 +151,14 @@ public class Message {
 
     public void setMessageString(String messageString) {
         this.messageString = messageString;
+    }
+
+    public Set<UserMessageRead> getReadByUsers() {
+        return readByUsers;
+    }
+
+    public void setReadByUsers(Set<UserMessageRead> readByUsers) {
+        this.readByUsers = readByUsers;
     }
 
     @Override

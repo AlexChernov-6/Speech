@@ -1,10 +1,7 @@
 package com.example.speech.control;
 
 import com.example.speech.model.*;
-import com.example.speech.service.ChannelService;
-import com.example.speech.service.ChannelUserService;
-import com.example.speech.service.MessageContentService;
-import com.example.speech.service.MessageService;
+import com.example.speech.service.*;
 import com.example.speech.util.FileUtils;
 import com.example.speech.util.HelpfulClass;
 import javafx.animation.PauseTransition;
@@ -16,8 +13,14 @@ import javafx.collections.transformation.FilteredList;
 import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.geometry.*;
+import javafx.geometry.Insets;
 import javafx.scene.Node;
 import javafx.scene.control.*;
+import javafx.scene.control.Button;
+import javafx.scene.control.Label;
+import javafx.scene.control.ScrollPane;
+import javafx.scene.control.TextArea;
+import javafx.scene.control.TextField;
 import javafx.scene.control.skin.VirtualFlow;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
@@ -32,6 +35,7 @@ import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import javafx.util.Duration;
 
+import java.awt.*;
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Field;
@@ -39,6 +43,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.List;
+import java.util.concurrent.*;
 
 import javafx.scene.control.IndexedCell;
 
@@ -183,6 +189,11 @@ public class SpeechBaseController {
     @FXML
     private Button createControlsWindowBtn;
 
+    private final Set<Integer> processedIndices = ConcurrentHashMap.newKeySet();
+    private final ScheduledExecutorService debounceExecutor = Executors.newSingleThreadScheduledExecutor();
+    private Runnable pendingCheck;
+
+    private final UserMessageReadService userMessageReadService = new UserMessageReadService();
 
     public void initializeData(Stage stage, User currentUser) {
         this.stage = stage;
@@ -267,6 +278,7 @@ public class SpeechBaseController {
                         if (currentFlow.getFirstVisibleCell() != null) {
                             firstVisible = currentFlow.getFirstVisibleCell().getIndex();
                             if (flag && !searchModeActive) setPinnedMessagesHBVisible(firstVisible);
+                            scheduleMarkVisibleMessagesAsRead();
                         }
                     });
                 }
@@ -290,28 +302,32 @@ public class SpeechBaseController {
 
         // Слушатель размера списка
         selectedFile.addListener((ListChangeListener<File>) change -> {
-            while (change.next()) { /* приводим изменение в актуальное состояние */ }
+            while (change.next()) { }
             int size = selectedFile.size();
             Platform.runLater(() -> {
-                if (size > 0) {
-                    AnchorPane.setRightAnchor(messageTA, 102.0);
-                    AnchorPane.setRightAnchor(emojiBtn, 50.0);
-                    sendMessageBtn.setVisible(true);
-                    if (fileListView != null) {
-                        fileListView.setVisible(true);
-                        fileListView.setManaged(true);
+
+                    if (size > 0) {
+                        AnchorPane.setRightAnchor(messageTA, 102.0);
+                        AnchorPane.setRightAnchor(emojiBtn, 50.0);
+                        sendMessageBtn.setVisible(true);
+                        if (fileListView != null) {
+                            fileListView.setVisible(true);
+                            fileListView.setManaged(true);
+                        }
+                    } else {
+                        if(!updateMessageHB.isVisible() || (updateMessageHB.isVisible() && contextPopUpBar != ContextPopUpBar.FORWARD_MESSAGE)) {
+                            if (messageTA != null && (messageTA.getText() == null || messageTA.getText().isEmpty() || messageTA.getText().equals("Сообщение..."))) {
+                                AnchorPane.setRightAnchor(messageTA, 51.0);
+                                AnchorPane.setRightAnchor(emojiBtn, 0.0);
+                                sendMessageBtn.setVisible(false);
+                            }
+                        }
+                        if (fileListView != null) {
+                            fileListView.setVisible(false);
+                            fileListView.setManaged(false);
+                        }
                     }
-                } else {
-                    if (messageTA != null && (messageTA.getText() == null || messageTA.getText().isEmpty() || messageTA.getText().equals("Сообщение..."))) {
-                        AnchorPane.setRightAnchor(messageTA, 51.0);
-                        AnchorPane.setRightAnchor(emojiBtn, 0.0);
-                        sendMessageBtn.setVisible(false);
-                    }
-                    if (fileListView != null) {
-                        fileListView.setVisible(false);
-                        fileListView.setManaged(false);
-                    }
-                }
+
             });
         });
 
@@ -395,6 +411,9 @@ public class SpeechBaseController {
                 event.consume();
             }
         });
+
+        messagesLV.heightProperty().addListener((obs, old, h) -> scheduleMarkVisibleMessagesAsRead());
+        messagesLV.widthProperty().addListener((obs, old, w) -> scheduleMarkVisibleMessagesAsRead());
     }
 
     public void initializeListViewChats() {
@@ -413,6 +432,8 @@ public class SpeechBaseController {
     }
 
     public void loadChannelMessages(ChannelUser selectedChat) {
+        processedIndices.clear();
+
         selectedChatVB.setVisible(true);
         channelName.setText(selectedChat.getChannel().getChannelName());
         channelStatus.setText(selectedChat.getChannel().getChannelType().getChannelTypeId() == 3 ?
@@ -463,6 +484,8 @@ public class SpeechBaseController {
                     setPinnedMessagesHBVisible(messagesLV.getItems().size());
                 else
                     setPinnedMessagesHBVisible(firstVisible);
+
+                scheduleMarkVisibleMessagesAsRead();
             });
         }).start();
     }
@@ -474,16 +497,18 @@ public class SpeechBaseController {
                     !newValue.matches("^[\\n\\r\\s]*$") &&
                     !newValue.equals("Сообщение...");
 
-            if (!hasVisibleText) {
-                if (selectedFile == null || selectedFile.isEmpty()) {
-                    sendMessageBtn.setVisible(false);
-                    AnchorPane.setRightAnchor(emojiBtn, 0.0);
-                    AnchorPane.setRightAnchor(messageTA, 51.0);
+            if(!updateMessageHB.isVisible() || (updateMessageHB.isVisible() && contextPopUpBar != ContextPopUpBar.FORWARD_MESSAGE)) {
+                if (!hasVisibleText) {
+                    if (selectedFile == null || selectedFile.isEmpty()) {
+                        sendMessageBtn.setVisible(false);
+                        AnchorPane.setRightAnchor(emojiBtn, 0.0);
+                        AnchorPane.setRightAnchor(messageTA, 51.0);
+                    }
+                } else {
+                    AnchorPane.setRightAnchor(messageTA, 102.0);
+                    AnchorPane.setRightAnchor(emojiBtn, 50.0);
+                    sendMessageBtn.setVisible(true);
                 }
-            } else {
-                AnchorPane.setRightAnchor(messageTA, 102.0);
-                AnchorPane.setRightAnchor(emojiBtn, 50.0);
-                sendMessageBtn.setVisible(true);
             }
 
             adjustTextAreaHeight(newValue);
@@ -563,6 +588,9 @@ public class SpeechBaseController {
                     boolean saved = messageService.save(messageToSave);
                     if (saved) {
                         Message savedMessage = messageService.getRowById(messageToSave.getMessageId());
+                        savedMessage.setMessageStatus("отправлено");
+                        messageService.update(savedMessage);
+                        chatsView.refresh();
                         Platform.runLater(() -> {
                             int index = messages.indexOf(messageToSave);
                             if (index >= 0) {
@@ -571,7 +599,7 @@ public class SpeechBaseController {
                         });
                     }
                 } catch (Exception e) {
-
+                    messageToSave.setMessageStatus("ошибка отправки");
                 }
             }).start();
 
@@ -622,6 +650,7 @@ public class SpeechBaseController {
                 new Thread(() -> {
                     try {
                         messageService.update(messageToUpdate);
+                        chatsView.refresh();
                         Platform.runLater(() -> {
                             // Успешно – обнуляем глобальную переменную, скрываем панель
                             updateMessage = null;
@@ -694,12 +723,13 @@ public class SpeechBaseController {
                         newMsg.setChannelUser(selectedChannelUser);
                         newMsg.setMessageString(original.getMessageString());
                         newMsg.setMessageDatetime(LocalDateTime.now());
-                        newMsg.setMessageStatus("отправлено");
                         newMsg.setForwardedFrom((long) original.getChannelUser().getUser().getIdUser());
 
                         boolean saved = new MessageService().save(newMsg);
                         if (saved) {
-                            Message savedMsg = new MessageService().getRowById(newMsg.getMessageId());
+                            Message savedMsg = messageService.getRowById(newMsg.getMessageId());
+                            savedMsg.setMessageStatus("отправлено");
+                            messageService.update(savedMsg);
                             Platform.runLater(() -> {
                                 int idx = messages.indexOf(tempMsg);
                                 if (idx >= 0) {
@@ -714,6 +744,7 @@ public class SpeechBaseController {
                         Platform.runLater(() -> tempMsg.setMessageStatus("ошибка отправки"));
                     }
                 }
+                chatsView.refresh();
             }).start();
 
             updateVisibleChangeMessageHB();
@@ -933,6 +964,14 @@ public class SpeechBaseController {
 
     public User getCurrentUser() {
         return currentUser;
+    }
+
+    public Button getEmojiBtn() {
+        return emojiBtn;
+    }
+
+    public Button getSendMessageBtn() {
+        return sendMessageBtn;
     }
 
     public MessageService getMessageService() {
@@ -1686,9 +1725,14 @@ public class SpeechBaseController {
             if(messages.contains(message)) {
                 messages.set(messages.indexOf(message), message);
                 setPinnedMessagesHBVisible(messages.size());
-            } else
-                messages.add(message);
+            } else {
+                if (message.getForwardedFrom() != null && !message.getChannelUser().getUser().equals(currentUser))
+                    messages.add(message);
+                if(!message.getChannelUser().getUser().equals(currentUser))
+                    Toolkit.getDefaultToolkit().beep();
+            }
         }
+        chatsView.refresh();
     }
 
     @FXML
@@ -1793,5 +1837,55 @@ public class SpeechBaseController {
 
             messagesSP.addEventFilter(MouseEvent.MOUSE_PRESSED, removeControlsWindow);
         }
+    }
+
+    private void markVisibleMessagesAsRead() {
+        if (currentFlow == null || messages == null || messages.isEmpty() || searchModeActive) return;
+
+        int first = currentFlow.getFirstVisibleCell().getIndex();
+        int last = currentFlow.getLastVisibleCell().getIndex();
+        if (first < 0 || last < 0) return;
+
+        for (int i = first; i <= last; i++) {
+            Message msg = messages.get(i);
+            // Проверяем, что статус не "прочитано" и индекс ещё не обработан
+            if (!"прочитано".equals(msg.getMessageStatus()) && processedIndices.add(i)
+                    && !msg.getChannelUser().getUser().equals(currentUser)) {
+                final int index = i;
+                // Асинхронно обновляем статус в БД
+                CompletableFuture.runAsync(() -> {
+                    try {
+                        msg.setMessageStatus("прочитано");
+                        messageService.update(msg);   // обновление в БД
+                    } catch (Exception e) {
+                        // Откатываем пометку, чтобы попробовать снова
+                        processedIndices.remove(index);
+                        e.printStackTrace();
+                    }
+                });
+            }
+
+            if(userMessageReadService.anyMatchByMessageIdAndUserId(msg.getMessageId(), currentUser.getIdUser()) == null) {
+                UserMessageRead userMessageRead = new UserMessageRead();
+                userMessageRead.setMessage(msg);
+                userMessageRead.setUser(currentUser);
+                userMessageReadService.save(userMessageRead);
+            }
+        }
+    }
+
+    private void scheduleMarkVisibleMessagesAsRead() {
+        pendingCheck = () -> {
+            Platform.runLater(() -> {
+                // Если VirtualFlow ещё не создан, пробуем снова через 100 мс
+                if (currentFlow == null) {
+                    Platform.runLater(this::scheduleMarkVisibleMessagesAsRead);
+                    return;
+                }
+                markVisibleMessagesAsRead();
+            });
+            pendingCheck = null;
+        };
+        debounceExecutor.schedule(pendingCheck, 200, TimeUnit.MILLISECONDS);
     }
 }

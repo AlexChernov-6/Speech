@@ -10,10 +10,7 @@ import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.*;
-import javafx.scene.layout.Pane;
-import javafx.scene.layout.Priority;
-import javafx.scene.layout.StackPane;
-import javafx.scene.layout.VBox;
+import javafx.scene.layout.*;
 import javafx.util.Duration;
 
 import java.nio.charset.StandardCharsets;
@@ -71,6 +68,11 @@ public class ChatSelectionController extends Pane {
                         speechBaseController.setContextPopUpBar(SpeechBaseController.ContextPopUpBar.FORWARD_MESSAGE);
                         speechBaseController.setForwardMessages(messages);
                         speechBaseController.getHintIV().setImage(forwardI);
+
+                        AnchorPane.setRightAnchor(speechBaseController.getMessageTA(), 102.0);
+                        AnchorPane.setRightAnchor(speechBaseController.getEmojiBtn(), 50.0);
+                        speechBaseController.getSendMessageBtn().setVisible(true);
+
                         List<String> senders = new ArrayList<>();
                         for(Message message : messages) {
                             if(!senders.contains(message.getChannelUser().getUser().getNameUser()))
