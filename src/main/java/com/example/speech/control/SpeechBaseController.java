@@ -1,9 +1,7 @@
 package com.example.speech.control;
 
-import com.example.speech.model.ChannelUser;
-import com.example.speech.model.Message;
-import com.example.speech.model.MessageContent;
-import com.example.speech.model.User;
+import com.example.speech.model.*;
+import com.example.speech.service.ChannelService;
 import com.example.speech.service.ChannelUserService;
 import com.example.speech.service.MessageContentService;
 import com.example.speech.service.MessageService;
@@ -15,6 +13,7 @@ import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
+import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.geometry.*;
 import javafx.scene.Node;
@@ -25,6 +24,7 @@ import javafx.scene.image.ImageView;
 import javafx.scene.input.Clipboard;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.MouseButton;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.*;
 import javafx.scene.text.Font;
 import javafx.scene.text.Text;
@@ -35,10 +35,8 @@ import javafx.util.Duration;
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Field;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.util.*;
 
@@ -178,6 +176,13 @@ public class SpeechBaseController {
 
     private ObservableList<Message> messages = FXCollections.observableArrayList();
 
+    private MessageListener messageListener;
+
+    private EventHandler<MouseEvent> removeControlsWindow;
+
+    @FXML
+    private Button createControlsWindowBtn;
+
 
     public void initializeData(Stage stage, User currentUser) {
         this.stage = stage;
@@ -206,9 +211,9 @@ public class SpeechBaseController {
         initializeListViewChats();
         setupMessageTextAreaListener();
 
-        MessageListener messageListener = new MessageListener("jdbc:postgresql://localhost:5432/speechdb"
+        messageListener = new MessageListener("jdbc:postgresql://192.168.1.103:5432/speechdb"
                 , currentUser.getNameUser(), currentUser.getPasswordUser(),
-                messageID -> { System.out.println("Получено новое сообщение с ID: " + messageID); }, userChats);
+                messageID -> {Platform.runLater(() -> messagesListViewRefresh(messageID));}, userChats, this);
 
         Thread listenerThread = new Thread(messageListener, "pg-listener");
         listenerThread.setDaemon(true);
@@ -452,9 +457,8 @@ public class SpeechBaseController {
             // Обновление UI
             Platform.runLater(() -> {
                 messages.setAll(filtered);
-                if (!messagesLV.getItems().isEmpty()) {
+                if (!messagesLV.getItems().isEmpty())
                     messagesLV.scrollTo(messagesLV.getItems().size());
-                }
                 if (firstVisible == 0)
                     setPinnedMessagesHBVisible(messagesLV.getItems().size());
                 else
@@ -1051,6 +1055,14 @@ public class SpeechBaseController {
         return selectionModeActive;
     }
 
+    public MessageListener getMessageListener() {
+        return messageListener;
+    }
+
+    public void setMessageListener(MessageListener messageListener) {
+        this.messageListener = messageListener;
+    }
+
     public void setSelectionModeActive(boolean active) {
         if (this.selectionModeActive == active) return;
         this.selectionModeActive = active;
@@ -1141,7 +1153,14 @@ public class SpeechBaseController {
             AnchorPane.setRightAnchor(selectionCancelBtn, 10.0);
             AnchorPane.setTopAnchor(selectionCancelBtn, 10.0);
             AnchorPane.setBottomAnchor(selectionCancelBtn, 10.0);
-            channelStateAP.getChildren().addAll(selectionForwardBtn, selectionDeleteBtn, selectionCancelBtn);
+            if(selectedChannelUser.getChannel().isDisable_sharing()) {
+                AnchorPane.setLeftAnchor(selectionDeleteBtn, 10.0);
+                AnchorPane.setTopAnchor(selectionDeleteBtn, 10.0);
+                AnchorPane.setBottomAnchor(selectionDeleteBtn, 10.0);
+                channelStateAP.getChildren().addAll(selectionDeleteBtn, selectionCancelBtn);
+            }
+            else
+                channelStateAP.getChildren().addAll(selectionForwardBtn, selectionDeleteBtn, selectionCancelBtn);
         } else {
             channelStateAP.getChildren().removeAll(selectionForwardBtn, selectionDeleteBtn, selectionCancelBtn);
             for (Node node : channelStateAP.getChildren()) {
@@ -1458,7 +1477,8 @@ public class SpeechBaseController {
             searchModeActive = false;
             rightSP.getChildren().removeAll(topSearchModeHB, bottomSearchModeHB, buttonsVB);
             filteredList.setPredicate(m -> true);
-            messagesLV.scrollTo(messages.getLast());
+            if (messages != null && !messages.isEmpty())
+                messagesLV.scrollTo(messages.getLast());
         });
     }
 
@@ -1632,11 +1652,11 @@ public class SpeechBaseController {
         pane.setPrefColumns(4);
         emojiVB.getChildren().add(pane);
 
-        for(String emojiChar : EMOJI_LIST) {
+        for (String emojiChar : EMOJI_LIST) {
             Button emojiBtn = new Button(emojiChar);
             emojiBtn.setStyle("-fx-background-color: transparent; -fx-cursor: hand; -fx-font-size: 19px;");
             emojiBtn.setOnAction(e -> {
-                if(messageTA.getText().equals("Сообщение..."))
+                if (messageTA.getText().equals("Сообщение..."))
                     messageTA.setText(emojiChar);
                 else
                     messageTA.setText(messageTA.getText() + emojiChar);
@@ -1649,12 +1669,129 @@ public class SpeechBaseController {
     }
 
     private void showEmojiWindow() {
-        if(emojiSP != null)
+        if (emojiSP != null)
             emojiSP.setVisible(true);
     }
 
     private void hideEmojiWindow() {
-        if(emojiSP != null)
+        if (emojiSP != null)
             emojiSP.setVisible(false);
+    }
+
+    private void messagesListViewRefresh(Long messageID) {
+        Message message = messageService.getRowById(messageID);
+        if(message == null)
+            messages.removeIf(m -> m.getMessageId() == messageID);
+        else {
+            if(messages.contains(message)) {
+                messages.set(messages.indexOf(message), message);
+                setPinnedMessagesHBVisible(messages.size());
+            } else
+                messages.add(message);
+        }
+    }
+
+    @FXML
+    private void createControlsWidow() {
+        double vBoxWidth = 200;
+
+        VBox controlsWindowRootVB = new VBox();
+        controlsWindowRootVB.setMaxWidth(vBoxWidth);
+        controlsWindowRootVB.setMaxHeight(Region.USE_PREF_SIZE);
+        controlsWindowRootVB.setUserData("controlsWindowRootVB");
+        StackPane.setAlignment(controlsWindowRootVB, Pos.TOP_RIGHT);
+        StackPane.setMargin(controlsWindowRootVB, new Insets(41, 10, 0, 0));
+        controlsWindowRootVB.getStyleClass().add("working-with-a-message-root-pane");
+        rightSP.getChildren().add(controlsWindowRootVB);
+
+        CustomButton searchBtn = new CustomButton(
+                new Image(Objects.requireNonNull(getClass().getResourceAsStream("/com/example/speech/image/imageSearchButton.png")))
+                , "Поиск");
+        searchBtn.setPrefWidth(vBoxWidth);
+        searchBtn.setPrefHeight(40);
+        VBox.setMargin(searchBtn, new Insets(5, 0, 0, 0));
+        searchBtn.setOnAction(e -> {
+            actionSearchBtn();
+        });
+        controlsWindowRootVB.getChildren().add(searchBtn);
+
+        CustomButton editBtn = new CustomButton(
+                new Image(Objects.requireNonNull(getClass().getResourceAsStream("/com/example/speech/image/change.png")))
+                , "Ввод");
+        editBtn.setPrefWidth(vBoxWidth);
+        editBtn.setPrefHeight(40);
+        editBtn.setOnAction(e -> {
+            messageTA.requestFocus();
+            messageTA.positionCaret(messageTA.getText().length());
+        });
+        controlsWindowRootVB.getChildren().add(editBtn);
+
+        CustomButton muteBtn = new CustomButton(
+                new Image(Objects.requireNonNull(getClass().getResourceAsStream("/com/example/speech/image/mute.png")))
+                , "Отключить звук");
+        muteBtn.setPrefWidth(vBoxWidth);
+        muteBtn.setPrefHeight(40);
+        muteBtn.setOnAction(e -> {
+            System.out.println("Нажата кнопка без звука");
+        });
+        controlsWindowRootVB.getChildren().add(muteBtn);
+
+        CustomButton selectMessagesBtn = new CustomButton(
+                new Image(Objects.requireNonNull(getClass().getResourceAsStream("/com/example/speech/image/select.png")))
+                , "Выбрать сообщения");
+        selectMessagesBtn.setPrefWidth(vBoxWidth);
+        selectMessagesBtn.setPrefHeight(40);
+        selectMessagesBtn.setOnAction(e -> {
+            setSelectionModeActive(true);
+        });
+        controlsWindowRootVB.getChildren().add(selectMessagesBtn);
+
+        if (selectedChannelUser.getChannel().isDisable_sharing()) {
+            CustomButton addSharingBtn = new CustomButton(
+                    new Image(Objects.requireNonNull(getClass().getResourceAsStream("/com/example/speech/image/forward.png")))
+                    , "Разрешить пересылку");
+            addSharingBtn.setPrefWidth(vBoxWidth);
+            addSharingBtn.setPrefHeight(40);
+            addSharingBtn.setOnAction(e -> {
+                Channel channel = selectedChannelUser.getChannel();
+                channel.setDisable_sharing(false);
+                new ChannelService().update(channel);
+            });
+            controlsWindowRootVB.getChildren().add(addSharingBtn);
+        } else {
+            CustomButton disableSharingBtn = new CustomButton(
+                    new Image(Objects.requireNonNull(getClass().getResourceAsStream("/com/example/speech/image/disable_sharing.png")))
+                    , "Запретить пересылку");
+            disableSharingBtn.setPrefWidth(vBoxWidth);
+            disableSharingBtn.setPrefHeight(40);
+            disableSharingBtn.setOnAction(e -> {
+                Channel channel = selectedChannelUser.getChannel();
+                channel.setDisable_sharing(true);
+                new ChannelService().update(channel);
+            });
+            controlsWindowRootVB.getChildren().add(disableSharingBtn);
+        }
+
+        CustomButton deleteChatBtn = new CustomButton(
+                new Image(Objects.requireNonNull(getClass().getResourceAsStream("/com/example/speech/image/delete.png")))
+                , "Отчистить переписку");
+        deleteChatBtn.setPrefWidth(vBoxWidth);
+        deleteChatBtn.setPrefHeight(40);
+        VBox.setMargin(deleteChatBtn, new Insets(0, 0, 5, 0));
+        deleteChatBtn.setOnAction(e -> {
+            List<Message> allMessage = messageService.getAllMessageInChannel(
+                    selectedChannelUser.getChannel().getChannelID());
+            if(allMessage != null && !allMessage.isEmpty())
+                new ConfirmationOfMessageDeletion().initializeShape(this, allMessage);
+        });
+        controlsWindowRootVB.getChildren().add(deleteChatBtn);
+
+        if(removeControlsWindow == null) {
+            removeControlsWindow = e -> {
+                    rightSP.getChildren().removeIf(node -> node.getUserData() != null && node.getUserData().equals("controlsWindowRootVB"));
+            };
+
+            messagesSP.addEventFilter(MouseEvent.MOUSE_PRESSED, removeControlsWindow);
+        }
     }
 }

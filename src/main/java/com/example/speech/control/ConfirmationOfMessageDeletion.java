@@ -160,4 +160,61 @@ public class ConfirmationOfMessageDeletion extends Pane {
 
         stackPane.getChildren().add(this);
     }
+
+    public void initializeShape(SpeechBaseController speechBaseController, List<Message> messages) {
+        this.setStyle("-fx-background-color: rgba(0, 0, 0, 0.6);");
+
+        double vBoxWidth = 350;
+        double vBoxHeight = 120;
+
+        VBox rootVB = new VBox(15);
+        rootVB.setPrefWidth(vBoxWidth);
+        rootVB.setPrefHeight(vBoxHeight);
+        rootVB.setAlignment(Pos.CENTER_LEFT);
+        rootVB.getStyleClass().add("working-with-a-message-root-pane");
+        rootVB.setLayoutX(speechBaseController.getMessagesSP().getScene().getWindow().getWidth() / 2 - vBoxWidth / 2);
+        rootVB.setLayoutY(speechBaseController.getMessagesSP().getScene().getWindow().getHeight() / 2 - vBoxHeight / 2);
+        rootVB.setPadding(new Insets(15));
+
+        Label questionLabel = new Label("Вы уверены, что хотите удалить все сообщения?");
+        questionLabel.setStyle("-fx-font-size: 14px");
+
+        HBox centralHB = new HBox(10);
+
+        CheckBox checkBox = new CheckBox();
+        checkBox.getStyleClass().add("check-box");
+
+        HBox bottomHB = new HBox(10);
+        bottomHB.setAlignment(Pos.CENTER_RIGHT);
+
+        Button cancellationButton = new Button();
+        cancellationButton.setText("Отмена");
+        cancellationButton.setOnAction(e -> {
+            speechBaseController.getMessagesSP().getChildren().remove(this);
+        });
+        cancellationButton.getStyleClass().add("login-button");
+
+        Button deleteButton = new Button();
+        deleteButton.setText("Удалить");
+        deleteButton.setOnAction(e -> {
+            new Thread(() -> {
+                new MessageService().deleteAllMessage(messages);
+            }).start();
+            speechBaseController.getMessagesSP().getChildren().remove(this);
+        });
+        deleteButton.getStyleClass().add("login-button");
+        bottomHB.getChildren().addAll(cancellationButton, deleteButton);
+
+        rootVB.getChildren().addAll(questionLabel, centralHB, bottomHB);
+        this.getChildren().add(rootVB);
+
+        this.setOnMousePressed(event -> {
+            if(rootVB.getBoundsInParent().contains(event.getX(), event.getY()))
+                event.consume();
+            else
+                speechBaseController.getMessagesSP().getChildren().remove(this);
+        });
+
+        speechBaseController.getMessagesSP().getChildren().add(this);
+    }
 }

@@ -54,14 +54,12 @@ public class MessageService extends BaseService<Message> {
     /**
      * Удаляет сообщение вместе со всеми вложениями (каскад + orphanRemoval).
      */
-    public void deleteMessage(long messageId) {
+    public void deleteAllMessage(List<Message> messages) {
         Session session = HibernateSessionFactory.getSessionFactory().openSession();
         try {
             session.getTransaction().begin();
-            Message msg = session.find(Message.class, messageId);
-            if (msg != null) {
+            for(Message msg : messages)
                 session.remove(msg);   // Hibernate сам удалит все MessageContent
-            }
             session.getTransaction().commit();
         } catch (Exception e) {
             if (session.getTransaction().isActive())

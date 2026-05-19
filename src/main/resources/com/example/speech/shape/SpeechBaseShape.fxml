@@ -48,7 +48,7 @@
                                 <Button styleClass="window-control-button, search-message-button" prefHeight="25"
                                         prefWidth="50" onAction="#actionSearchBtn"/>
                                 <Button styleClass="window-control-button, menu-message-button" prefHeight="25"
-                                        prefWidth="50"/>
+                                        prefWidth="50" onAction="#createControlsWidow" fx:id="createControlsWindowBtn"/>
                             </HBox>
                         </AnchorPane>
 

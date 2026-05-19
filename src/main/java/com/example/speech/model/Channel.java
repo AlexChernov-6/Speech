@@ -21,6 +21,8 @@ public class Channel {
     private ChannelType channelType;
     @Column
     private String channel_name_unique;
+    @Column
+    private boolean disable_sharing;
 
     @Transient
     private Image photoChannel;
@@ -40,13 +42,14 @@ public class Channel {
 
     public Channel() { }
 
-    public Channel(int channelID, String channelName, byte[] channelLogo, int channelCountUser, ChannelType channelType, String channel_name_unique) {
+    public Channel(int channelID, String channelName, byte[] channelLogo, int channelCountUser, ChannelType channelType, String channel_name_unique, boolean disable_sharing) {
         this.channelID = channelID;
         this.channelName = channelName;
         this.channelLogo = channelLogo;
         this.channelCountUser = channelCountUser;
         this.channelType = channelType;
         this.channel_name_unique = channel_name_unique;
+        this.disable_sharing = disable_sharing;
     }
 
     public int getChannelID() {
@@ -95,5 +98,13 @@ public class Channel {
 
     public void setChannel_name_unique(String channel_name_unique) {
         this.channel_name_unique = channel_name_unique;
+    }
+
+    public boolean isDisable_sharing() {
+        return disable_sharing;
+    }
+
+    public void setDisable_sharing(boolean disable_sharing) {
+        this.disable_sharing = disable_sharing;
     }
 }

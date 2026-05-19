@@ -251,9 +251,15 @@ public class WorkingWithAMessageListController extends Pane {
                 });
             });
 
-            rootVB.getChildren().addAll(reply, change, pin, copy, forward, delete, select);
+            if(speechBaseController.getSelectedChannelUser().getChannel().isDisable_sharing())
+                rootVB.getChildren().addAll(reply, change, pin, copy, delete, select);
+            else
+                rootVB.getChildren().addAll(reply, change, pin, copy, forward, delete, select);
         } else {
-            rootVB.getChildren().addAll(reply, pin, copy, forward, delete, select);
+            if(speechBaseController.getSelectedChannelUser().getChannel().isDisable_sharing())
+                rootVB.getChildren().addAll(reply, pin, copy, delete, select);
+            else
+                rootVB.getChildren().addAll(reply, pin, copy, forward, delete, select);
         }
 
         this.getChildren().add(rootVB);

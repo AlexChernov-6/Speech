@@ -60,6 +60,7 @@ public class MessageListener implements Runnable {
             if (activeConnection != null && !isConnectionClosed(activeConnection)) {
                 try (Statement st = activeConnection.createStatement()) {
                     st.execute("LISTEN " + channelName);
+                    System.out.println("Подписка на канал " + channelName + " добавлена динамически");
                 } catch (SQLException e) {
                     System.err.println("Не удалось подписаться на канал " + channelName + ": " + e.getMessage());
                 }
@@ -159,14 +160,13 @@ public class MessageListener implements Runnable {
                     else if (channelName.startsWith("new_channel_for_user_")) {
                         try {
                             long channelUserId = Long.parseLong(payload);
+                            System.out.println("Получено новое соединение: " + channelUserId);
                             ChannelUser newCu = new ChannelUserService().getRowById(channelUserId);
 
                             addChannelAsync(newCu);
 
-                            Platform.runLater(() -> {
-                                if(!speechBaseController.userChats.contains(newCu))
-                                    speechBaseController.userChats.add(newCu);
-                            });
+                            if(!speechBaseController.userChats.contains(newCu))
+                                speechBaseController.userChats.add(newCu);
                         } catch (NumberFormatException e) {
                             System.err.println("Неверный формат channelId: " + payload);
                         }

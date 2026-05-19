@@ -2,6 +2,8 @@ package com.example.speech.model;
 
 import jakarta.persistence.*;
 
+import java.util.Objects;
+
 @Entity
 @Table(name = "channel_user", schema = "public")
 public class ChannelUser {
@@ -44,5 +46,17 @@ public class ChannelUser {
 
     public void setChannel(Channel channel) {
         this.channel = channel;
+    }
+
+    @Override
+    public boolean equals(Object object) {
+        if (object == null || getClass() != object.getClass()) return false;
+        ChannelUser that = (ChannelUser) object;
+        return channelUserId == that.channelUserId;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(channelUserId);
     }
 }

@@ -208,6 +208,8 @@ public class SearchChannelWindow extends VBox {
                             newChannelUser.setUser(speechBaseController.getCurrentUser());
                             newChannelUser.setChannel((Channel) selectedObject);
 
+                            speechBaseController.getMessageListener().addChannelAsync(newChannelUser);
+
                             boolean save = channelUserService.save(newChannelUser);
 
                             if (save)
@@ -218,6 +220,8 @@ public class SearchChannelWindow extends VBox {
                         } else {
                             if(!speechBaseController.userChats.contains(oldChannelUser))
                                 speechBaseController.userChats.add(oldChannelUser);
+
+                            speechBaseController.getMessageListener().addChannelAsync(oldChannelUser);
 
                             speechBaseController.chatsView.getSelectionModel().select(oldChannelUser);
                         }
@@ -231,18 +235,19 @@ public class SearchChannelWindow extends VBox {
                         ChannelService channelService = new ChannelService();
                         if (!channelService.chatsWithThatName(speechBaseController.getCurrentUser().getNameUser() + "_" + ((User) selectedObject).getNameUser()) &&
                                 !channelService.chatsWithThatName(((User) selectedObject).getNameUser() + "_" + speechBaseController.getCurrentUser().getNameUser())) {
-                            System.out.println("Чата с таким названием не существует");
                             Channel channel = new Channel();
                             channel.setChannelName(((User) selectedObject).getVisibleNameUser());
                             channel.setChannelLogo(((User) selectedObject).getPhotoUser());
                             channel.setChannelType(correspondenceChannelType);
                             channel.setChannel_name_unique(speechBaseController.getCurrentUser().getNameUser() + "_" + ((User) selectedObject).getNameUser());
+                            channel.setDisable_sharing(false);
 
                             channelService.save(channel);
 
                             ChannelUser newChannelUser1 = new ChannelUser();
                             newChannelUser1.setUser(speechBaseController.getCurrentUser());
                             newChannelUser1.setChannel(channel);
+                            speechBaseController.getMessageListener().addChannelAsync(newChannelUser1);
 
                             ChannelUser newChannelUser2 = new ChannelUser();
                             newChannelUser2.setUser(((User) selectedObject));
@@ -259,25 +264,28 @@ public class SearchChannelWindow extends VBox {
                             searchTF.setText("");
                             hide();
                         } else {
-                            System.out.println("Чат с таким названием уже существует");
                             Channel oldChannel;
                             if (channelService.chatsWithThatName(speechBaseController.getCurrentUser().getNameUser() + "_" + ((User) selectedObject).getNameUser()))
                                 oldChannel = channelService.getChatWithName(speechBaseController.getCurrentUser().getNameUser() + "_" + ((User) selectedObject).getNameUser());
                             else
                                 oldChannel = channelService.getChatWithName(((User) selectedObject).getNameUser() + "_" + speechBaseController.getCurrentUser().getNameUser());
 
-                            ChannelUser oldChannelUser = channelUserService.getChannelUserByUserIdAndChannelId(
+                            ChannelUser oldChannelUser1 = channelUserService.getChannelUserByUserIdAndChannelId(
                                     speechBaseController.getCurrentUser().getIdUser(), oldChannel.getChannelID());
 
-                            if(oldChannelUser != null) {
-                                if (!speechBaseController.userChats.contains(oldChannelUser))
-                                    speechBaseController.userChats.add(oldChannelUser);
+                            if(oldChannelUser1 != null) {
+                                if (!speechBaseController.userChats.contains(oldChannelUser1))
+                                    speechBaseController.userChats.add(oldChannelUser1);
 
-                                speechBaseController.chatsView.getSelectionModel().select(oldChannelUser);
+                                speechBaseController.getMessageListener().addChannelAsync(oldChannelUser1);
+
+                                speechBaseController.chatsView.getSelectionModel().select(oldChannelUser1);
                             } else {
                                 ChannelUser newChannelUser = new ChannelUser();
                                 newChannelUser.setUser(speechBaseController.getCurrentUser());
                                 newChannelUser.setChannel(oldChannel);
+
+                                speechBaseController.getMessageListener().addChannelAsync(newChannelUser);
 
                                 boolean save = channelUserService.save(newChannelUser);
 
@@ -286,6 +294,18 @@ public class SearchChannelWindow extends VBox {
 
                                 speechBaseController.chatsView.getSelectionModel().select(newChannelUser);
                             }
+
+                            ChannelUser oldChannelUser2 = channelUserService.getChannelUserByUserIdAndChannelId(
+                                    ((User) selectedObject).getIdUser(), oldChannel.getChannelID());
+
+                            if(oldChannelUser2 == null) {
+                                ChannelUser newChannelUser = new ChannelUser();
+                                newChannelUser.setUser(((User) selectedObject));
+                                newChannelUser.setChannel(oldChannel);
+
+                                channelUserService.save(newChannelUser);
+                            }
+
                             searchTF.setText("");
                             hide();
                         }
