@@ -4,6 +4,8 @@ import com.example.speech.util.ImageConverter;
 import jakarta.persistence.*;
 import javafx.scene.image.Image;
 
+import java.util.Objects;
+
 @Entity
 @Table(name = "channels", schema = "public")
 public class Channel {
@@ -106,5 +108,17 @@ public class Channel {
 
     public void setDisable_sharing(boolean disable_sharing) {
         this.disable_sharing = disable_sharing;
+    }
+
+    @Override
+    public boolean equals(Object object) {
+        if (object == null || getClass() != object.getClass()) return false;
+        Channel channel = (Channel) object;
+        return channelID == channel.channelID;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(channelID);
     }
 }

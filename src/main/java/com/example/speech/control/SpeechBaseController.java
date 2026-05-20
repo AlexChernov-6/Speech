@@ -189,12 +189,6 @@ public class SpeechBaseController {
     @FXML
     private Button createControlsWindowBtn;
 
-    private final Set<Integer> processedIndices = ConcurrentHashMap.newKeySet();
-    private final ScheduledExecutorService debounceExecutor = Executors.newSingleThreadScheduledExecutor();
-    private Runnable pendingCheck;
-
-    private final UserMessageReadService userMessageReadService = new UserMessageReadService();
-
     public void initializeData(Stage stage, User currentUser) {
         this.stage = stage;
         this.currentUser = currentUser;
@@ -278,7 +272,6 @@ public class SpeechBaseController {
                         if (currentFlow.getFirstVisibleCell() != null) {
                             firstVisible = currentFlow.getFirstVisibleCell().getIndex();
                             if (flag && !searchModeActive) setPinnedMessagesHBVisible(firstVisible);
-                            scheduleMarkVisibleMessagesAsRead();
                         }
                     });
                 }
@@ -410,21 +403,18 @@ public class SpeechBaseController {
             if (event.getButton() == MouseButton.PRIMARY) {
                 if (!dragSelecting && dragStartIndex != -1) {
                     Message clickedMsg = messagesLV.getItems().get(dragStartIndex);
-                    if (selectionModeActive)
-                        toggleMessageSelection(clickedMsg);
+                    if(!selectionModeActive)
+                        activateSelectionModeWithMessage(clickedMsg);
                 }
                 dragSelecting = false;
                 dragStartIndex = -1;
                 lastProcessedDragIndex = -1;
-                baseSelection.clear(); // очищаем после завершения
+                baseSelection.clear();
                 if (selectedMessages.isEmpty())
                     setSelectionModeActive(false);
                 event.consume();
             }
         });
-
-        messagesLV.heightProperty().addListener((obs, old, h) -> scheduleMarkVisibleMessagesAsRead());
-        messagesLV.widthProperty().addListener((obs, old, w) -> scheduleMarkVisibleMessagesAsRead());
     }
 
     public void initializeListViewChats() {
@@ -443,8 +433,6 @@ public class SpeechBaseController {
     }
 
     public void loadChannelMessages(ChannelUser selectedChat) {
-        processedIndices.clear();
-
         selectedChatVB.setVisible(true);
         channelName.setText(selectedChat.getChannel().getChannelName());
         channelStatus.setText(selectedChat.getChannel().getChannelType().getChannelTypeId() == 3 ?
@@ -497,8 +485,6 @@ public class SpeechBaseController {
                     setPinnedMessagesHBVisible(messagesLV.getItems().size());
                 else
                     setPinnedMessagesHBVisible(firstVisible);
-
-                scheduleMarkVisibleMessagesAsRead();
             });
         }).start();
     }
@@ -574,6 +560,8 @@ public class SpeechBaseController {
     @FXML
     private void handleSendMessage() throws IOException {
         String text = messageTA.getText().trim();
+        messageTA.setText("");
+        messageTA.requestFocus();
 
         // ----------------------- Обычная отправка -----------------------
         if (((!text.isEmpty() && !text.equals("Сообщение...")) || (selectedFile != null && !selectedFile.isEmpty()))
@@ -592,11 +580,12 @@ public class SpeechBaseController {
                 messageToSave.setMessageIdReplyTo(messageIdReplyTo);
             }
 
-            messages.add(messageToSave);
-            Platform.runLater(() -> messagesLV.scrollTo(messagesLV.getItems().size()));
-            messageTA.setText("");
+            Platform.runLater(() -> {
+                messages.add(messageToSave);
+                messagesLV.scrollTo(messagesLV.getItems().size());
+            });
 
-            new Thread(() -> {
+            Thread sendThread = new Thread(() -> {
                 try {
                     boolean saved = messageService.save(messageToSave);
                     if (saved) {
@@ -614,11 +603,11 @@ public class SpeechBaseController {
                 } catch (Exception e) {
                     messageToSave.setMessageStatus("ошибка отправки");
                 }
-            }).start();
+            });
+            sendThread.setDaemon(true);
+            sendThread.start();
 
-            messageTA.requestFocus();
             updateVisibleChangeMessageHB();
-            messagesLV.refresh();
             return;
         }
 
@@ -661,7 +650,7 @@ public class SpeechBaseController {
                 messageToUpdate.setModifiedMessage(true);
 
                 // Асинхронное сохранение
-                new Thread(() -> {
+                Thread sendThread = new Thread(() -> {
                     try {
                         messageService.update(messageToUpdate);
                         chatsView.refresh();
@@ -673,7 +662,9 @@ public class SpeechBaseController {
                     } catch (Exception e) {
 
                     }
-                }).start();
+                });
+                sendThread.setDaemon(true);
+                sendThread.start();
 
                 messageTA.requestFocus();
                 messageTA.setText("");
@@ -708,7 +699,7 @@ public class SpeechBaseController {
             Platform.runLater(() -> messagesLV.scrollTo(messagesLV.getItems().size()));
 
             // Асинхронное сохранение
-            new Thread(() -> {
+            Thread sendThread = new Thread(() -> {
                 for (int i = 0; i < forwardMessages.size(); i++) {
                     Message original = forwardMessages.get(i);
                     Message tempMsg = tempMessages.get(i);
@@ -761,7 +752,9 @@ public class SpeechBaseController {
                     }
                 }
                 chatsView.refresh();
-            }).start();
+            });
+            sendThread.setDaemon(true);
+            sendThread.start();
 
             messageTA.requestFocus();
             updateVisibleChangeMessageHB();
@@ -1130,19 +1123,6 @@ public class SpeechBaseController {
         checkSelectedMode(active);
     }
 
-    public void toggleMessageSelection(Message message) {
-        if (!selectionModeActive) return;
-        if (selectedMessages.contains(message)) {
-            selectedMessages.remove(message);
-        } else {
-            selectedMessages.add(message);
-        }
-        TextMessageCellController controller = messageCellCreator.getControllerCache().get(message);
-        if (controller != null) {
-            controller.setSelected(selectedMessages.contains(message));
-        }
-    }
-
     public boolean isMessageSelected(Message message) {
         return selectedMessages.contains(message);
     }
@@ -1182,10 +1162,9 @@ public class SpeechBaseController {
                 setSelectionModeActive(false);
             });
             selectionForwardBtn.setPrefWidth(120);
-            selectionForwardBtn.setPrefHeight(20);
             AnchorPane.setLeftAnchor(selectionForwardBtn, 10.0);
-            AnchorPane.setTopAnchor(selectionForwardBtn, 10.0);
-            AnchorPane.setBottomAnchor(selectionForwardBtn, 10.0);
+            AnchorPane.setTopAnchor(selectionForwardBtn, 0.0);
+            AnchorPane.setBottomAnchor(selectionForwardBtn, 0.0);
 
             selectionDeleteBtn = new Button("УДАЛИТЬ");
             selectionDeleteBtn.getStyleClass().add("login-button");
@@ -1194,10 +1173,9 @@ public class SpeechBaseController {
                         , selectedMessages);
             });
             selectionDeleteBtn.setPrefWidth(120);
-            selectionDeleteBtn.setPrefHeight(20);
             AnchorPane.setLeftAnchor(selectionDeleteBtn, 140.0);
-            AnchorPane.setTopAnchor(selectionDeleteBtn, 10.0);
-            AnchorPane.setBottomAnchor(selectionDeleteBtn, 10.0);
+            AnchorPane.setTopAnchor(selectionDeleteBtn, 0.0);
+            AnchorPane.setBottomAnchor(selectionDeleteBtn, 0.0);
 
             selectionCancelBtn = new Button("ОТМЕНА");
             selectionCancelBtn.getStyleClass().add("login-button");
@@ -1205,10 +1183,9 @@ public class SpeechBaseController {
                 setSelectionModeActive(false);
             });
             selectionCancelBtn.setPrefWidth(120);
-            selectionCancelBtn.setPrefHeight(20);
             AnchorPane.setRightAnchor(selectionCancelBtn, 10.0);
-            AnchorPane.setTopAnchor(selectionCancelBtn, 10.0);
-            AnchorPane.setBottomAnchor(selectionCancelBtn, 10.0);
+            AnchorPane.setTopAnchor(selectionCancelBtn, 0.0);
+            AnchorPane.setBottomAnchor(selectionCancelBtn, 0.0);
             if(selectedChannelUser.getChannel().isDisable_sharing()) {
                 AnchorPane.setLeftAnchor(selectionDeleteBtn, 10.0);
                 AnchorPane.setTopAnchor(selectionDeleteBtn, 10.0);
@@ -1251,13 +1228,6 @@ public class SpeechBaseController {
 
     public List<Message> getSelectedMessages() {
         return selectedMessages;
-    }
-
-    private void updateAllMessageCellsSelection() {
-        for (Map.Entry<Message, TextMessageCellController> entry :
-                messageCellCreator.getControllerCache().entrySet()) {
-            entry.getValue().setSelected(selectedMessages.contains(entry.getKey()));
-        }
     }
 
     private IndexedCell<Message> findCellAt(double screenX, double screenY) {
@@ -1703,14 +1673,16 @@ public class SpeechBaseController {
         if(message == null)
             messages.removeIf(m -> m.getMessageId() == messageID);
         else {
-            if(message.getChannelUser().equals(selectedChannelUser)) {
+            if(selectedChannelUser != null && message.getChannelUser().getChannel().equals(selectedChannelUser.getChannel())) {
                 if (messages.contains(message)) {
                     messages.set(messages.indexOf(message), message);
                     setPinnedMessagesHBVisible(messages.size());
                 } else {
-                    if (message.getForwardedFrom() == null || (message.getForwardedFrom() != null && !message.getChannelUser().getUser().equals(currentUser)))
-                        if(message.getDeletedByUsers() != null && !message.getDeletedByUsers().contains(Long.valueOf(currentUser.getIdUser())))
-                            messages.add(message);
+                    if (message.getForwardedFrom() == null || (message.getForwardedFrom() != null && !message.getChannelUser().getUser().equals(currentUser)) &&
+                            message.getDeletedByUsers() == null || (message.getDeletedByUsers() != null && !message.getDeletedByUsers().contains(Long.valueOf(currentUser.getIdUser())))) {
+
+                        messages.add(message);
+                    }
                     if (!message.getChannelUser().getUser().equals(currentUser))
                         Toolkit.getDefaultToolkit().beep();
                 }
@@ -1824,57 +1796,6 @@ public class SpeechBaseController {
         }
     }
 
-    private void markVisibleMessagesAsRead() {
-        if (currentFlow == null || messages == null || messages.isEmpty() || searchModeActive) return;
-
-        int first = currentFlow.getFirstVisibleCell().getIndex();
-        int last = currentFlow.getLastVisibleCell().getIndex();
-        if (first < 0 || last < 0) return;
-
-        for (int i = first; i <= last; i++) {
-            Message msg = messages.get(i);
-            // Проверяем, что статус не "прочитано" и индекс ещё не обработан
-            if (!"прочитано".equals(msg.getMessageStatus()) && processedIndices.add(i)
-                    && !msg.getChannelUser().getUser().equals(currentUser)) {
-                final int index = i;
-                // Асинхронно обновляем статус в БД
-                CompletableFuture.runAsync(() -> {
-                    try {
-                        msg.setMessageStatus("прочитано");
-                        messageService.update(msg);   // обновление в БД
-                    } catch (Exception e) {
-                        // Откатываем пометку, чтобы попробовать снова
-                        processedIndices.remove(index);
-                        e.printStackTrace();
-                    }
-                });
-            }
-
-            if(!msg.isReadByUser(currentUser)) {
-                UserMessageRead userMessageRead = new UserMessageRead();
-                userMessageRead.setMessage(msg);
-                userMessageRead.setUser(currentUser);
-                msg.addReadByUser(userMessageRead);
-                userMessageReadService.save(userMessageRead);
-            }
-        }
-    }
-
-    private void scheduleMarkVisibleMessagesAsRead() {
-        pendingCheck = () -> {
-            Platform.runLater(() -> {
-                // Если VirtualFlow ещё не создан, пробуем снова через 100 мс
-                if (currentFlow == null) {
-                    Platform.runLater(this::scheduleMarkVisibleMessagesAsRead);
-                    return;
-                }
-                markVisibleMessagesAsRead();
-            });
-            pendingCheck = null;
-        };
-        debounceExecutor.schedule(pendingCheck, 200, TimeUnit.MILLISECONDS);
-    }
-
     private void updateEmojiWindowPosition() {
         if (emojiSP == null) return;
 
@@ -1913,5 +1834,35 @@ public class SpeechBaseController {
         selectedMessages.add(msg);
         setSelectionModeActive(true);
         updateAllMessageCellsSelection();
+    }
+
+    public void handleMessageClick(Message msg, MouseEvent event) {
+        if (selectionModeActive) {
+            toggleMessageSelection(msg);
+        } else {
+            activateSelectionModeWithMessage(msg);
+        }
+        event.consume();
+    }
+
+    public void toggleMessageSelection(Message message) {
+        if (!selectionModeActive) return;
+        if (selectedMessages.contains(message)) {
+            selectedMessages.remove(message);
+            if (selectedMessages.isEmpty()) {
+                setSelectionModeActive(false);
+            }
+        } else
+            selectedMessages.add(message);
+        TextMessageCellController controller = messageCellCreator.getControllerCache().get(message);
+        if (controller != null)
+            controller.setSelected(selectedMessages.contains(message));
+    }
+
+    private void updateAllMessageCellsSelection() {
+        for (Map.Entry<Message, TextMessageCellController> entry :
+                messageCellCreator.getControllerCache().entrySet()) {
+            entry.getValue().setSelected(selectedMessages.contains(entry.getKey()));
+        }
     }
 }

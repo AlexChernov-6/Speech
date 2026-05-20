@@ -37,9 +37,6 @@ public class Message {
     @Column(name = "message_string")
     private String messageString;
 
-    @OneToMany(mappedBy = "message", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
-    private Set<UserMessageRead> readByUsers = new HashSet<>();
-
     public Message() { }
 
     public Message(long messageId, LocalDateTime messageDatetime, ChannelUser channelUser, String messageStatus, List<Long> deletedByUsers, Boolean modifiedMessage, Long messageIdReplyTo, Boolean pinMessage, Long forwardedFrom, List<MessageContent> messageContent) {
@@ -151,25 +148,6 @@ public class Message {
 
     public void setMessageString(String messageString) {
         this.messageString = messageString;
-    }
-
-    public Set<UserMessageRead> getReadByUsers() {
-        return readByUsers;
-    }
-
-    public void setReadByUsers(Set<UserMessageRead> readByUsers) {
-        this.readByUsers = readByUsers;
-    }
-
-    public void addReadByUser(UserMessageRead userMessageRead) {
-        this.readByUsers.add(userMessageRead);
-    }
-
-    public boolean isReadByUser(User user) {
-        return readByUsers.stream()
-                .anyMatch(
-                        userMessageRead -> userMessageRead.getMessage().equals(this)
-                                && userMessageRead.getUser().equals(user));
     }
 
     @Override

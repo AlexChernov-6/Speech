@@ -213,6 +213,9 @@ public class TextMessageCellController {
             userInfoBtn.setText(user.getNameUser());
         }
 
+        boolean isSelected = speechBaseController.isMessageSelected(message);
+        setSelected(isSelected);
+
         return contentGP;
     }
 
@@ -222,20 +225,16 @@ public class TextMessageCellController {
 
     public void setMouseListener() {
         contentVB.setOnMouseClicked(event -> {
-            if (!speechBaseController.isSelectionModeActive() ||
-                    event.getButton() == MouseButton.SECONDARY) {
-                if (event.getButton() == MouseButton.SECONDARY) {
-                    WorkingWithAMessageListController controller = new WorkingWithAMessageListController();
-                    controller.initializeShape(event.getSceneX(), event.getSceneY(), speechBaseController, message);
-                    speechBaseController.getMessagesSP().getChildren().add(controller);
-                    event.consume();
-                }
-
-                if (event.getButton() == MouseButton.PRIMARY && event.getClickCount() == 2) {
+            if (event.getButton() == MouseButton.SECONDARY) {
+                WorkingWithAMessageListController controller = new WorkingWithAMessageListController();
+                controller.initializeShape(event.getSceneX(), event.getSceneY(), speechBaseController, message);
+                speechBaseController.getMessagesSP().getChildren().add(controller);
+                event.consume();
+            } else if (event.getButton() == MouseButton.PRIMARY) {
+                if (event.getClickCount() == 2) {
                     speechBaseController.getHintIV().setImage(replyI);
                     speechBaseController.getHintLB().setText("В ответ " + message.getChannelUser().getUser().getNameUser());
                     speechBaseController.setContextPopUpBar(SpeechBaseController.ContextPopUpBar.REPLY_MESSAGE);
-                    speechBaseController.getContentUpdateMessageLB().setText(message.getMessageString());
                     String contentMessage;
                     if (message.getMessageString() != null && !message.getMessageString().isEmpty())
                         contentMessage = message.getMessageString();
@@ -254,19 +253,19 @@ public class TextMessageCellController {
                     speechBaseController.getUpdateMessageHB().setManaged(true);
                     speechBaseController.setMessageIdReplyTo(message.getMessageId());
                     speechBaseController.getMessagesSP().getChildren().remove(this);
-                    Platform.runLater(() -> {
-                        speechBaseController.getMessageTA().requestFocus();
-                    });
+                    Platform.runLater(() -> speechBaseController.getMessageTA().requestFocus());
+                    event.consume();
+                } else {
+                    speechBaseController.handleMessageClick(message, event);
                 }
             }
         });
 
-        /*highlightMessageTemporarilySP.setOnMouseClicked(e -> {
-            if(speechBaseController.isSelectionModeActive() && e.getButton() == MouseButton.PRIMARY) {
-                setSelected(!selectIV.isVisible());
-                e.consume();
+        highlightMessageTemporarilySP.setOnMouseClicked(event -> {
+            if (event.getButton() == MouseButton.PRIMARY) {
+                speechBaseController.handleMessageClick(message, event);
             }
-        });*/
+        });
     }
 
 
@@ -576,5 +575,7 @@ public class TextMessageCellController {
     }
     public void setSelected(boolean selected) {
         selectIV.setVisible(selected);
+        highlightMessageTemporarilySP.setStyle(
+                selected ? "-fx-background-color: rgba(100, 149, 237, 0.3); -fx-background-radius: 12;" : "");
     }
 }

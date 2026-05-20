@@ -1,11 +1,9 @@
 package com.example.speech.control;
 
-import com.example.speech.model.Channel;
 import com.example.speech.model.ChannelUser;
 import com.example.speech.model.Message;
 import com.example.speech.service.ChannelUserService;
 import com.example.speech.service.MessageService;
-import com.example.speech.service.UserMessageReadService;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
@@ -80,16 +78,6 @@ public class ChannelCellController {
 
             timeLastMessageLB.setVisible(true);
             timeLastMessageLB.setText(lastMessage.getMessageDatetime().toLocalTime().format(DateTimeFormatter.ofPattern("HH:mm")));
-
-            int res = 0;
-            for(Message message : listMessage) {
-                if(!message.getChannelUser().getUser().equals(speechBaseController.getCurrentUser()) && !message.isReadByUser(speechBaseController.getCurrentUser()))
-                    res += 1;
-            }
-            if(res > 0) {
-                countUnreadMessages.setVisible(true);
-                countUnreadMessages.setText(String.format("%d", res));//Нужно правильно обработать непрочитанные сообщения в группе
-            }
         }
         rootContainer.setOnMouseEntered(event -> {
             deleteChanelBtn.setVisible(true);
