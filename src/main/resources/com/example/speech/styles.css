@@ -169,7 +169,7 @@
 }
 
 .list-cell {
-    -fx-background-color: white;
+    -fx-background-color: transparent;
 }
 
 .list-cell:filled:hover {
@@ -177,6 +177,18 @@
 }
 
 .list-cell:filled:selected {
+    -fx-background-color: #b0d0da;
+}
+
+.chats-user-list-view {
+    -fx-background-color: white;
+}
+
+.chats-user-list-view:hover {
+    -fx-background-color: #f5f5f5;
+}
+
+.chats-user-list-view:selected {
     -fx-background-color: #b0d0da;
 }
 

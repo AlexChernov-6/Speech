@@ -260,6 +260,13 @@ public class TextMessageCellController {
                 }
             }
         });
+
+        /*highlightMessageTemporarilySP.setOnMouseClicked(e -> {
+            if(speechBaseController.isSelectionModeActive() && e.getButton() == MouseButton.PRIMARY) {
+                setSelected(!selectIV.isVisible());
+                e.consume();
+            }
+        });*/
     }
 
 

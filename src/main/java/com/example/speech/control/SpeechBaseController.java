@@ -285,20 +285,31 @@ public class SpeechBaseController {
             }
         });
 
+        messageTA.setOnKeyReleased(e -> {
+            if(e.isShiftDown() && e.getCode() == KeyCode.ENTER) {
+                int caretPos = messageTA.getCaretPosition();
+                messageTA.insertText(caretPos, "\n");
+                return;
+            }
+
+            if(e.getCode() == KeyCode.ENTER && sendMessageBtn.isVisible())
+                sendMessageBtn.fire();
+        });
+
         selectedFile = FXCollections.observableArrayList();
         fileListView = new ListView<>();
-        fileListView.setMaxHeight(60);
+        fileListView.setMaxHeight(70);
+        fileListView.setMinHeight(70);
+        fileListView.setPrefHeight(70);
         fileListView.setVisible(false);
         fileListView.setManaged(false);
         fileListView.setSelectionModel(null);
         fileListView.setOrientation(Orientation.HORIZONTAL);
         fileListView.getStyleClass().add("no-vertical-scroll");
-        fileListView.prefWidthProperty().bind(rightSP.widthProperty());
-        StackPane.setMargin(fileListView, new Insets(0, 0, 40, 0));
-        StackPane.setAlignment(fileListView, Pos.BOTTOM_CENTER);
+        fileListView.prefWidthProperty().bind(selectedChatVB.widthProperty());
         fileListView.setCellFactory(f -> new FileCell(this));
         fileListView.setItems(selectedFile);
-        rightSP.getChildren().add(fileListView);
+        selectedChatVB.getChildren().add(4, fileListView);
 
         // Слушатель размера списка
         selectedFile.addListener((ListChangeListener<File>) change -> {
@@ -441,6 +452,8 @@ public class SpeechBaseController {
                 String.format("Число участников: %d", selectedChat.getChannel().getChannelCountUser()));
         messageTA.setText("");
         messageCellCreator.clearCache();
+
+        messageTA.requestFocus();
 
         hideTheListOfPinnedMessages();
 
@@ -603,6 +616,7 @@ public class SpeechBaseController {
                 }
             }).start();
 
+            messageTA.requestFocus();
             updateVisibleChangeMessageHB();
             messagesLV.refresh();
             return;
@@ -661,10 +675,12 @@ public class SpeechBaseController {
                     }
                 }).start();
 
+                messageTA.requestFocus();
                 messageTA.setText("");
                 messagesLV.refresh();
                 return;
             } else {
+                messageTA.requestFocus();
                 updateVisibleChangeMessageHB();
             }
         }
@@ -747,6 +763,7 @@ public class SpeechBaseController {
                 chatsView.refresh();
             }).start();
 
+            messageTA.requestFocus();
             updateVisibleChangeMessageHB();
         }
     }
@@ -1599,87 +1616,19 @@ public class SpeechBaseController {
     }
 
     private void createEmojiWidow() {
-        Insets allHidden = new Insets(40, 0, 0, 40);
-        Insets bottomHidden = new Insets(80, 0, 0, 40);
-        Insets topHidden = new Insets(40, 0, 0, 80);
-        Insets allVisible = new Insets(74, 0, 0, 78);
-
         emojiSP = new ScrollPane();
         emojiSP.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
         emojiSP.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
         emojiSP.setMaxWidth(220);
         emojiSP.setVisible(false);
-        if (pinnedMessagesHB.isVisible()) {
-            if (!updateMessageHB.isVisible()) {
-                StackPane.setMargin(emojiSP, bottomHidden);
-                emojiSP.maxHeightProperty().bind(rightSP.heightProperty().subtract(80 + 40));
-            } else {
-                StackPane.setMargin(emojiSP, allVisible);
-                emojiSP.maxHeightProperty().bind(rightSP.heightProperty().subtract(74 + 78));
-            }
-        } else {
-            if (!updateMessageHB.isVisible()) {
-                StackPane.setMargin(emojiSP, allHidden);
-                emojiSP.maxHeightProperty().bind(rightSP.heightProperty().subtract(40 + 40));
-            } else {
-                StackPane.setMargin(emojiSP, topHidden);
-                emojiSP.maxHeightProperty().bind(rightSP.heightProperty().subtract(40 + 80));
-            }
-        }
         StackPane.setAlignment(emojiSP, Pos.TOP_RIGHT);
-        emojiSP.visibleProperty().addListener((ob, oldV, newV) -> {
-            if (newV)
-                HelpfulClass.setImageWithButton(emojiBtn, "imageEmojiButtonBlue.png");
-            else
-                HelpfulClass.setImageWithButton(emojiBtn, "imageEmojiButton.png");
-        });
 
+        // Содержимое (без изменений)
         VBox emojiVB = new VBox(5);
         emojiVB.setStyle("-fx-background-color: rgba(245, 245, 245);");
         emojiVB.setMaxWidth(260);
         emojiVB.setAlignment(Pos.TOP_RIGHT);
-        emojiVB.maxHeightProperty().bind(emojiSP.heightProperty());
         emojiSP.setContent(emojiVB);
-
-        pinnedMessagesHB.visibleProperty().addListener((ob, oldV, newV) -> {
-            if (newV) {
-                if (!updateMessageHB.isVisible()) {
-                    StackPane.setMargin(emojiSP, bottomHidden);
-                    emojiSP.maxHeightProperty().bind(rightSP.heightProperty().subtract(80 + 40));
-                } else {
-                    StackPane.setMargin(emojiSP, allVisible);
-                    emojiSP.maxHeightProperty().bind(rightSP.heightProperty().subtract(74 + 78));
-                }
-            } else {
-                if (!updateMessageHB.isVisible()) {
-                    StackPane.setMargin(emojiSP, allHidden);
-                    emojiSP.maxHeightProperty().bind(rightSP.heightProperty().subtract(40 + 40));
-                } else {
-                    StackPane.setMargin(emojiSP, topHidden);
-                    emojiSP.maxHeightProperty().bind(rightSP.heightProperty().subtract(40 + 80));
-                }
-            }
-        });
-
-        updateMessageHB.visibleProperty().addListener((ob, oldV, newV) -> {
-            if (newV) {
-                if (!pinnedMessagesHB.isVisible()) {
-                    StackPane.setMargin(emojiSP, topHidden);
-                    emojiSP.maxHeightProperty().bind(rightSP.heightProperty().subtract(40 + 80));
-                } else {
-                    StackPane.setMargin(emojiSP, allVisible);
-                    emojiSP.maxHeightProperty().bind(rightSP.heightProperty().subtract(74 + 78));
-                }
-            } else {
-                if (!pinnedMessagesHB.isVisible()) {
-                    StackPane.setMargin(emojiSP, allHidden);
-                    emojiSP.maxHeightProperty().bind(rightSP.heightProperty().subtract(40 + 40));
-                } else {
-                    StackPane.setMargin(emojiSP, bottomHidden);
-                    emojiSP.maxHeightProperty().bind(rightSP.heightProperty().subtract(80 + 40));
-                }
-            }
-        });
 
         Label frequentlyUsed = new Label("Доступные эмодзи");
         frequentlyUsed.getStyleClass().add("emoji-label");
@@ -1699,12 +1648,44 @@ public class SpeechBaseController {
                     messageTA.setText(emojiChar);
                 else
                     messageTA.setText(messageTA.getText() + emojiChar);
+                messageTA.requestFocus(); // возвращаем фокус после выбора
             });
-
             pane.getChildren().add(emojiBtn);
         }
 
         rightSP.getChildren().add(emojiSP);
+
+        // Слушатели для обновления позиции
+        messageAnchor.heightProperty().addListener((obs, o, n) -> {
+            if (emojiSP.isVisible()) updateEmojiWindowPosition();
+        });
+        pinnedMessagesHB.visibleProperty().addListener((obs, o, n) -> {
+            if (emojiSP.isVisible()) updateEmojiWindowPosition();
+        });
+        updateMessageHB.visibleProperty().addListener((obs, o, n) -> {
+            if (emojiSP.isVisible()) updateEmojiWindowPosition();
+        });
+        rightSP.heightProperty().addListener((obs, o, n) -> {
+            if (emojiSP.isVisible()) updateEmojiWindowPosition();
+        });
+        // При изменении высоты самой панели (после заполнения содержимым)
+        emojiSP.heightProperty().addListener((obs, o, n) -> {
+            if (emojiSP.isVisible()) updateEmojiWindowPosition();
+        });
+
+        fileListView.visibleProperty().addListener((obs, o, n) -> {
+            updateEmojiWindowPosition();
+        });
+
+        // Цвет кнопки при открытии/закрытии
+        emojiSP.visibleProperty().addListener((ob, oldV, newV) -> {
+            if (newV) {
+                updateEmojiWindowPosition();
+                HelpfulClass.setImageWithButton(emojiBtn, "imageEmojiButtonBlue.png");
+            } else {
+                HelpfulClass.setImageWithButton(emojiBtn, "imageEmojiButton.png");
+            }
+        });
     }
 
     private void showEmojiWindow() {
@@ -1722,16 +1703,20 @@ public class SpeechBaseController {
         if(message == null)
             messages.removeIf(m -> m.getMessageId() == messageID);
         else {
-            if(messages.contains(message)) {
-                messages.set(messages.indexOf(message), message);
-                setPinnedMessagesHBVisible(messages.size());
-            } else {
-                if (message.getForwardedFrom() != null && !message.getChannelUser().getUser().equals(currentUser))
-                    messages.add(message);
-                if(!message.getChannelUser().getUser().equals(currentUser))
-                    Toolkit.getDefaultToolkit().beep();
+            if(message.getChannelUser().equals(selectedChannelUser)) {
+                if (messages.contains(message)) {
+                    messages.set(messages.indexOf(message), message);
+                    setPinnedMessagesHBVisible(messages.size());
+                } else {
+                    if (message.getForwardedFrom() == null || (message.getForwardedFrom() != null && !message.getChannelUser().getUser().equals(currentUser)))
+                        if(message.getDeletedByUsers() != null && !message.getDeletedByUsers().contains(Long.valueOf(currentUser.getIdUser())))
+                            messages.add(message);
+                    if (!message.getChannelUser().getUser().equals(currentUser))
+                        Toolkit.getDefaultToolkit().beep();
+                }
             }
         }
+        messagesLV.refresh();
         chatsView.refresh();
     }
 
@@ -1865,10 +1850,11 @@ public class SpeechBaseController {
                 });
             }
 
-            if(userMessageReadService.anyMatchByMessageIdAndUserId(msg.getMessageId(), currentUser.getIdUser()) == null) {
+            if(!msg.isReadByUser(currentUser)) {
                 UserMessageRead userMessageRead = new UserMessageRead();
                 userMessageRead.setMessage(msg);
                 userMessageRead.setUser(currentUser);
+                msg.addReadByUser(userMessageRead);
                 userMessageReadService.save(userMessageRead);
             }
         }
@@ -1887,5 +1873,45 @@ public class SpeechBaseController {
             pendingCheck = null;
         };
         debounceExecutor.schedule(pendingCheck, 200, TimeUnit.MILLISECONDS);
+    }
+
+    private void updateEmojiWindowPosition() {
+        if (emojiSP == null) return;
+
+        double top = 40;
+        double bottom = 0;
+        double right = 0;
+        double left = 0;
+
+        double messageAnchorHeight = messageAnchor.getHeight();
+
+        if (pinnedMessagesHB.isVisible()) {
+            top += 40;
+        }
+
+        if (updateMessageHB.isVisible()) {
+            bottom += 40;
+        }
+
+        if(fileListView.isVisible())
+            bottom += 70;
+
+        bottom += messageAnchorHeight;
+
+        Insets newMargin = new Insets(top, right, bottom, left);
+        StackPane.setMargin(emojiSP, newMargin);
+
+        emojiSP.maxHeightProperty().bind(rightSP.heightProperty().subtract(top + bottom));
+    }
+
+    public void activateSelectionModeWithMessage(Message msg) {
+        if (selectionModeActive) {
+            toggleMessageSelection(msg);
+            return;
+        }
+        selectedMessages.clear();
+        selectedMessages.add(msg);
+        setSelectionModeActive(true);
+        updateAllMessageCellsSelection();
     }
 }

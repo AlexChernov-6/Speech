@@ -36,7 +36,7 @@
                 <StackPane fx:id="rightSP" AnchorPane.leftAnchor="300" AnchorPane.topAnchor="0"
                            AnchorPane.bottomAnchor="5" AnchorPane.rightAnchor="5">
                     <VBox fx:id="selectedChatVB" visible="false">
-                        <AnchorPane style="-fx-background-color: white;" prefHeight="40" fx:id="channelStateAP">
+                        <AnchorPane style="-fx-background-color: white;" prefHeight="40" minHeight="40" maxHeight="40" fx:id="channelStateAP">
                             <VBox fx:id="channelStateVB" AnchorPane.leftAnchor="5" AnchorPane.topAnchor="0"
                                   AnchorPane.bottomAnchor="0" AnchorPane.rightAnchor="100" alignment="CENTER_LEFT">
                                 <Label fx:id="channelName" text="labelName"/>
@@ -53,7 +53,7 @@
                         </AnchorPane>
 
                         <HBox fx:id="pinnedMessagesHB" style="-fx-background-color: white; -fx-cursor: hand;"
-                              prefHeight="40" visible="false" managed="false">
+                              prefHeight="40" minHeight="40" maxHeight="40" visible="false" managed="false">
                             <VBox.margin>
                                 <Insets top="1"/>
                             </VBox.margin>
@@ -77,7 +77,7 @@
                         <ListView fx:id="messagesLV" VBox.vgrow="ALWAYS"/>
 
                         <HBox fx:id="updateMessageHB" style="-fx-background-color: white; -fx-cursor: hand;"
-                              prefHeight="40"
+                              prefHeight="40" minHeight="40" maxHeight="40"
                               visible="false" managed="false">
                             <ImageView fx:id="HintIV" fitHeight="20" fitWidth="20" preserveRatio="true">
                                 <HBox.margin>

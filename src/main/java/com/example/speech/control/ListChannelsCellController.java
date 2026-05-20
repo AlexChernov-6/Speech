@@ -15,6 +15,7 @@ public class ListChannelsCellController extends ListCell<ChannelUser> {
 
     public ListChannelsCellController(SpeechBaseController speechBaseController) {
         this.speechBaseController = speechBaseController;
+        getStyleClass().setAll("chats-user-list-view");
         try {
             FXMLLoader loader = new FXMLLoader(getClass()
                     .getResource("/com/example/speech/shape/ChannelCellShape.fxml"));

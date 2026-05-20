@@ -81,18 +81,13 @@ public class ChannelCellController {
             timeLastMessageLB.setVisible(true);
             timeLastMessageLB.setText(lastMessage.getMessageDatetime().toLocalTime().format(DateTimeFormatter.ofPattern("HH:mm")));
 
-            List<Message> unreadMessagesList = listMessage.stream()
-                    .filter(msg ->
-                            !msg.getChannelUser().getUser().equals(speechBaseController.getCurrentUser())
-                                    && !msg.getMessageStatus().equals("прочитано")).toList();
-            if(!unreadMessagesList.isEmpty()) {
+            int res = 0;
+            for(Message message : listMessage) {
+                if(!message.getChannelUser().getUser().equals(speechBaseController.getCurrentUser()) && !message.isReadByUser(speechBaseController.getCurrentUser()))
+                    res += 1;
+            }
+            if(res > 0) {
                 countUnreadMessages.setVisible(true);
-                UserMessageReadService service = new UserMessageReadService();
-                int res = 0;
-                for(Message message : listMessage) {
-                    if(service.anyMatchByMessageIdAndUserId(message.getMessageId(), speechBaseController.getCurrentUser().getIdUser()) != null)
-                        res += 1;
-                }
                 countUnreadMessages.setText(String.format("%d", res));//Нужно правильно обработать непрочитанные сообщения в группе
             }
         }

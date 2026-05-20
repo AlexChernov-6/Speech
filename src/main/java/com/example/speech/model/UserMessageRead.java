@@ -12,9 +12,9 @@ public class UserMessageRead {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "user_message_read_id")
     private long userMessageReadID;
-    @ManyToOne(fetch = FetchType.LAZY) @JoinColumn(name = "message_id")
+    @ManyToOne(fetch = FetchType.EAGER) @JoinColumn(name = "message_id")
     private Message message;
-    @ManyToOne(fetch = FetchType.LAZY) @JoinColumn(name = "user_id")
+    @ManyToOne(fetch = FetchType.EAGER) @JoinColumn(name = "user_id")
     private User user;
     @Column(name = "read_at")
     private LocalDateTime readAt = LocalDateTime.now();
