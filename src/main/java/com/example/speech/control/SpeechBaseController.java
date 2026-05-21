@@ -5,6 +5,7 @@ import com.example.speech.service.*;
 import com.example.speech.util.FileUtils;
 import com.example.speech.util.HelpfulClass;
 import com.example.speech.util.HelpfulStylingClass;
+import javafx.animation.FadeTransition;
 import javafx.animation.PauseTransition;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
@@ -193,6 +194,8 @@ public class SpeechBaseController {
     private Button searchSubstringInMessageBtn, createControlsWindowBtn, showAllPinnedMessagesBtn, hideUpdateMessageHBBtn, addFileBtn;
 
     private final List<Node> hiddenNodesOnSelection = new ArrayList<>();
+
+    private final List<Node> hiddenNodesOnPinned = new ArrayList<>();
 
     private final UsersInSilentModeService usersInSilentModeService = new UsersInSilentModeService();
 
@@ -472,15 +475,16 @@ public class SpeechBaseController {
     }
 
     public void loadChannelMessages(ChannelUser selectedChat) {
-        selectedChatVB.setVisible(true);
-        channelName.setText(selectedChat.getChannel().getChannelName());
-        channelStatus.setText(selectedChat.getChannel().getChannelType().getChannelTypeId() == 3 ?
-                channelUserService.getInterlocutorStatus(selectedChat.getChannel(), selectedChat.getUser()) :
-                String.format("Число участников: %d", selectedChat.getChannel().getChannelCountUser()));
-        messageTA.setText("");
-        messageCellCreator.clearCache();
-
-        messageTA.requestFocus();
+        Platform.runLater(() -> {
+            messageCellCreator.clearCache();
+            selectedChatVB.setVisible(true);
+            channelName.setText(selectedChat.getChannel().getChannelName());
+            messageTA.setText("");
+            channelStatus.setText(selectedChat.getChannel().getChannelType().getChannelTypeId() == 3 ?
+                    selectedChat.getUser().getStatusUser() :
+                    String.format("Число участников: %d", selectedChat.getChannel().getChannelCountUser()));
+            messageTA.requestFocus();
+        });
 
         hideTheListOfPinnedMessages();
 
@@ -507,25 +511,57 @@ public class SpeechBaseController {
 
         setSelectionModeActive(false);
 
-        new Thread(() -> {
+        Thread loadChannelMessagesThread = new Thread(() -> {
             List<Message> messagesList = messageService.getAllMessageInChannel(
                     selectedChannelUser.getChannel().getChannelID());
-            List<Message> filtered = messagesList.stream()
+            List<Message> filteredAll = messagesList.stream()
                     .filter(message -> !message.getDeletedByUsers()
                             .contains(Long.valueOf(currentUser.getIdUser())))
                     .toList();
 
-            // Обновление UI
             Platform.runLater(() -> {
-                messages.setAll(filtered);
-                if (!messagesLV.getItems().isEmpty())
-                    messagesLV.scrollTo(messagesLV.getItems().size());
-                if (firstVisible == 0)
-                    setPinnedMessagesHBVisible(messagesLV.getItems().size());
-                else
-                    setPinnedMessagesHBVisible(firstVisible);
+                PauseTransition pauseTransitionR = new PauseTransition(Duration.millis(100));
+                pauseTransitionR.play();
+                pauseTransitionR.setOnFinished(eR -> {
+                    messages.clear();
+                    int total = filteredAll.size();
+                    int takeLast = Math.min(total, 13);
+                    for (int i = total - takeLast; i < total; i++) {
+                        messages.add(filteredAll.get(i));
+                    }
+
+                    PauseTransition pauseTransition = new PauseTransition(Duration.millis(300));
+                    pauseTransition.play();
+                    pauseTransition.setOnFinished(e -> {
+                        if (!messagesLV.getItems().isEmpty())
+                            messagesLV.scrollTo(messagesLV.getItems().size());
+                        if (firstVisible == 0)
+                            setPinnedMessagesHBVisible(messagesLV.getItems().size());
+                        else
+                            setPinnedMessagesHBVisible(firstVisible);
+                    });
+
+                    if (total > 13) {
+                        List<Message> remaining = new ArrayList<>(filteredAll.subList(0, total - 13));
+                        Thread addRemainingThread = new Thread(() -> {
+                            try {
+                                Thread.sleep(2000);
+                            } catch (InterruptedException ignored) {
+                            }
+                            Platform.runLater(() -> {
+                                messages.addAll(0, remaining);
+                                setPinnedMessagesHBVisible(messagesLV.getItems().size());
+                            });
+                        });
+                        addRemainingThread.setDaemon(true);
+                        addRemainingThread.start();
+                    }
+                });
             });
-        }).start();
+        });
+
+        loadChannelMessagesThread.setDaemon(true);
+        loadChannelMessagesThread.start();
     }
 
     private void setupMessageTextAreaListener() {
@@ -883,10 +919,14 @@ public class SpeechBaseController {
 
         filteredList.setPredicate(mes -> mes != null && Boolean.TRUE.equals(mes.getPinMessage()));
 
+        hiddenNodesOnPinned.clear();
+
         for (Node node : channelStateAP.getChildren()) {
-            hiddenNodesOnSelection.add(node);
-            node.setVisible(false);
-            node.setManaged(false);
+            if (node.isVisible()) {
+                hiddenNodesOnPinned.add(node);
+                node.setVisible(false);
+                node.setManaged(false);
+            }
         }
 
         if (backBtn == null) {
@@ -927,13 +967,13 @@ public class SpeechBaseController {
         }
 
         if (updateMessageHB.isVisible()) {
-            hiddenNodesOnSelection.add(updateMessageHB);
+            hiddenNodesOnPinned.add(updateMessageHB);
             updateMessageHB.setVisible(false);
             updateMessageHB.setManaged(false);
         }
 
         for (Node node : messageHB.getChildren()) {
-            hiddenNodesOnSelection.add(node);
+            hiddenNodesOnPinned.add(node);
             node.setVisible(false);
             node.setManaged(false);
         }
@@ -973,7 +1013,7 @@ public class SpeechBaseController {
         flag = true;
         filteredList.setPredicate(m -> true);
 
-        for (Node node : hiddenNodesOnSelection) {
+        for (Node node : hiddenNodesOnPinned) {
             node.setVisible(true);
             node.setManaged(true);
         }
