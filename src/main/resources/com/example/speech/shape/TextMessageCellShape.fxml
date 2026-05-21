@@ -56,7 +56,7 @@
                 </rowConstraints>
                 <columnConstraints>
                     <ColumnConstraints/>
-                    <ColumnConstraints prefWidth="100" minWidth="100" fx:id="columnInfo"/>
+                    <ColumnConstraints prefWidth="120" minWidth="120" fx:id="columnInfo"/>
                 </columnConstraints>
 
                 <TextFlow fx:id="contentTextFlow" GridPane.columnSpan="2">
@@ -64,22 +64,22 @@
                         <Insets top="7"/>
                     </padding>
 
-                    <Label fx:id="messageLabel" wrapText="true" style="-fx-font-size: 14px;" text="Content"/>
+                    <Label fx:id="messageLabel" wrapText="true" styleClass="message-text"/>
                 </TextFlow>
 
                 <HBox fx:id="timeStatusHB" GridPane.rowIndex="1" GridPane.columnIndex="1" alignment="BOTTOM_RIGHT">
-                    <Label text="изменено" visible="false" managed="false" fx:id="changeStatusLB"
-                           style="-fx-text-fill: gray; -fx-font-size: 10px;">
+                    <Label text="изменено" visible="false" managed="false" fx:id="changeStatusLB" styleClass="message-time">
                         <HBox.margin>
                             <Insets right="5"/>
                         </HBox.margin>
                     </Label>
 
-                    <Label fx:id="timeLabel" style="-fx-text-fill: gray; -fx-font-size: 10px;" text="00:00">
+                    <Label fx:id="timeLabel" styleClass="message-time" text="00:00">
                         <HBox.margin>
                             <Insets right="3"/>
                         </HBox.margin>
                     </Label>
+
                     <ImageView fx:id="statusIV" fitHeight="13" fitWidth="13" preserveRatio="true">
                         <HBox.margin>
                             <Insets bottom="1.7"/>

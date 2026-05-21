@@ -4,6 +4,7 @@ import com.example.speech.model.*;
 import com.example.speech.service.*;
 import com.example.speech.util.FileUtils;
 import com.example.speech.util.HelpfulClass;
+import com.example.speech.util.HelpfulStylingClass;
 import javafx.animation.PauseTransition;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
@@ -106,7 +107,7 @@ public class SpeechBaseController {
     @FXML
     private ListView<Message> messagesLV;
     @FXML
-    private AnchorPane messageAnchor;
+    private HBox messageHB;
     @FXML
     private StackPane messagesSP;
     @FXML
@@ -132,6 +133,8 @@ public class SpeechBaseController {
     private Label contentPinnedMessageLB;
 
     private ContextPopUpBar contextPopUpBar;
+
+    private String currentSearchText = null;
 
     private Button backBtn;
 
@@ -187,7 +190,13 @@ public class SpeechBaseController {
     private EventHandler<MouseEvent> removeControlsWindow;
 
     @FXML
-    private Button createControlsWindowBtn;
+    private Button searchSubstringInMessageBtn, createControlsWindowBtn, showAllPinnedMessagesBtn, hideUpdateMessageHBBtn, addFileBtn;
+
+    private final List<Node> hiddenNodesOnSelection = new ArrayList<>();
+
+    private final UsersInSilentModeService usersInSilentModeService = new UsersInSilentModeService();
+
+    private VBox controlsWindowRootVB;
 
     public void initializeData(Stage stage, User currentUser) {
         this.stage = stage;
@@ -205,8 +214,31 @@ public class SpeechBaseController {
             }
         });
 
-        HelpfulClass.setImageWithButton(sendMessageBtn, "imageSendButton.png");
+        HelpfulClass.setImageWithButton(searchSubstringInMessageBtn, "imageSearchButton.png");
+        HelpfulClass.setImageWithButton(createControlsWindowBtn, "imageMenuButton.png");
 
+        HelpfulClass.setImageWithButton(showAllPinnedMessagesBtn, "pin.png");
+
+        double hideUpdateMessageHBBtnSize = 30;
+
+        HelpfulClass.setImageWithButton(
+                hideUpdateMessageHBBtn, "image-delete-chat-not-focused.png", "delete-chat-btn",
+                hideUpdateMessageHBBtnSize, hideUpdateMessageHBBtnSize);
+
+        hideUpdateMessageHBBtn.setOnMouseEntered(e -> {
+            HelpfulClass.setImageWithButton(
+                    hideUpdateMessageHBBtn, "image-delete-chat-focused.png", "delete-chat-btn",
+                    hideUpdateMessageHBBtnSize, hideUpdateMessageHBBtnSize);
+        });
+
+        hideUpdateMessageHBBtn.setOnMouseExited(e -> {
+            HelpfulClass.setImageWithButton(
+                    hideUpdateMessageHBBtn, "image-delete-chat-not-focused.png", "delete-chat-btn",
+                    hideUpdateMessageHBBtnSize, hideUpdateMessageHBBtnSize);
+        });
+
+        HelpfulClass.setImageWithButton(addFileBtn, "imageAddFileButton.png");
+        HelpfulClass.setImageWithButton(sendMessageBtn, "imageSendButton.png");
         HelpfulClass.setImageWithButton(emojiBtn, "imageEmojiButton.png");
 
         filteredList = new FilteredList<>(messages, m -> true);
@@ -218,7 +250,9 @@ public class SpeechBaseController {
 
         messageListener = new MessageListener("jdbc:postgresql://192.168.1.103:5432/speechdb"
                 , currentUser.getNameUser(), currentUser.getPasswordUser(),
-                messageID -> {Platform.runLater(() -> messagesListViewRefresh(messageID));}, userChats, this);
+                messageID -> {
+                    Platform.runLater(() -> messagesListViewRefresh(messageID));
+                }, userChats, this);
 
         Thread listenerThread = new Thread(messageListener, "pg-listener");
         listenerThread.setDaemon(true);
@@ -279,26 +313,25 @@ public class SpeechBaseController {
         });
 
         messageTA.setOnKeyReleased(e -> {
-            if(e.isShiftDown() && e.getCode() == KeyCode.ENTER) {
+            if (e.isShiftDown() && e.getCode() == KeyCode.ENTER) {
                 int caretPos = messageTA.getCaretPosition();
                 messageTA.insertText(caretPos, "\n");
                 return;
             }
 
-            if(e.getCode() == KeyCode.ENTER && sendMessageBtn.isVisible())
+            if (e.getCode() == KeyCode.ENTER && sendMessageBtn.isVisible())
                 sendMessageBtn.fire();
         });
 
         selectedFile = FXCollections.observableArrayList();
         fileListView = new ListView<>();
-        fileListView.setMaxHeight(70);
-        fileListView.setMinHeight(70);
-        fileListView.setPrefHeight(70);
+        fileListView.setMaxHeight(75);
+        fileListView.setMinHeight(75);
+        fileListView.setPrefHeight(75);
         fileListView.setVisible(false);
         fileListView.setManaged(false);
         fileListView.setSelectionModel(null);
         fileListView.setOrientation(Orientation.HORIZONTAL);
-        fileListView.getStyleClass().add("no-vertical-scroll");
         fileListView.prefWidthProperty().bind(selectedChatVB.widthProperty());
         fileListView.setCellFactory(f -> new FileCell(this));
         fileListView.setItems(selectedFile);
@@ -306,31 +339,31 @@ public class SpeechBaseController {
 
         // Слушатель размера списка
         selectedFile.addListener((ListChangeListener<File>) change -> {
-            while (change.next()) { }
+            while (change.next()) {
+            }
             int size = selectedFile.size();
             Platform.runLater(() -> {
 
-                    if (size > 0) {
-                        AnchorPane.setRightAnchor(messageTA, 102.0);
-                        AnchorPane.setRightAnchor(emojiBtn, 50.0);
-                        sendMessageBtn.setVisible(true);
-                        if (fileListView != null) {
-                            fileListView.setVisible(true);
-                            fileListView.setManaged(true);
-                        }
-                    } else {
-                        if(!updateMessageHB.isVisible() || (updateMessageHB.isVisible() && contextPopUpBar != ContextPopUpBar.FORWARD_MESSAGE)) {
-                            if (messageTA != null && (messageTA.getText() == null || messageTA.getText().isEmpty() || messageTA.getText().equals("Сообщение..."))) {
-                                AnchorPane.setRightAnchor(messageTA, 51.0);
-                                AnchorPane.setRightAnchor(emojiBtn, 0.0);
-                                sendMessageBtn.setVisible(false);
-                            }
-                        }
-                        if (fileListView != null) {
-                            fileListView.setVisible(false);
-                            fileListView.setManaged(false);
+                if (size > 0) {
+                    sendMessageBtn.setVisible(true);
+                    sendMessageBtn.setManaged(true);
+                    if (fileListView != null) {
+                        fileListView.setVisible(true);
+                        fileListView.setManaged(true);
+                    }
+                } else {
+                    if (!updateMessageHB.isVisible() || (updateMessageHB.isVisible() && contextPopUpBar != ContextPopUpBar.FORWARD_MESSAGE)) {
+                        if (messageTA != null && (messageTA.getText() == null || messageTA.getText().isEmpty()
+                                || messageTA.getText().equals("Сообщение..."))) {
+                            sendMessageBtn.setVisible(false);
+                            sendMessageBtn.setManaged(false);
                         }
                     }
+                    if (fileListView != null) {
+                        fileListView.setVisible(false);
+                        fileListView.setManaged(false);
+                    }
+                }
 
             });
         });
@@ -403,7 +436,7 @@ public class SpeechBaseController {
             if (event.getButton() == MouseButton.PRIMARY) {
                 if (!dragSelecting && dragStartIndex != -1) {
                     Message clickedMsg = messagesLV.getItems().get(dragStartIndex);
-                    if(!selectionModeActive)
+                    if (!selectionModeActive)
                         activateSelectionModeWithMessage(clickedMsg);
                 }
                 dragSelecting = false;
@@ -414,6 +447,12 @@ public class SpeechBaseController {
                     setSelectionModeActive(false);
                 event.consume();
             }
+        });
+
+        Platform.runLater(() -> {
+            HelpfulStylingClass.scrollPaneAnimation(messagesLV);
+            HelpfulStylingClass.scrollPaneAnimation(chatsView);
+            HelpfulStylingClass.scrollPaneAnimation(fileListView, true);
         });
     }
 
@@ -496,17 +535,15 @@ public class SpeechBaseController {
                     !newValue.matches("^[\\n\\r\\s]*$") &&
                     !newValue.equals("Сообщение...");
 
-            if(!updateMessageHB.isVisible() || (updateMessageHB.isVisible() && contextPopUpBar != ContextPopUpBar.FORWARD_MESSAGE)) {
+            if (!updateMessageHB.isVisible() || (updateMessageHB.isVisible() && contextPopUpBar != ContextPopUpBar.FORWARD_MESSAGE)) {
                 if (!hasVisibleText) {
                     if (selectedFile == null || selectedFile.isEmpty()) {
                         sendMessageBtn.setVisible(false);
-                        AnchorPane.setRightAnchor(emojiBtn, 0.0);
-                        AnchorPane.setRightAnchor(messageTA, 51.0);
+                        sendMessageBtn.setManaged(false);
                     }
                 } else {
-                    AnchorPane.setRightAnchor(messageTA, 102.0);
-                    AnchorPane.setRightAnchor(emojiBtn, 50.0);
                     sendMessageBtn.setVisible(true);
+                    sendMessageBtn.setManaged(true);
                 }
             }
 
@@ -520,14 +557,14 @@ public class SpeechBaseController {
         int setMinHeightByCountLines = Math.max(countLinesNewValue, 2) * 20;
 
         if (countLinesNewValue > countLinesOldValue) {
-            messageAnchor.setMinHeight(Math.min(setMinHeightByCountLines, 200));
+            messageHB.setMinHeight(Math.min(setMinHeightByCountLines, 200));
         } else if (countLinesNewValue < countLinesOldValue) {
-            messageAnchor.setMinHeight(Math.max(40, Math.min(setMinHeightByCountLines, 200)));
+            messageHB.setMinHeight(Math.max(40, Math.min(setMinHeightByCountLines, 200)));
         }
 
         if (newValue == null || newValue.trim().isEmpty()) {
-            messageAnchor.setMinHeight(40);
-            messageAnchor.setPrefHeight(40);
+            messageHB.setMinHeight(40);
+            messageHB.setPrefHeight(40);
             messageTA.setPrefHeight(40);
         }
         countLinesOldValue = countLinesNewValue;
@@ -847,6 +884,7 @@ public class SpeechBaseController {
         filteredList.setPredicate(mes -> mes != null && Boolean.TRUE.equals(mes.getPinMessage()));
 
         for (Node node : channelStateAP.getChildren()) {
+            hiddenNodesOnSelection.add(node);
             node.setVisible(false);
             node.setManaged(false);
         }
@@ -854,11 +892,10 @@ public class SpeechBaseController {
         if (backBtn == null) {
             backBtn = new Button();
             backBtn.setId("backBtn");
-            backBtn.getStyleClass().addAll("window-control-button", "back-button");
+            HelpfulClass.setImageWithButton(backBtn, "back.png");
             backBtn.setOnAction(e -> {
                 hideTheListOfPinnedMessages();
             });
-            backBtn.setPrefWidth(50.0);
             AnchorPane.setLeftAnchor(backBtn, 10.0);
             AnchorPane.setTopAnchor(backBtn, 5.0);
             AnchorPane.setBottomAnchor(backBtn, 5.0);
@@ -871,7 +908,7 @@ public class SpeechBaseController {
         if (countPinnedMessages == null) {
             countPinnedMessages = new Label();
             countPinnedMessages.setId("countPinnedMessages");
-            countPinnedMessages.setStyle("-fx-font-size: 14px; -fx-font-weight: bold;");
+            countPinnedMessages.setStyle("-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: #00C49A;");
             AnchorPane.setLeftAnchor(countPinnedMessages, 70.0);
             AnchorPane.setRightAnchor(countPinnedMessages, 0.0);
             AnchorPane.setTopAnchor(countPinnedMessages, 0.0);
@@ -890,11 +927,13 @@ public class SpeechBaseController {
         }
 
         if (updateMessageHB.isVisible()) {
+            hiddenNodesOnSelection.add(updateMessageHB);
             updateMessageHB.setVisible(false);
             updateMessageHB.setManaged(false);
         }
 
-        for (Node node : messageAnchor.getChildren()) {
+        for (Node node : messageHB.getChildren()) {
+            hiddenNodesOnSelection.add(node);
             node.setVisible(false);
             node.setManaged(false);
         }
@@ -902,15 +941,14 @@ public class SpeechBaseController {
         if (unpinnedAllMessagesBtn == null) {
             unpinnedAllMessagesBtn = new Button();
             unpinnedAllMessagesBtn.setId("unpinnedAllMessagesBtn");
-            unpinnedAllMessagesBtn.setStyle("-fx-font-size: 16px; -fx-text-fill: blue;");
-            AnchorPane.setLeftAnchor(unpinnedAllMessagesBtn, 0.0);
-            AnchorPane.setRightAnchor(unpinnedAllMessagesBtn, 0.0);
-            AnchorPane.setTopAnchor(unpinnedAllMessagesBtn, 0.0);
-            AnchorPane.setBottomAnchor(unpinnedAllMessagesBtn, 0.0);
+            unpinnedAllMessagesBtn.prefWidthProperty().bind(messageHB.widthProperty());
+            unpinnedAllMessagesBtn.setPrefHeight(40);
+            unpinnedAllMessagesBtn.getStyleClass().add("unpin-all-btn");
+            HBox.setHgrow(unpinnedAllMessagesBtn, Priority.ALWAYS);
             unpinnedAllMessagesBtn.setOnAction(e -> {
                 new ConfirmationOfMessageDeletion().initializeShape(this);
             });
-            messageAnchor.getChildren().add(unpinnedAllMessagesBtn);
+            messageHB.getChildren().add(unpinnedAllMessagesBtn);
         } else if (!unpinnedAllMessagesBtn.isVisible()) {
             unpinnedAllMessagesBtn.setVisible(true);
             unpinnedAllMessagesBtn.setManaged(true);
@@ -935,24 +973,12 @@ public class SpeechBaseController {
         flag = true;
         filteredList.setPredicate(m -> true);
 
-        for (Node node : channelStateAP.getChildren()) {
+        for (Node node : hiddenNodesOnSelection) {
             node.setVisible(true);
             node.setManaged(true);
         }
 
         setPinnedMessagesHBVisible(firstVisible);
-
-        if (updateMessage != null) {
-            updateMessageHB.setVisible(true);
-            updateMessageHB.setManaged(true);
-        }
-
-        for (Node node : messageAnchor.getChildren()) {
-            if (!node.equals(sendMessageBtn)) {
-                node.setVisible(true);
-                node.setManaged(true);
-            }
-        }
 
         messagesLV.scrollTo(messages.size());
 
@@ -1026,10 +1052,6 @@ public class SpeechBaseController {
 
     public VBox getSelectedChatVB() {
         return selectedChatVB;
-    }
-
-    public AnchorPane getMessageAnchor() {
-        return messageAnchor;
     }
 
     public VBox getLeftVB() {
@@ -1149,13 +1171,21 @@ public class SpeechBaseController {
 
     private void checkSelectedMode(boolean active) {
         if (active) {
+            hiddenNodesOnSelection.clear();
+            for (Node node : channelStateAP.getChildren()) {
+                if (node.isVisible()) {
+                    hiddenNodesOnSelection.add(node);
+                    node.setVisible(false);
+                    node.setManaged(false);
+                }
+            }
             for (Node node : channelStateAP.getChildren()) {
                 node.setVisible(false);
                 node.setManaged(false);
             }
 
             selectionForwardBtn = new Button("ПЕРЕСЛАТЬ");
-            selectionForwardBtn.getStyleClass().add("login-button");
+            selectionForwardBtn.getStyleClass().add("selected-message-mode-buttons");
             selectionForwardBtn.setOnAction(e -> {
                 forwardMessages.setAll(selectedMessages);
                 new ChatSelectionController(this, forwardMessages);
@@ -1163,45 +1193,43 @@ public class SpeechBaseController {
             });
             selectionForwardBtn.setPrefWidth(120);
             AnchorPane.setLeftAnchor(selectionForwardBtn, 10.0);
-            AnchorPane.setTopAnchor(selectionForwardBtn, 0.0);
-            AnchorPane.setBottomAnchor(selectionForwardBtn, 0.0);
+            AnchorPane.setTopAnchor(selectionForwardBtn, 5.0);
+            AnchorPane.setBottomAnchor(selectionForwardBtn, 5.0);
 
             selectionDeleteBtn = new Button("УДАЛИТЬ");
-            selectionDeleteBtn.getStyleClass().add("login-button");
+            selectionDeleteBtn.getStyleClass().add("selected-message-mode-buttons");
             selectionDeleteBtn.setOnAction(e -> {
                 new ConfirmationOfMessageDeletion().initializeShape(channelName.getText(), this
                         , selectedMessages);
             });
             selectionDeleteBtn.setPrefWidth(120);
             AnchorPane.setLeftAnchor(selectionDeleteBtn, 140.0);
-            AnchorPane.setTopAnchor(selectionDeleteBtn, 0.0);
-            AnchorPane.setBottomAnchor(selectionDeleteBtn, 0.0);
+            AnchorPane.setTopAnchor(selectionDeleteBtn, 5.0);
+            AnchorPane.setBottomAnchor(selectionDeleteBtn, 5.0);
 
             selectionCancelBtn = new Button("ОТМЕНА");
-            selectionCancelBtn.getStyleClass().add("login-button");
+            selectionCancelBtn.getStyleClass().add("selected-message-mode-buttons");
             selectionCancelBtn.setOnAction(e -> {
                 setSelectionModeActive(false);
             });
             selectionCancelBtn.setPrefWidth(120);
             AnchorPane.setRightAnchor(selectionCancelBtn, 10.0);
-            AnchorPane.setTopAnchor(selectionCancelBtn, 0.0);
-            AnchorPane.setBottomAnchor(selectionCancelBtn, 0.0);
-            if(selectedChannelUser.getChannel().isDisable_sharing()) {
+            AnchorPane.setTopAnchor(selectionCancelBtn, 5.0);
+            AnchorPane.setBottomAnchor(selectionCancelBtn, 5.0);
+            if (selectedChannelUser.getChannel().isDisable_sharing()) {
                 AnchorPane.setLeftAnchor(selectionDeleteBtn, 10.0);
-                AnchorPane.setTopAnchor(selectionDeleteBtn, 10.0);
-                AnchorPane.setBottomAnchor(selectionDeleteBtn, 10.0);
+                AnchorPane.setTopAnchor(selectionDeleteBtn, 5.0);
+                AnchorPane.setBottomAnchor(selectionDeleteBtn, 5.0);
                 channelStateAP.getChildren().addAll(selectionDeleteBtn, selectionCancelBtn);
-            }
-            else
+            } else
                 channelStateAP.getChildren().addAll(selectionForwardBtn, selectionDeleteBtn, selectionCancelBtn);
         } else {
             channelStateAP.getChildren().removeAll(selectionForwardBtn, selectionDeleteBtn, selectionCancelBtn);
-            for (Node node : channelStateAP.getChildren()) {
-                if (node.getId() != null && !node.equals(backBtn) && !node.equals(countPinnedMessages)) {
-                    node.setVisible(true);
-                    node.setManaged(true);
-                }
+            for (Node node : hiddenNodesOnSelection) {
+                node.setVisible(true);
+                node.setManaged(true);
             }
+            hiddenNodesOnSelection.clear();
         }
     }
 
@@ -1307,8 +1335,9 @@ public class SpeechBaseController {
             }
         }
 
-        topSearchModeHB = new HBox();
-        topSearchModeHB.setStyle("-fx-background-color: white;");
+        topSearchModeHB = new HBox(10);
+        topSearchModeHB.getStyleClass().add("search-top-pane");
+        topSearchModeHB.setPadding(new Insets(0, 10, 0, 10));
         StackPane.setAlignment(topSearchModeHB, Pos.TOP_LEFT);
         topSearchModeHB.setPrefHeight(40);
         topSearchModeHB.setMaxHeight(40);
@@ -1318,19 +1347,17 @@ public class SpeechBaseController {
         Button closeSearchModeBtn = new Button();
         topSearchModeHB.getChildren().add(closeSearchModeBtn);
 
-        ImageView closeSearchModeIV = new ImageView(
-                new Image(Objects.requireNonNull(getClass().getResourceAsStream("/com/example/speech/image/arrow.png"))));
-        closeSearchModeIV.setFitWidth(15);
-        closeSearchModeIV.setFitHeight(15);
-        closeSearchModeIV.setPreserveRatio(true);
-
-        closeSearchModeBtn.setGraphic(closeSearchModeIV);
+        HelpfulClass.setImageWithButton(closeSearchModeBtn, "arrow.png", "close-search-btn", 30, 30);
 
         TextField searchFromChatTF = new TextField();
         searchFromChatTF.setPromptText("Поиск...");
+        searchFromChatTF.setAlignment(Pos.CENTER_LEFT);
+        searchFromChatTF.setPrefHeight(35);
         applyPromptWithTF(searchFromChatTF);
         HBox.setHgrow(searchFromChatTF, Priority.ALWAYS);
         topSearchModeHB.getChildren().add(searchFromChatTF);
+        searchFromChatTF.requestFocus();
+        searchFromChatTF.getStyleClass().setAll("search-text-field");
 
         Button searchContainsStrFromMessage = new Button();
         topSearchModeHB.getChildren().add(searchContainsStrFromMessage);
@@ -1339,16 +1366,11 @@ public class SpeechBaseController {
                 searchContainsStrFromMessage.fire();
         });
 
-        ImageView searchModeIV = new ImageView(
-                new Image(Objects.requireNonNull(getClass().getResourceAsStream("/com/example/speech/image/imageSearchButton.png"))));
-        searchModeIV.setFitWidth(15);
-        searchModeIV.setFitHeight(15);
-        searchModeIV.setPreserveRatio(true);
+        HelpfulClass.setImageWithButton(searchContainsStrFromMessage, "imageSearchButton.png", "search-action-btn", 30, 30);
 
-        searchContainsStrFromMessage.setGraphic(searchModeIV);
-
-        bottomSearchModeHB = new HBox();
-        bottomSearchModeHB.setStyle("-fx-background-color: white;");
+        bottomSearchModeHB = new HBox(10);
+        bottomSearchModeHB.getStyleClass().add("search-bottom-pane");
+        bottomSearchModeHB.setPadding(new Insets(0, 10, 0, 10));
         StackPane.setAlignment(bottomSearchModeHB, Pos.BOTTOM_LEFT);
         bottomSearchModeHB.setPrefHeight(40);
         bottomSearchModeHB.setMaxHeight(40);
@@ -1362,51 +1384,63 @@ public class SpeechBaseController {
         listSearchModeIV.setPreserveRatio(true);
         bottomSearchModeHB.getChildren().add(listSearchModeIV);
 
-        TextField countResult = new TextField();
-        countResult.setDisable(true);
+        Label countResult = new Label();
+        countResult.getStyleClass().add("count-result-label");
         countResult.setAlignment(Pos.CENTER_LEFT);
-        HBox.setHgrow(countResult, Priority.ALWAYS);
+        countResult.minWidthProperty().bind(bottomSearchModeHB.widthProperty().subtract(150));
+        countResult.setMinHeight(35);
         bottomSearchModeHB.getChildren().add(countResult);
 
         Button listOfBtn = new Button("Списком");
         listOfBtn.setDisable(true);
         bottomSearchModeHB.getChildren().add(listOfBtn);
+        listOfBtn.getStyleClass().setAll("list-of-btn");
 
-        buttonsVB = new VBox(10);//Нужно скрывать местами
+        buttonsVB = new VBox(10);
         StackPane.setAlignment(buttonsVB, Pos.BOTTOM_RIGHT);
         buttonsVB.setVisible(false);
         StackPane.setMargin(buttonsVB, new Insets(0, 10, 10 + 40, 0));
         buttonsVB.setPrefWidth(40);
         buttonsVB.setMaxWidth(40);
+        buttonsVB.setAlignment(Pos.CENTER);
         buttonsVB.setMaxHeight(Region.USE_PREF_SIZE);
+        buttonsVB.getStyleClass().add("nav-buttons-box");
+        buttonsVB.setPadding(new Insets(5, 0, 5, 0));
         rightSP.getChildren().add(buttonsVB);
 
         Button upBtn = new Button();
+        upBtn.setVisible(false);
+        upBtn.setManaged(false);
         buttonsVB.getChildren().add(upBtn);
-        upBtn.setDisable(true);
 
-        ImageView upIV = new ImageView(
-                new Image(Objects.requireNonNull(getClass().getResourceAsStream("/com/example/speech/image/up.png"))));
-        upIV.setFitWidth(15);
-        upIV.setFitHeight(15);
-        upIV.setPreserveRatio(true);
-
-        upBtn.setGraphic(upIV);
+        HelpfulClass.setImageWithButton(upBtn, "up.png", "nav-btn", 30, 30);
 
         Button downBtn = new Button();
         buttonsVB.getChildren().add(downBtn);
-        downBtn.setDisable(true);
+        downBtn.setVisible(false);
+        downBtn.setManaged(false);
         downBtn.setOnAction(e -> {
             //Кнопка вниз
             currInd -= 1;
             scrollToMessage(resultList.get(resultList.size() - currInd));
-            upBtn.setDisable(currInd == resultList.size());
-            downBtn.setDisable(currInd == 1);
+            if (currInd == resultList.size()) {
+                upBtn.setVisible(false);
+                upBtn.setManaged(false);
+            } else {
+                upBtn.setVisible(true);
+                upBtn.setManaged(true);
+            }
+            if (currInd == 1) {
+                downBtn.setVisible(false);
+                downBtn.setManaged(false);
+            } else {
+                downBtn.setVisible(true);
+                downBtn.setManaged(true);
+            }
             countResult.setText(currInd + "/" + resultList.size());
             Platform.runLater(() -> {
                 PauseTransition pauseTransition = new PauseTransition(Duration.millis(100));
                 pauseTransition.setOnFinished(e1 -> {
-                    System.out.println("Показываем выделение");
                     messageCellCreator.getControllerCache().get(resultList.get(resultList.size() - currInd)).highlightText(searchFromChatTF.getText());
                 });
                 pauseTransition.playFromStart();
@@ -1416,31 +1450,36 @@ public class SpeechBaseController {
             //Кнопка вверх
             currInd += 1;
             scrollToMessage(resultList.get(resultList.size() - currInd));
-            upBtn.setDisable(currInd == resultList.size());
-            downBtn.setDisable(currInd == 1);
+            if (currInd == resultList.size()) {
+                upBtn.setVisible(false);
+                upBtn.setManaged(false);
+            } else {
+                upBtn.setVisible(true);
+                upBtn.setManaged(true);
+            }
+            if (currInd == 1) {
+                downBtn.setVisible(false);
+                downBtn.setManaged(false);
+            } else {
+                downBtn.setVisible(true);
+                downBtn.setManaged(true);
+            }
             countResult.setText(currInd + "/" + resultList.size());
             Platform.runLater(() -> {
                 PauseTransition pauseTransition = new PauseTransition(Duration.millis(100));
                 pauseTransition.setOnFinished(e1 -> {
-                    System.out.println("Показываем выделение");
                     messageCellCreator.getControllerCache().get(resultList.get(resultList.size() - currInd)).highlightText(searchFromChatTF.getText());
                 });
                 pauseTransition.playFromStart();
             });
         });
 
-        ImageView downIV = new ImageView(
-                new Image(Objects.requireNonNull(getClass().getResourceAsStream("/com/example/speech/image/down.png"))));
-        downIV.setFitWidth(15);
-        downIV.setFitHeight(15);
-        downIV.setPreserveRatio(true);
-
-        downBtn.setGraphic(downIV);
+        HelpfulClass.setImageWithButton(downBtn, "down.png", "nav-btn", 30, 30);
 
         listOfBtn.setOnAction(e -> {
             //Вывод только нужных сообщений
             if (listOfBtn.getText().equals("Списком")) {
-                filteredList.setPredicate(message -> message.getMessageString().toLowerCase()
+                filteredList.setPredicate(message -> message.getMessageString() != null && message.getMessageString().toLowerCase()
                         .contains(searchFromChatTF.getText().trim().toLowerCase()));
                 listOfBtn.setText("Чатом");
                 countResult.setText("Всего записей: " + resultList.size());
@@ -1455,7 +1494,6 @@ public class SpeechBaseController {
                 Platform.runLater(() -> {
                     PauseTransition pauseTransition = new PauseTransition(Duration.millis(100));
                     pauseTransition.setOnFinished(e1 -> {
-                        System.out.println("Показываем выделение");
                         messageCellCreator.getControllerCache().get(resultList.getLast()).highlightText(searchFromChatTF.getText());
                     });
                     pauseTransition.playFromStart();
@@ -1466,13 +1504,15 @@ public class SpeechBaseController {
         searchContainsStrFromMessage.setOnAction(e -> {
             //Кнопка поиска вхождений подстроки в сообщения
             if (searchFromChatTF.getText() != null && !searchFromChatTF.getText().isEmpty()) {
+                currentSearchText = searchFromChatTF.getText().trim();
+
                 resultList = messages.stream().filter(message ->
-                        message.getMessageString().toLowerCase().contains(searchFromChatTF.getText().trim().toLowerCase())).toList();
+                        message.getMessageString() != null &&
+                                message.getMessageString().toLowerCase().contains(
+                                        searchFromChatTF.getText().trim().toLowerCase())).toList();
 
                 if (resultList.isEmpty()) {
                     countResult.setText("Нету результатов");
-                    upBtn.setDisable(true);
-                    downBtn.setDisable(true);
                     listOfBtn.setDisable(true);
                     buttonsVB.setVisible(false);
                 } else {
@@ -1481,8 +1521,20 @@ public class SpeechBaseController {
                     listOfBtn.setDisable(false);
                     scrollToMessage(resultList.getLast());
                     currInd = 1;
-                    upBtn.setDisable(currInd == resultList.size());
-                    downBtn.setDisable(currInd == 1);
+                    if (currInd == resultList.size()) {
+                        upBtn.setVisible(false);
+                        upBtn.setManaged(false);
+                    } else {
+                        upBtn.setVisible(true);
+                        upBtn.setManaged(true);
+                    }
+                    if (currInd == 1) {
+                        downBtn.setVisible(false);
+                        downBtn.setManaged(false);
+                    } else {
+                        downBtn.setVisible(true);
+                        downBtn.setManaged(true);
+                    }
                     Platform.runLater(() -> {
                         PauseTransition pauseTransition = new PauseTransition(Duration.millis(100));
                         pauseTransition.setOnFinished(e1 -> {
@@ -1496,6 +1548,7 @@ public class SpeechBaseController {
         });
 
         closeSearchModeBtn.setOnAction(e -> {
+            currentSearchText = null;
             for (Node node : hiddenList) {
                 node.setVisible(true);
                 node.setManaged(true);
@@ -1506,6 +1559,10 @@ public class SpeechBaseController {
             if (messages != null && !messages.isEmpty())
                 messagesLV.scrollTo(messages.getLast());
         });
+    }
+
+    public String getCurrentSearchText() {
+        return currentSearchText;
     }
 
     public ObservableList<Message> getMessages() {
@@ -1595,7 +1652,6 @@ public class SpeechBaseController {
 
         // Содержимое (без изменений)
         VBox emojiVB = new VBox(5);
-        emojiVB.setStyle("-fx-background-color: rgba(245, 245, 245);");
         emojiVB.setMaxWidth(260);
         emojiVB.setAlignment(Pos.TOP_RIGHT);
         emojiSP.setContent(emojiVB);
@@ -1605,6 +1661,7 @@ public class SpeechBaseController {
         emojiVB.getChildren().add(frequentlyUsed);
 
         TilePane pane = new TilePane();
+        pane.setStyle("-fx-background-color: #E0F2EF;");
         pane.setHgap(5);
         pane.setVgap(5);
         pane.setPrefColumns(4);
@@ -1618,7 +1675,7 @@ public class SpeechBaseController {
                     messageTA.setText(emojiChar);
                 else
                     messageTA.setText(messageTA.getText() + emojiChar);
-                messageTA.requestFocus(); // возвращаем фокус после выбора
+                messageTA.requestFocus();
             });
             pane.getChildren().add(emojiBtn);
         }
@@ -1626,7 +1683,7 @@ public class SpeechBaseController {
         rightSP.getChildren().add(emojiSP);
 
         // Слушатели для обновления позиции
-        messageAnchor.heightProperty().addListener((obs, o, n) -> {
+        messageHB.heightProperty().addListener((obs, o, n) -> {
             if (emojiSP.isVisible()) updateEmojiWindowPosition();
         });
         pinnedMessagesHB.visibleProperty().addListener((obs, o, n) -> {
@@ -1670,10 +1727,10 @@ public class SpeechBaseController {
 
     private void messagesListViewRefresh(Long messageID) {
         Message message = messageService.getRowById(messageID);
-        if(message == null)
+        if (message == null)
             messages.removeIf(m -> m.getMessageId() == messageID);
         else {
-            if(selectedChannelUser != null && message.getChannelUser().getChannel().equals(selectedChannelUser.getChannel())) {
+            if (selectedChannelUser != null && message.getChannelUser().getChannel().equals(selectedChannelUser.getChannel())) {
                 if (messages.contains(message)) {
                     messages.set(messages.indexOf(message), message);
                     setPinnedMessagesHBVisible(messages.size());
@@ -1683,7 +1740,9 @@ public class SpeechBaseController {
 
                         messages.add(message);
                     }
-                    if (!message.getChannelUser().getUser().equals(currentUser))
+                    if (!message.getChannelUser().getUser().equals(currentUser)
+                            && !usersInSilentModeService.isUserSetSilentMode(
+                            message.getChannelUser().getChannel().getChannelID(), currentUser.getIdUser()))
                         Toolkit.getDefaultToolkit().beep();
                 }
             }
@@ -1696,103 +1755,185 @@ public class SpeechBaseController {
     private void createControlsWidow() {
         double vBoxWidth = 200;
 
-        VBox controlsWindowRootVB = new VBox();
-        controlsWindowRootVB.setMaxWidth(vBoxWidth);
-        controlsWindowRootVB.setMaxHeight(Region.USE_PREF_SIZE);
-        controlsWindowRootVB.setUserData("controlsWindowRootVB");
-        StackPane.setAlignment(controlsWindowRootVB, Pos.TOP_RIGHT);
-        StackPane.setMargin(controlsWindowRootVB, new Insets(41, 10, 0, 0));
-        controlsWindowRootVB.getStyleClass().add("working-with-a-message-root-pane");
-        rightSP.getChildren().add(controlsWindowRootVB);
+        if (controlsWindowRootVB == null) {
+            controlsWindowRootVB = new VBox();
+            controlsWindowRootVB.setMaxWidth(vBoxWidth);
+            controlsWindowRootVB.setMaxHeight(Region.USE_PREF_SIZE);
+            controlsWindowRootVB.setUserData("controlsWindowRootVB");
+            StackPane.setAlignment(controlsWindowRootVB, Pos.TOP_RIGHT);
+            StackPane.setMargin(controlsWindowRootVB, new Insets(41, 10, 0, 0));
+            controlsWindowRootVB.getStyleClass().add("working-with-a-message-root-pane");
+            rightSP.getChildren().add(controlsWindowRootVB);
 
-        CustomButton searchBtn = new CustomButton(
-                new Image(Objects.requireNonNull(getClass().getResourceAsStream("/com/example/speech/image/imageSearchButton.png")))
-                , "Поиск");
-        searchBtn.setPrefWidth(vBoxWidth);
-        searchBtn.setPrefHeight(40);
-        VBox.setMargin(searchBtn, new Insets(5, 0, 0, 0));
-        searchBtn.setOnAction(e -> {
-            actionSearchBtn();
-        });
-        controlsWindowRootVB.getChildren().add(searchBtn);
+            CustomButton searchBtn = new CustomButton(
+                    new Image(Objects.requireNonNull(getClass().getResourceAsStream("/com/example/speech/image/imageSearchButton.png")))
+                    , "Поиск");
+            searchBtn.setPrefWidth(vBoxWidth);
+            searchBtn.setPrefHeight(40);
+            VBox.setMargin(searchBtn, new Insets(5, 0, 0, 0));
+            searchBtn.setOnAction(e -> {
+                actionSearchBtn();
+            });
+            controlsWindowRootVB.getChildren().add(searchBtn);
 
-        CustomButton editBtn = new CustomButton(
-                new Image(Objects.requireNonNull(getClass().getResourceAsStream("/com/example/speech/image/change.png")))
-                , "Ввод");
-        editBtn.setPrefWidth(vBoxWidth);
-        editBtn.setPrefHeight(40);
-        editBtn.setOnAction(e -> {
-            messageTA.requestFocus();
-            messageTA.positionCaret(messageTA.getText().length());
-        });
-        controlsWindowRootVB.getChildren().add(editBtn);
+            CustomButton editBtn = new CustomButton(
+                    new Image(Objects.requireNonNull(getClass().getResourceAsStream("/com/example/speech/image/change.png")))
+                    , "Ввод");
+            editBtn.setPrefWidth(vBoxWidth);
+            editBtn.setPrefHeight(40);
+            editBtn.setOnAction(e -> {
+                messageTA.requestFocus();
+                messageTA.positionCaret(messageTA.getText().length());
+            });
+            controlsWindowRootVB.getChildren().add(editBtn);
 
-        CustomButton muteBtn = new CustomButton(
-                new Image(Objects.requireNonNull(getClass().getResourceAsStream("/com/example/speech/image/mute.png")))
-                , "Отключить звук");
-        muteBtn.setPrefWidth(vBoxWidth);
-        muteBtn.setPrefHeight(40);
-        muteBtn.setOnAction(e -> {
-            System.out.println("Нажата кнопка без звука");
-        });
-        controlsWindowRootVB.getChildren().add(muteBtn);
+            CustomButton muteBtn = new CustomButton(
+                    new Image(Objects.requireNonNull(getClass().getResourceAsStream("/com/example/speech/image/mute.png")))
+                    , "Отключить звук");
+            muteBtn.setPrefWidth(vBoxWidth);
+            muteBtn.setPrefHeight(40);
+            controlsWindowRootVB.getChildren().add(muteBtn);
 
-        CustomButton selectMessagesBtn = new CustomButton(
-                new Image(Objects.requireNonNull(getClass().getResourceAsStream("/com/example/speech/image/select.png")))
-                , "Выбрать сообщения");
-        selectMessagesBtn.setPrefWidth(vBoxWidth);
-        selectMessagesBtn.setPrefHeight(40);
-        selectMessagesBtn.setOnAction(e -> {
-            setSelectionModeActive(true);
-        });
-        controlsWindowRootVB.getChildren().add(selectMessagesBtn);
+            CustomButton enableNotificationsBtn = new CustomButton(
+                    new Image(Objects.requireNonNull(getClass().getResourceAsStream("/com/example/speech/image/notification-bell.png")))
+                    , "Включить уведомления");
+            enableNotificationsBtn.setPrefWidth(vBoxWidth);
+            enableNotificationsBtn.setPrefHeight(40);
+            enableNotificationsBtn.setOnAction(e -> {
+                usersInSilentModeService.deleteUserSetSilentMode(selectedChannelUser.getChannel().getChannelID(), currentUser.getIdUser());
 
-        if (selectedChannelUser.getChannel().isDisable_sharing()) {
+                Platform.runLater(() -> {
+                    enableNotificationsBtn.setVisible(false);
+                    enableNotificationsBtn.setManaged(false);
+
+                    muteBtn.setVisible(true);
+                    muteBtn.setManaged(true);
+                });
+            });
+            muteBtn.setOnAction(e -> {
+                UsersInSilentMode newUserSilentMode = new UsersInSilentMode();
+                newUserSilentMode.setChannelID(selectedChannelUser.getChannel().getChannelID());
+                newUserSilentMode.setUserID(currentUser.getIdUser());
+                usersInSilentModeService.save(newUserSilentMode);
+
+                Platform.runLater(() -> {
+                    enableNotificationsBtn.setVisible(true);
+                    enableNotificationsBtn.setManaged(true);
+
+                    muteBtn.setVisible(false);
+                    muteBtn.setManaged(false);
+                });
+            });
+            controlsWindowRootVB.getChildren().add(enableNotificationsBtn);
+
+            if (usersInSilentModeService.isUserSetSilentMode(selectedChannelUser.getChannel().getChannelID(), currentUser.getIdUser())) {
+                enableNotificationsBtn.setVisible(true);
+                enableNotificationsBtn.setManaged(true);
+
+                muteBtn.setVisible(false);
+                muteBtn.setManaged(false);
+            }
+
+            CustomButton selectMessagesBtn = new CustomButton(
+                    new Image(Objects.requireNonNull(getClass().getResourceAsStream("/com/example/speech/image/select.png")))
+                    , "Выбрать сообщения");
+            selectMessagesBtn.setPrefWidth(vBoxWidth);
+            selectMessagesBtn.setPrefHeight(40);
+            selectMessagesBtn.setOnAction(e -> {
+                setSelectionModeActive(true);
+            });
+            controlsWindowRootVB.getChildren().add(selectMessagesBtn);
+
+
             CustomButton addSharingBtn = new CustomButton(
                     new Image(Objects.requireNonNull(getClass().getResourceAsStream("/com/example/speech/image/forward.png")))
                     , "Разрешить пересылку");
             addSharingBtn.setPrefWidth(vBoxWidth);
             addSharingBtn.setPrefHeight(40);
-            addSharingBtn.setOnAction(e -> {
-                Channel channel = selectedChannelUser.getChannel();
-                channel.setDisable_sharing(false);
-                new ChannelService().update(channel);
-            });
-            controlsWindowRootVB.getChildren().add(addSharingBtn);
-        } else {
+
             CustomButton disableSharingBtn = new CustomButton(
                     new Image(Objects.requireNonNull(getClass().getResourceAsStream("/com/example/speech/image/disable_sharing.png")))
                     , "Запретить пересылку");
             disableSharingBtn.setPrefWidth(vBoxWidth);
             disableSharingBtn.setPrefHeight(40);
+            addSharingBtn.setOnAction(e -> {
+                Channel channel = selectedChannelUser.getChannel();
+                channel.setDisable_sharing(false);
+                new ChannelService().update(channel);
+
+                addSharingBtn.setVisible(false);
+                addSharingBtn.setManaged(false);
+
+                disableSharingBtn.setVisible(true);
+                disableSharingBtn.setManaged(true);
+            });
+            controlsWindowRootVB.getChildren().add(addSharingBtn);
             disableSharingBtn.setOnAction(e -> {
                 Channel channel = selectedChannelUser.getChannel();
                 channel.setDisable_sharing(true);
                 new ChannelService().update(channel);
+
+                addSharingBtn.setVisible(true);
+                addSharingBtn.setManaged(true);
+
+                disableSharingBtn.setVisible(false);
+                disableSharingBtn.setManaged(false);
             });
             controlsWindowRootVB.getChildren().add(disableSharingBtn);
+
+            if (selectedChannelUser.getChannel().isDisable_sharing()) {
+                addSharingBtn.setVisible(true);
+                addSharingBtn.setManaged(true);
+
+                disableSharingBtn.setVisible(false);
+                disableSharingBtn.setManaged(false);
+            } else {
+                addSharingBtn.setVisible(false);
+                addSharingBtn.setManaged(false);
+
+                disableSharingBtn.setVisible(true);
+                disableSharingBtn.setManaged(true);
+            }
+
+
+            CustomButton deleteChatBtn = new CustomButton(
+                    new Image(Objects.requireNonNull(getClass().getResourceAsStream("/com/example/speech/image/delete-red.png")))
+                    , "Отчистить переписку");
+            deleteChatBtn.addStyleText("clear-all-message");
+            deleteChatBtn.setPrefWidth(vBoxWidth);
+            deleteChatBtn.setPrefHeight(40);
+            VBox.setMargin(deleteChatBtn, new Insets(0, 0, 5, 0));
+            deleteChatBtn.setOnAction(e -> {
+                List<Message> allMessage = messageService.getAllMessageInChannel(
+                        selectedChannelUser.getChannel().getChannelID());
+                if (allMessage != null && !allMessage.isEmpty())
+                    new ConfirmationOfMessageDeletion().initializeShape(this, allMessage);
+            });
+            controlsWindowRootVB.getChildren().add(deleteChatBtn);
+
+            if (removeControlsWindow == null) {
+                removeControlsWindow = e -> {
+                    Point2D point = createControlsWindowBtn.screenToLocal(e.getScreenX(), e.getScreenY());
+                    if (point != null && createControlsWindowBtn.contains(point)) return;
+                    else {
+                        PauseTransition pause = new PauseTransition(Duration.millis(100));
+                        pause.playFromStart();
+                        pause.setOnFinished(ev -> {
+                            controlsWindowRootVB.setVisible(false);
+                            controlsWindowRootVB.setManaged(false);
+                        });
+                    }
+                };
+
+                messagesSP.addEventFilter(MouseEvent.MOUSE_PRESSED, removeControlsWindow);
+            }
         }
-
-        CustomButton deleteChatBtn = new CustomButton(
-                new Image(Objects.requireNonNull(getClass().getResourceAsStream("/com/example/speech/image/delete.png")))
-                , "Отчистить переписку");
-        deleteChatBtn.setPrefWidth(vBoxWidth);
-        deleteChatBtn.setPrefHeight(40);
-        VBox.setMargin(deleteChatBtn, new Insets(0, 0, 5, 0));
-        deleteChatBtn.setOnAction(e -> {
-            List<Message> allMessage = messageService.getAllMessageInChannel(
-                    selectedChannelUser.getChannel().getChannelID());
-            if(allMessage != null && !allMessage.isEmpty())
-                new ConfirmationOfMessageDeletion().initializeShape(this, allMessage);
-        });
-        controlsWindowRootVB.getChildren().add(deleteChatBtn);
-
-        if(removeControlsWindow == null) {
-            removeControlsWindow = e -> {
-                    rightSP.getChildren().removeIf(node -> node.getUserData() != null && node.getUserData().equals("controlsWindowRootVB"));
-            };
-
-            messagesSP.addEventFilter(MouseEvent.MOUSE_PRESSED, removeControlsWindow);
+        if (controlsWindowRootVB.isVisible()) {
+            controlsWindowRootVB.setVisible(false);
+            controlsWindowRootVB.setManaged(false);
+        } else {
+            controlsWindowRootVB.setVisible(true);
+            controlsWindowRootVB.setManaged(true);
         }
     }
 
@@ -1804,7 +1945,7 @@ public class SpeechBaseController {
         double right = 0;
         double left = 0;
 
-        double messageAnchorHeight = messageAnchor.getHeight();
+        double messageAnchorHeight = messageHB.getHeight();
 
         if (pinnedMessagesHB.isVisible()) {
             top += 40;
@@ -1814,7 +1955,7 @@ public class SpeechBaseController {
             bottom += 40;
         }
 
-        if(fileListView.isVisible())
+        if (fileListView.isVisible())
             bottom += 70;
 
         bottom += messageAnchorHeight;

@@ -2,6 +2,7 @@ package com.example.speech.util;
 
 import com.example.speech.control.EntranceController;
 import com.example.speech.service.UserService;
+import javafx.geometry.Pos;
 import javafx.scene.control.Button;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
@@ -75,10 +76,47 @@ public class HelpfulClass {
     }
 
     public static void setImageWithButton(Button btn, String imageName) {
-        ImageView buttonImage = new ImageView(//вынести в метод
+        btn.getStyleClass().setAll("icon-button");
+        double btnHeight = 40;
+        double btnWidth = 40;
+
+        btn.setMinHeight(btnHeight);
+        btn.setPrefHeight(btnHeight);
+        btn.setMaxHeight(btnHeight);
+
+        btn.setMinWidth(btnWidth);
+        btn.setPrefWidth(btnWidth);
+        btn.setMaxWidth(btnWidth);
+
+        btn.setAlignment(Pos.CENTER);
+
+        ImageView buttonImage = new ImageView(
                 new Image(Objects.requireNonNull(HelpfulClass.class.getResourceAsStream("/com/example/speech/image/" + imageName))));
-        buttonImage.setFitHeight(20);
-        buttonImage.setFitWidth(20);
+        buttonImage.setFitHeight(btnHeight / 2);
+        buttonImage.setFitWidth(btnWidth / 2);
+        buttonImage.setPreserveRatio(true);
+
+        btn.setGraphic(buttonImage);
+    }
+
+    public static void setImageWithButton(Button btn, String imageName, String styleClassName, double btnHeight, double btnWidth) {
+        btn.getStyleClass().setAll(styleClassName);
+
+        btn.setMinHeight(btnHeight);
+        btn.setPrefHeight(btnHeight);
+        btn.setMaxHeight(btnHeight);
+
+        btn.setMinWidth(btnWidth);
+        btn.setPrefWidth(btnWidth);
+        btn.setMaxWidth(btnWidth);
+
+        btn.setAlignment(Pos.CENTER);
+
+        ImageView buttonImage = new ImageView(
+                new Image(Objects.requireNonNull(HelpfulClass.class.getResourceAsStream("/com/example/speech/image/" + imageName))));
+        double fitSize = Math.min(btnHeight, btnWidth);
+        buttonImage.setFitHeight(fitSize / 2);
+        buttonImage.setFitWidth(fitSize / 2);
         buttonImage.setPreserveRatio(true);
 
         btn.setGraphic(buttonImage);

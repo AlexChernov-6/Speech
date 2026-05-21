@@ -11,9 +11,8 @@
             xmlns:fx="http://javafx.com/fxml/1"
             xmlns="http://javafx.com/javafx/17.0.12" fx:controller="com.example.speech.control.SpeechBaseController">
 
-    <AnchorPane style="-fx-background-color: gray;" AnchorPane.bottomAnchor="0" AnchorPane.leftAnchor="0"
-                AnchorPane.rightAnchor="0"
-                AnchorPane.topAnchor="0">
+    <AnchorPane style="-fx-background-color: #fafafa;" AnchorPane.bottomAnchor="0" AnchorPane.leftAnchor="0"
+                AnchorPane.rightAnchor="0" AnchorPane.topAnchor="0">
 
         <fx:include prefHeight="40" source="WindowControlsShape.fxml" AnchorPane.leftAnchor="0"
                     AnchorPane.rightAnchor="0"
@@ -23,62 +22,48 @@
                    AnchorPane.topAnchor="40">
             <AnchorPane>
                 <VBox fx:id="leftVB" prefWidth="300" AnchorPane.leftAnchor="0" AnchorPane.topAnchor="0"
-                      AnchorPane.bottomAnchor="0" alignment="TOP_CENTER">
-                    <Button text="Найти или начать беседу" prefWidth="280" prefHeight="30" styleClass="login-button"
+                      AnchorPane.bottomAnchor="0" alignment="TOP_CENTER" styleClass="left-panel">
+                    <Button text="Найти или начать беседу" prefWidth="300" prefHeight="40" styleClass="find-or-start-chat-btn"
                             onAction="#showSearchChannelWindow"/>
-                    <ListView fx:id="chatsView" prefWidth="280" VBox.vgrow="ALWAYS" styleClass="list-view">
-                        <padding>
-                            <Insets left="10" right="10" top="10" bottom="5"/>
-                        </padding>
-                    </ListView>
+                    <ListView fx:id="chatsView" prefWidth="300" VBox.vgrow="ALWAYS"/>
                 </VBox>
 
                 <StackPane fx:id="rightSP" AnchorPane.leftAnchor="300" AnchorPane.topAnchor="0"
                            AnchorPane.bottomAnchor="5" AnchorPane.rightAnchor="5">
                     <VBox fx:id="selectedChatVB" visible="false">
-                        <AnchorPane style="-fx-background-color: white;" prefHeight="40" minHeight="40" maxHeight="40" fx:id="channelStateAP">
-                            <VBox fx:id="channelStateVB" AnchorPane.leftAnchor="5" AnchorPane.topAnchor="0"
-                                  AnchorPane.bottomAnchor="0" AnchorPane.rightAnchor="100" alignment="CENTER_LEFT">
-                                <Label fx:id="channelName" text="labelName"/>
-                                <Label fx:id="channelStatus" text="channelStatus"/>
+                        <AnchorPane styleClass="chat-info-bar" prefHeight="40" minHeight="40" maxHeight="40"
+                                    fx:id="channelStateAP">
+                            <VBox AnchorPane.leftAnchor="5" AnchorPane.topAnchor="0" AnchorPane.bottomAnchor="0"
+                                  AnchorPane.rightAnchor="100" alignment="CENTER_LEFT" fx:id="channelStateVB">
+                                <Label fx:id="channelName" styleClass="chat-title"/>
+                                <Label fx:id="channelStatus" styleClass="chat-subtitle"/>
                             </VBox>
 
-                            <HBox fx:id="channelStateHB" AnchorPane.rightAnchor="0" AnchorPane.topAnchor="0"
-                                  AnchorPane.bottomAnchor="0" alignment="CENTER_RIGHT">
-                                <Button styleClass="window-control-button, search-message-button" prefHeight="25"
-                                        prefWidth="50" onAction="#actionSearchBtn"/>
-                                <Button styleClass="window-control-button, menu-message-button" prefHeight="25"
-                                        prefWidth="50" onAction="#createControlsWidow" fx:id="createControlsWindowBtn"/>
+                            <HBox AnchorPane.rightAnchor="0" AnchorPane.topAnchor="0" AnchorPane.bottomAnchor="0"
+                                  alignment="CENTER_RIGHT" fx:id="channelStateHB">
+                                <Button onAction="#actionSearchBtn" fx:id="searchSubstringInMessageBtn"/>
+                                <Button onAction="#createControlsWidow" fx:id="createControlsWindowBtn"/>
                             </HBox>
                         </AnchorPane>
 
-                        <HBox fx:id="pinnedMessagesHB" style="-fx-background-color: white; -fx-cursor: hand;"
-                              prefHeight="40" minHeight="40" maxHeight="40" visible="false" managed="false">
-                            <VBox.margin>
-                                <Insets top="1"/>
-                            </VBox.margin>
-                            <VBox HBox.hgrow="ALWAYS" prefWidth="40">
-                                <Label text="Закреплённое сообщение" style="-fx-text-fill: blue; -fx-font-size: 13px;"/>
-                                <Label text="Content" style="-fx-font-size: 13px" fx:id="contentPinnedMessageLB"/>
+                        <HBox fx:id="pinnedMessagesHB" styleClass="pinned-message-bar" prefHeight="40" minHeight="40"
+                              maxHeight="40" visible="false" managed="false">
+                            <VBox HBox.hgrow="ALWAYS" prefWidth="40" alignment="CENTER_LEFT">
+                                <Label text="Закреплённое сообщение" styleClass="pinned-label"/>
+                                <Label styleClass="pinned-text" fx:id="contentPinnedMessageLB"/>
                                 <HBox.margin>
-                                    <Insets left="20"/>
+                                    <Insets left="5"/>
                                 </HBox.margin>
                             </VBox>
 
-                            <Button styleClass="window-control-button, pinned-messages-button" prefWidth="60"
-                                    prefHeight="30"
-                                    onAction="#showPinnedContent" style="-fx-background-radius: 5px;">
-                                <HBox.margin>
-                                    <Insets right="10" top="4"/>
-                                </HBox.margin>
-                            </Button>
+                            <Button fx:id="showAllPinnedMessagesBtn" onAction="#showPinnedContent"/>
                         </HBox>
 
-                        <ListView fx:id="messagesLV" VBox.vgrow="ALWAYS"/>
+                        <ListView fx:id="messagesLV" VBox.vgrow="ALWAYS" styleClass="messages-list"/>
 
-                        <HBox fx:id="updateMessageHB" style="-fx-background-color: white; -fx-cursor: hand;"
-                              prefHeight="40" minHeight="40" maxHeight="40"
-                              visible="false" managed="false">
+                        <HBox fx:id="updateMessageHB" styleClass="edit-forward-or-update-box" prefHeight="40"
+                              minHeight="40"
+                              maxHeight="40" visible="false" managed="false">
                             <ImageView fx:id="HintIV" fitHeight="20" fitWidth="20" preserveRatio="true">
                                 <HBox.margin>
                                     <Insets left="10" top="10"/>
@@ -86,42 +71,30 @@
                             </ImageView>
 
                             <VBox HBox.hgrow="ALWAYS" prefWidth="40">
-                                <Label fx:id="HintLB" style="-fx-text-fill: blue; -fx-font-size: 13px;"/>
-                                <Label text="Content" style="-fx-font-size: 13px" fx:id="contentUpdateMessageLB"/>
+                                <Label fx:id="HintLB" styleClass="edit-forward-or-update-label"/>
+                                <Label styleClass="edit-forward-or-update-text" fx:id="contentUpdateMessageLB"/>
                                 <HBox.margin>
                                     <Insets left="20"/>
                                 </HBox.margin>
                             </VBox>
 
-                            <Button styleClass="window-control-button, close-button" prefWidth="40" prefHeight="20"
-                                    onAction="#updateVisibleChangeMessageHB" style="-fx-background-radius: 5px;">
+                            <Button onAction="#updateVisibleChangeMessageHB" fx:id="hideUpdateMessageHBBtn">
                                 <HBox.margin>
-                                    <Insets right="10" top="10"/>
+                                    <Insets right="25" top="5"/>
                                 </HBox.margin>
                             </Button>
                         </HBox>
 
-                        <AnchorPane fx:id="messageAnchor" style="-fx-background-color: rgba(255,255,255,0.5);"
-                                    prefHeight="40" maxHeight="40">
-                            <VBox AnchorPane.leftAnchor="0" AnchorPane.bottomAnchor="0" prefWidth="50"
-                                  alignment="CENTER"
-                                  prefHeight="40" AnchorPane.topAnchor="0" style="-fx-background-color: white;">
-                                <Button styleClass="window-control-button, add-file-message-button" prefHeight="25"
-                                        prefWidth="50" onAction="#actionAddFileBtn"/>
-                            </VBox>
+                        <HBox fx:id="messageHB" styleClass="message-composer" prefHeight="40" maxHeight="40" alignment="BOTTOM_LEFT">
+                            <Button onAction="#actionAddFileBtn" fx:id="addFileBtn"/>
 
-                            <TextArea fx:id="messageTA" promptText="Сообщение..." style="-fx-font-size: 16px;"
-                                      wrapText="true" prefHeight="40" AnchorPane.leftAnchor="50"
-                                      AnchorPane.topAnchor="0" AnchorPane.bottomAnchor="0" AnchorPane.rightAnchor="50"/>
+                            <TextArea fx:id="messageTA" promptText="Сообщение..." styleClass="message-text-area"
+                                      wrapText="true" prefHeight="40" HBox.hgrow="ALWAYS"/>
 
-                            <Button onAction="#openEmojiWindow" prefHeight="40" prefWidth="50" minHeight="40" minWidth="50"
-                                    AnchorPane.rightAnchor="0" AnchorPane.bottomAnchor="0" AnchorPane.topAnchor="0" fx:id="emojiBtn"/>
+                            <Button onAction="#openEmojiWindow" fx:id="emojiBtn"/>
 
-                            <Button AnchorPane.rightAnchor="0" AnchorPane.bottomAnchor="0" AnchorPane.topAnchor="0"
-                                    prefHeight="40" prefWidth="50" minHeight="40" minWidth="50" visible="false"
-                                    onAction="#handleSendMessage"
-                                    fx:id="sendMessageBtn"/>
-                        </AnchorPane>
+                            <Button visible="false" managed="false" onAction="#handleSendMessage" fx:id="sendMessageBtn"/>
+                        </HBox>
                     </VBox>
                 </StackPane>
             </AnchorPane>

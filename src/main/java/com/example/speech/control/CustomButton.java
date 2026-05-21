@@ -8,6 +8,7 @@ import javafx.scene.image.ImageView;
 import javafx.scene.layout.HBox;
 
 public class CustomButton extends Button {
+    private final Label label;
 
     public CustomButton(Image image, String text) {
         super();
@@ -21,12 +22,17 @@ public class CustomButton extends Button {
         imageView.setPreserveRatio(true);
         hBox.getChildren().add(imageView);
 
-        Label label = new Label(text);
+        label = new Label(text);
         label.setStyle("-fx-font-size: 14px; -fx-text-fill: black;");
         hBox.getChildren().add(label);
 
         setGraphic(hBox);
 
         getStyleClass().add("working-with-a-message-button");
+    }
+
+    public void addStyleText(String styleClass) {
+        label.setStyle("");
+        label.getStyleClass().add(styleClass);
     }
 }

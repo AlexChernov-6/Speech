@@ -96,62 +96,10 @@
 
 /*Основные аспекты стиля, для кнопок управления окном*/
 .window-control-button {
-    -fx-background-size: 35% 70%;
-    -fx-background-repeat: no-repeat;
     -fx-background-color: rgba(255,255,255);
     -fx-border-color: transparent;
     -fx-padding: 0;
-    -fx-background-position: center;
     -fx-background-radius: 0;
-}
-
-/*Изображение для кнопки свернуть*/
-.wrap-button {
-     -fx-background-image: url('image/imageWrapBtn.png');
-     -fx-background-size: 35% 60%;
-}
-
-/*Изображение для кнопки expandBtn, когда окно раскрыто в полный экран*/
-.expand-button-fullscreen {
-    -fx-background-image: url('image/imageStandardScreen.png');
-}
-
-/*Изображение для кнопки expandBtn, когда окно находиться в стандартном состоянии*/
-.expand-button-windowed {
-    -fx-background-image: url('image/imageFullScreen.png');
-}
-
-/*Изображение для кнопки закрыть окно*/
-.close-button {
-    -fx-background-image: url('image/imageCloseBtn.png');
-}
-
-.search-message-button {
-    -fx-background-image: url('image/imageSearchButton.png');
-}
-
-.menu-message-button {
-    -fx-background-image: url('image/imageMenuButton.png');
-}
-
-.add-file-message-button {
-    -fx-background-image: url('image/imageAddFileButton.png');
-}
-
-.emoji-button {
-    -fx-background-image: url('image/imageEmojiButton.png');
-}
-
-.send-message-button {
-    -fx-background-image: url('image/imageSendButton.png');
-}
-
-.pinned-messages-button {
-    -fx-background-image: url('image/pin.png');
-}
-
-.back-button {
-    -fx-background-image: url('image/back.png');
 }
 
 /*Меняем фон при наведении курсора на кнопку*/
@@ -164,22 +112,6 @@
     -fx-background-color: rgba(250, 80, 80, 0.8);
 }
 
-.list-view {
-    -fx-background-color: transparent;
-}
-
-.list-cell {
-    -fx-background-color: transparent;
-}
-
-.list-cell:filled:hover {
-    -fx-background-color: #f5f5f5;
-}
-
-.list-cell:filled:selected {
-    -fx-background-color: #b0d0da;
-}
-
 .chats-user-list-view {
     -fx-background-color: white;
 }
@@ -189,7 +121,7 @@
 }
 
 .chats-user-list-view:selected {
-    -fx-background-color: #b0d0da;
+    -fx-background-color: #E0F2EF;
 }
 
 .custom-message-button {
@@ -199,25 +131,6 @@
 .no-horizontal-scroll {
     -fx-hbar-policy: never;
     -fx-vbar-policy: as-needed;
-}
-
-.message-text-grid-pane-my {
-    -fx-background-color: #c0dda5;
-    -fx-background-radius: 15px 15px 15px 2px;
-    -fx-border-radius: 15px 15px 15px 2px;
-    -fx-border-color: transparent;
-    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.1), 3, 0.3, 0, 1);
-    -fx-padding: 10px;
-}
-
-.message-text-grid-pane-other {
-    -fx-background-color: #ffffff;
-    -fx-background-radius: 15px 15px 15px 2px;
-    -fx-border-radius: 15px 15px 15px 2px;
-    -fx-border-color: #e0e0e0;
-    -fx-border-width: 1px;
-    -fx-padding: 8px 12px;
-    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.05), 3, 0.3, 0, 1);
 }
 
 .working-with-a-message-root-pane {
@@ -342,10 +255,6 @@
     -fx-background-color: rgba(245,245,245,0.7);
 }
 
-.search-list-view {
-
-}
-
 .search-text-field {
     -fx-background-radius: 12;
     -fx-background-color: rgba(70, 70, 70);
@@ -360,5 +269,446 @@
 .emoji-label {
     -fx-font-size: 14px;
     -fx-font-weight: bold;
-    -fx-text-fill: rgba(200, 200, 200);
+    -fx-text-fill: #00C49A;
+}
+
+.chat-name {
+    -fx-font-weight: bold;
+    -fx-font-size: 13px;
+    -fx-text-fill: #1E293B;
+}
+
+.chat-state {
+    -fx-font-size: 12px;
+    -fx-text-fill: #64748B;
+}
+
+.chat-time {
+    -fx-font-size: 11px;
+    -fx-text-fill: #94A3B8;
+}
+
+.chat-info-bar {
+    -fx-background-color: white;
+    -fx-border-color: transparent transparent #E2E8F0 transparent;
+    -fx-border-width: 0 0 1px 0;
+}
+
+.chat-title {
+    -fx-font-size: 16px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #1E293B;
+}
+
+.chat-subtitle {
+    -fx-font-size: 11px;
+    -fx-text-fill: #64748B;
+}
+
+.icon-button {
+    -fx-background-color: transparent;
+    -fx-text-fill: #64748B;
+    -fx-cursor: hand;
+    -fx-background-radius: 5px;
+}
+
+.icon-button:hover {
+    -fx-background-color: #F0F0F0;
+    -fx-text-fill: #00C49A;
+}
+
+.icon-button:pressed {
+    -fx-background-color: #E2E8F0;
+}
+
+.pinned-message-bar {
+    -fx-background-color: #F5F9FF;
+    -fx-border-color: #E2E8F0;
+    -fx-border-width: 0 0 1px 0;
+}
+
+.pinned-message-bar:hover {
+    -fx-cursor: hand;
+}
+
+.pinned-label {
+    -fx-font-size: 12px;
+    -fx-text-fill: #00C49A;
+    -fx-font-weight: bold;
+}
+
+.pinned-text {
+    -fx-font-size: 12px;
+    -fx-text-fill: #1E293B;
+}
+
+.messages-list {
+     -fx-background-image: url('image/messages-list-view-background-default.jpg');
+     -fx-background-size: cover;
+     -fx-background-repeat: no-repeat;
+     -fx-background-position: top;
+}
+
+.message-text-grid-pane-my {
+    -fx-background-color: #D1FAE5;
+    -fx-background-radius: 18px 18px 18px 2px;
+    -fx-border-color: transparent;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.1), 3, 0.3, 0, 1);
+    -fx-padding: 8px 12px;
+}
+
+.message-text-grid-pane-other {
+    -fx-background-color: #F0F0F0;
+    -fx-background-radius: 18px 18px 18px 2px;
+    -fx-border-radius: 18px 18px 18px 2px;
+    -fx-border-color: #e0e0e0;
+    -fx-border-width: 1px;
+    -fx-padding: 8px 12px;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.05), 3, 0.3, 0, 1);
+}
+
+.message-text {
+    -fx-font-size: 14px;
+    -fx-text-fill: #1E293B;
+    -fx-wrap-text: true;
+}
+
+.message-time {
+    -fx-font-size: 10px;
+    -fx-text-fill: #64748B;
+    -fx-padding: 4px 0 0 8px;
+}
+
+.list-view {
+    -fx-background-color: transparent;
+    -fx-border-width: 0;
+}
+
+.delete-chat-btn {
+    -fx-background-color: transparent;
+    -fx-border-width: 0;
+    -fx-effect: none;
+}
+
+.edit-forward-box {
+    -fx-background-color: #E0F2EF;
+    -fx-border-color: #00C49A;
+    -fx-border-width: 1px 0 0 0;
+}
+
+.edit-forward-or-update-box:hover {
+    -fx-cursor: hand;
+}
+
+.edit-forward-or-update-label {
+    -fx-font-size: 12px;
+    -fx-text-fill: #00C49A;
+    -fx-font-weight: bold;
+}
+
+.edit-forward-or-update-text {
+    -fx-font-size: 12px;
+    -fx-text-fill: #1E293B;
+}
+
+.message-composer {
+    -fx-background-color: white;
+    -fx-border-color: #E2E8F0;
+    -fx-border-width: 1px 0 0 0;
+}
+
+.message-text-area {
+    -fx-background-color: #fafafa;
+    -fx-background-radius: 3px;
+    -fx-border-color: #E2E8F0;
+    -fx-border-radius: 3px;
+    -fx-font-size: 12px;
+    -fx-padding: 0;
+}
+
+.message-text-area .content {
+    -fx-background-color: #fafafa;
+    -fx-background-radius: 3px;
+    -fx-border-width: 0px;
+}
+
+.message-text-area:focused {
+    -fx-border-color: #00C49A;
+    -fx-border-width: 1px;
+}
+
+.search-top-pane {
+    -fx-background-color: #ffffff;
+    -fx-border-color: #d1d5db;
+    -fx-border-width: 0 0 1 0;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.03), 2, 0, 0, 1);
+}
+
+.search-bottom-pane {
+    -fx-background-color: #ffffff;
+    -fx-border-color: #d1d5db;
+    -fx-border-width: 1 0 0 0;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.03), 2, 0, 0, -1);
+}
+
+.search-text-field {
+    -fx-background-color: #f1f5f9;
+    -fx-background-radius: 20;
+    -fx-border-radius: 20;
+    -fx-border-width: 0;
+    -fx-padding: 6 12;
+    -fx-font-size: 13px;
+    -fx-text-fill: #1e293b;
+    -fx-prompt-text-fill: #94a3b8;
+}
+
+.search-text-field:focused {
+    -fx-background-color: #ffffff;
+    -fx-border-color: #10b981;
+    -fx-border-width: 1;
+    -fx-effect: dropshadow(gaussian, rgba(16,185,129,0.2), 4, 0, 0, 0);
+    -fx-text-fill: #0f172a;
+}
+
+.close-search-btn {
+    -fx-background-color: transparent;
+    -fx-padding: 5;
+    -fx-cursor: hand;
+}
+
+.close-search-btn:hover {
+    -fx-background-color: #e2e8f0;
+    -fx-background-radius: 20;
+}
+
+.search-action-btn {
+    -fx-background-color: #10b981;
+    -fx-background-radius: 20;
+    -fx-padding: 5 12;
+    -fx-cursor: hand;
+}
+
+.search-action-btn:hover {
+    -fx-background-color: #059669;
+}
+
+.count-result-label {
+    -fx-background-color: #f8fafc;
+    -fx-background-radius: 20;
+    -fx-border-color: #d1d5db;
+    -fx-border-radius: 20;
+    -fx-padding: 0 16;
+    -fx-font-size: 13px;
+    -fx-font-weight: normal;
+    -fx-text-fill: #1e293b;
+}
+
+.list-of-btn {
+    -fx-background-color: #f1f5f9;
+    -fx-background-radius: 20;
+    -fx-padding: 5 14;
+    -fx-font-size: 12px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #475569;
+    -fx-cursor: hand;
+}
+
+.list-of-btn:hover {
+    -fx-background-color: #d1fae5;
+    -fx-text-fill: #065f46;
+}
+
+.nav-buttons-box {
+    -fx-background-color: rgba(255,255,255,0.9);
+    -fx-background-radius: 30;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 6, 0, 0, 2);
+}
+
+.nav-btn {
+    -fx-background-color: transparent;
+    -fx-background-radius: 30;
+    -fx-padding: 6;
+    -fx-cursor: hand;
+}
+
+.nav-btn:hover {
+    -fx-background-color: #d1fae5;
+}
+
+.nav-btn:pressed {
+    -fx-background-color: #a7f3d0;
+}
+
+.clear-all-message {
+    -fx-font-size: 14px;
+    -fx-text-fill: #c4101c;
+}
+
+.pinned-mode-header {
+    -fx-background-color: #f0fdf4;
+    -fx-border-color: #bbf7d0;
+    -fx-border-width: 0 0 1 0;
+}
+
+.back-btn {
+    -fx-background-color: #10b981;
+    -fx-background-radius: 20;
+    -fx-padding: 5 12;
+    -fx-cursor: hand;
+}
+
+.back-btn:hover {
+    -fx-background-color: #059669;
+}
+
+.back-btn .image-view {
+    -fx-fit-width: 16px;
+    -fx-fit-height: 16px;
+}
+
+.pinned-count-label {
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #065f46;
+    -fx-background-color: #d1fae5;
+    -fx-background-radius: 20;
+    -fx-padding: 4 12;
+    -fx-alignment: center;
+}
+
+.unpin-all-btn {
+    -fx-background-color: #ef4444;
+    -fx-background-radius: 20;
+    -fx-text-fill: white;
+    -fx-font-size: 13px;
+    -fx-font-weight: bold;
+    -fx-padding: 6 16;
+    -fx-cursor: hand;
+}
+
+.unpin-all-btn:hover {
+    -fx-background-color: #dc2626;
+}
+
+.unpin-all-btn:pressed {
+    -fx-background-color: #b91c1c;
+}
+
+.pinned-messages-container {
+    -fx-background-color: #ffffff;
+    -fx-padding: 10;
+}
+
+/* Крупная кнопка поиска/создания чата (зелёная, основное действие) */
+.find-or-start-chat-btn {
+    -fx-background-color: #10b981;
+    -fx-background-radius: 0;
+    -fx-text-fill: white;
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+    -fx-padding: 12 24;
+    -fx-cursor: hand;
+}
+
+.find-or-start-chat-btn:hover {
+    -fx-background-color: #059669;
+}
+
+.find-or-start-chat-btn:pressed {
+    -fx-background-color: #047857;
+}
+
+.unpin-all-btn {
+    -fx-background-color: rgba(250, 250, 255);
+    -fx-background-radius: 0;
+    -fx-text-fill: blue;
+    -fx-font-size: 16px;
+    -fx-font-weight: bold;
+    -fx-padding: 12 24;
+    -fx-cursor: hand;
+}
+
+.unpin-all-btn:hover {
+    -fx-background-color: rgba(250, 215, 215);
+}
+
+.unpin-all-btn:pressed {
+    -fx-background-color: rgba(230, 180, 180);
+}
+
+.selected-message-mode-buttons {
+    -fx-background-color: #10b981;
+    -fx-text-fill: white;
+    -fx-font-size: 12px;
+    -fx-font-weight: bold;
+    -fx-background-radius: 8;
+    -fx-padding: 3 15;
+    -fx-cursor: hand;
+}
+
+.selected-message-mode-buttons:hover {
+    -fx-background-color: #059669;
+}
+
+.selected-message-mode-buttons:pressed {
+    -fx-background-color: #047857;
+}
+
+.scroll-bar .track {
+    -fx-background-color: rgba(220, 220, 220, 0.5);
+    -fx-background-radius: 8px;
+    -fx-border-width: 0px;
+    -fx-cursor: hand;
+}
+
+.scroll-bar .thumb {
+    -fx-background-color: rgba(160, 160, 160, 0.7);
+    -fx-background-radius: 8px;
+    -fx-border-width: 0px;
+    -fx-cursor: hand;
+}
+
+.scroll-bar {
+    -fx-background-color: transparent;
+}
+
+.scroll-bar:vertical {
+    -fx-pref-width: 10;
+    -fx-max-width: 10;
+    -fx-min-width: 10;
+}
+
+.scroll-bar:horizontal {
+    -fx-pref-height: 10;
+    -fx-max-height: 10;
+    -fx-min-height: 10;
+}
+
+.scroll-bar .increment-button,
+.scroll-bar .decrement-button {
+    -fx-min-height: 0;
+    -fx-pref-height: 0;
+    -fx-max-height: 0;
+
+    -fx-min-width: 0;
+    -fx-pref-width: 0;
+    -fx-max-width: 0;
+}
+
+.scroll-bar .decrement-arrow,
+.scroll-bar .increment-arrow {
+    -fx-opacity: 0px;
+    -fx-background-color: transparent;
+}
+
+.scroll-bar .decrement-arrow:hover,
+.scroll-bar .increment-arrow:hover {
+    -fx-opacity: 0px;
+    -fx-background-color: transparent;
+}
+
+.scroll-bar .decrement-arrow:pressed,
+.scroll-bar .increment-arrow:pressed {
+    -fx-opacity: 0px;
+    -fx-background-color: transparent;
 }

@@ -9,6 +9,7 @@ import com.example.speech.service.ChannelService;
 import com.example.speech.service.ChannelTypeService;
 import com.example.speech.service.ChannelUserService;
 import com.example.speech.util.HelpfulStylingClass;
+import javafx.animation.FadeTransition;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -21,6 +22,7 @@ import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.*;
 import javafx.scene.text.TextFlow;
 import javafx.util.Callback;
+import javafx.util.Duration;
 
 import java.util.List;
 
@@ -59,7 +61,7 @@ public class SearchChannelWindow extends VBox {
         maxWidthProperty().bind(parentStackPane.widthProperty().subtract(200));
         maxHeightProperty().bind(parentStackPane.heightProperty().subtract(200));
         setAlignment(Pos.TOP_CENTER);
-        setVisible(false);
+        setOpacity(0.0);
         setSpacing(5);
 
         createInfoLB();
@@ -72,7 +74,7 @@ public class SearchChannelWindow extends VBox {
             Point2D pointInWindow = screenToLocal(event.getScreenX(), event.getScreenY());
             if (pointInWindow != null && contains(pointInWindow))
                 return;
-            else
+            else if (this.getOpacity() == 1.0)
                 hide();
         });
 
@@ -370,13 +372,19 @@ public class SearchChannelWindow extends VBox {
 
     public void show() {
         shadowPane.setVisible(true);
-        setVisible(true);
         setManaged(true);
+        FadeTransition fadeIn = new FadeTransition(Duration.millis(600), this);
+        fadeIn.setToValue(1.0);
+        fadeIn.play();
     }
 
     public void hide() {
-        shadowPane.setVisible(false);
-        setVisible(false);
-        setManaged(false);
+        FadeTransition fadeOut = new FadeTransition(Duration.millis(300), this);
+        fadeOut.setToValue(0.0);
+        fadeOut.setOnFinished(e -> {
+            shadowPane.setVisible(false);
+            setManaged(false);
+        });
+        fadeOut.play();
     }
 }

@@ -103,6 +103,12 @@ public class TextMessageCellController {
             messageLabel.setText(message.getMessageString());
         else messageLabel.setManaged(false);
 
+        if (speechBaseController.getCurrentSearchText() != null &&
+                message.getMessageString() != null &&
+                message.getMessageString().toLowerCase().contains(speechBaseController.getCurrentSearchText().toLowerCase())) {
+            highlightText(speechBaseController.getCurrentSearchText());
+        }
+
         timeLabel.setText(message.getMessageDatetime().toLocalTime().format(DateTimeFormatter.ofPattern("HH:mm")));
         if (message.getMessageStatus() != null && message.getMessageStatus().equals("отправлено"))
             statusIV.setImage(shipped);
@@ -131,8 +137,8 @@ public class TextMessageCellController {
         setMouseListener();
 
         if (message.isModifiedMessage()) {
-            columnInfo.setPrefWidth(100);
-            columnInfo.setMinWidth(100);
+            columnInfo.setPrefWidth(120);
+            columnInfo.setMinWidth(120);
             changeStatusLB.setVisible(true);
             changeStatusLB.setManaged(true);
         } else {
@@ -224,45 +230,13 @@ public class TextMessageCellController {
     }
 
     public void setMouseListener() {
-        contentVB.setOnMouseClicked(event -> {
+        highlightMessageTemporarilySP.setOnMouseClicked(event -> {
             if (event.getButton() == MouseButton.SECONDARY) {
                 WorkingWithAMessageListController controller = new WorkingWithAMessageListController();
                 controller.initializeShape(event.getSceneX(), event.getSceneY(), speechBaseController, message);
                 speechBaseController.getMessagesSP().getChildren().add(controller);
                 event.consume();
             } else if (event.getButton() == MouseButton.PRIMARY) {
-                if (event.getClickCount() == 2) {
-                    speechBaseController.getHintIV().setImage(replyI);
-                    speechBaseController.getHintLB().setText("В ответ " + message.getChannelUser().getUser().getNameUser());
-                    speechBaseController.setContextPopUpBar(SpeechBaseController.ContextPopUpBar.REPLY_MESSAGE);
-                    String contentMessage;
-                    if (message.getMessageString() != null && !message.getMessageString().isEmpty())
-                        contentMessage = message.getMessageString();
-                    else if (message.getMessageContent() != null && !message.getMessageContent().isEmpty()) {
-                        int countContents = message.getMessageContent().size();
-                        if (countContents == 1)
-                            contentMessage = String.format("%d вложение", countContents);
-                        else if (countContents >= 2 && countContents <= 4)
-                            contentMessage = String.format("%d вложения", countContents);
-                        else
-                            contentMessage = String.format("%d вложений", countContents);
-                    } else
-                        contentMessage = "";
-                    speechBaseController.getContentUpdateMessageLB().setText(contentMessage);
-                    speechBaseController.getUpdateMessageHB().setVisible(true);
-                    speechBaseController.getUpdateMessageHB().setManaged(true);
-                    speechBaseController.setMessageIdReplyTo(message.getMessageId());
-                    speechBaseController.getMessagesSP().getChildren().remove(this);
-                    Platform.runLater(() -> speechBaseController.getMessageTA().requestFocus());
-                    event.consume();
-                } else {
-                    speechBaseController.handleMessageClick(message, event);
-                }
-            }
-        });
-
-        highlightMessageTemporarilySP.setOnMouseClicked(event -> {
-            if (event.getButton() == MouseButton.PRIMARY) {
                 speechBaseController.handleMessageClick(message, event);
             }
         });

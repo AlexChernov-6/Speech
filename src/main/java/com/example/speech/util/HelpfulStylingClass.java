@@ -1,15 +1,17 @@
 package com.example.speech.util;
 
+import javafx.animation.FadeTransition;
+import javafx.animation.PauseTransition;
+import javafx.application.Platform;
 import javafx.geometry.Insets;
+import javafx.scene.Node;
 import javafx.scene.Parent;
-import javafx.scene.control.Label;
-import javafx.scene.control.TextField;
-import javafx.scene.control.TextFormatter;
-import javafx.scene.control.TextInputControl;
+import javafx.scene.control.*;
 import javafx.scene.image.*;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
 import javafx.stage.Stage;
+import javafx.util.Duration;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
@@ -18,8 +20,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
 public class HelpfulStylingClass {
-    //Сам метод подгружает файл, откуда будут использоваться стили для контроллеров, переданных в качестве аргумента
-    //Метод в качестве аргумента может принимать любое количество экземпляров-наследников класса Control.
     public static void setStyleSheets(Parent... parents) {
         String cssUrl = HelpfulClass.class.getResource("/com/example/speech/styles.css").toExternalForm();
         for (Parent parent : parents) {
@@ -27,40 +27,27 @@ public class HelpfulStylingClass {
         }
     }
 
-    //Метод, который в качестве аргумента принимает множество объектов класса Label.
-    //Метод находит последний элемент и закрашивает его в красный цвет(нужно где есть *,
-    //которая показывает обязательное поле)
     public static void setRedEndChar(Label... labels) {
         for(Label label : labels) {
             String text = label.getText();
             if (text == null || text.isEmpty()) return;
 
             int labelLength = text.length();
-            //Вычисляем процент всех символом без * относительно всего текста в Label
             double percent = ((double) (labelLength - 1) / labelLength) * 100;
-            //Рисуем градиент, который весь текст закрасит в один цвет, а последний символ в красный
             label.setStyle("-fx-text-fill: linear-gradient(from 0% 0% to 100% 0%, " +
-                    //Первый цвет у нас будет от 0% до того значения, которое мы вычислили,
-                    //А второй цвет(красный) будет от вычисленного процента до 100% текста
                     "#718096 0%, #718096 " + percent + "%, red " + percent + "%, red 100%);");
         }
     }
 
     //Метод, который следит за изменениями состояний окна, а конкретно за FullScreen
     public static void setupFullScreenListener(Stage stage, Pane rootPane) {
-        //Добавляем обработчика, то что следит за изменениями для fullScreenProperty
-        //Вместо создания отдельного класса, который реализовывает интерфейс InvalidationListener
-        //Используем лямбда-функцию, в которой переопределим необходимый метод invalidated
         stage.fullScreenProperty().addListener(observable -> {
-            //Если у нас окно открыто в полный экран-то есть имеет state FullScreen, то мы убираем отступы у корневого
-            //Pane в обратном случае, мы возвращаем ему отступы для его содержимого
             if (stage.isFullScreen())
                 rootPane.setPadding(new Insets(0));
             else
                 rootPane.setPadding(new Insets(13));
         });
 
-        // Устанавливаем начальное значение
         if (stage.isFullScreen())
             rootPane.setPadding(new Insets(0));
         else
@@ -106,5 +93,93 @@ public class HelpfulStylingClass {
 
             return change;
         }));
+    }
+
+    public static void scrollPaneAnimation(Node node) {
+        Platform.runLater(() -> {
+            ScrollBar vBar = (ScrollBar) node.lookup(".scroll-bar:vertical");
+            if(vBar != null) {
+                vBar.setStyle("-fx-pref-width: 10;");
+                vBar.setOpacity(0.0);
+
+                FadeTransition fadeIn = new FadeTransition(Duration.millis(70), vBar);
+                fadeIn.setToValue(1.0);
+
+                FadeTransition fadeOut = new FadeTransition(Duration.millis(600), vBar);
+                fadeOut.setToValue(0.0);
+
+                PauseTransition hideTimer = new PauseTransition(Duration.seconds(2));
+                hideTimer.setOnFinished(event -> {
+                    fadeIn.stop();
+                    fadeOut.playFromStart();
+                });
+
+                Runnable showBar = () -> {
+                    fadeOut.stop();
+                    if (vBar.getOpacity() < 1.0) {
+                        fadeIn.playFromStart();
+                    }
+                    hideTimer.stop();
+                    hideTimer.playFromStart();
+                };
+
+                vBar.setOnMouseEntered(e -> showBar.run());
+
+                vBar.setOnMouseExited(e -> {
+                    hideTimer.stop();
+                    hideTimer.playFromStart();
+                });
+
+                vBar.valueProperty().addListener((ob, oldV, newV) -> {
+                    if (oldV.doubleValue() != newV.doubleValue()) {
+                        showBar.run();
+                    }
+                });
+            }
+        });
+    }
+
+    public static void scrollPaneAnimation(Node node, boolean isHorizontal) {
+        Platform.runLater(() -> {
+            ScrollBar vBar = (ScrollBar) node.lookup(".scroll-bar:horizontal");
+            if(vBar != null) {
+                vBar.setStyle("-fx-pref-width: 10;");
+                vBar.setOpacity(0.0);
+
+                FadeTransition fadeIn = new FadeTransition(Duration.millis(70), vBar);
+                fadeIn.setToValue(1.0);
+
+                FadeTransition fadeOut = new FadeTransition(Duration.millis(600), vBar);
+                fadeOut.setToValue(0.0);
+
+                PauseTransition hideTimer = new PauseTransition(Duration.seconds(2));
+                hideTimer.setOnFinished(event -> {
+                    fadeIn.stop();
+                    fadeOut.playFromStart();
+                });
+
+                Runnable showBar = () -> {
+                    fadeOut.stop();
+                    if (vBar.getOpacity() < 1.0) {
+                        fadeIn.playFromStart();
+                    }
+                    hideTimer.stop();
+                    hideTimer.playFromStart();
+                };
+
+                vBar.setOnMouseEntered(e -> showBar.run());
+
+                vBar.setOnMouseExited(e -> {
+                    hideTimer.stop();
+                    hideTimer.playFromStart();
+                });
+
+                vBar.valueProperty().addListener((ob, oldV, newV) -> {
+                    if (oldV.doubleValue() != newV.doubleValue()) {
+                        showBar.run();
+                    }
+                });
+            }
+        });
     }
 }
