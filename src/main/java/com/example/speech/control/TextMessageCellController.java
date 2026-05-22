@@ -32,8 +32,8 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.format.DateTimeFormatter;
+import java.util.*;
 import java.util.List;
-import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -88,6 +88,8 @@ public class TextMessageCellController {
     private static final Image loading = new Image(Objects.requireNonNull
             (TextMessageCellController.class.getResourceAsStream("/com/example/speech/image/preview.gif")));
 
+    private final List<Image> imagesFromMessage = new ArrayList<>();
+
     public GridPane initializeMessage(SpeechBaseController speechBaseController, Message message, boolean drawUserPhoto) {
         this.speechBaseController = speechBaseController;
         this.message = message;
@@ -98,7 +100,6 @@ public class TextMessageCellController {
                 messageLabel.setMaxWidth(newWidth - 20);
             }
         });
-        userPhotoIV.setImage(message.getChannelUser().getUser().getPhotoImage());
         if (message.getMessageString() != null && !message.getMessageString().isEmpty())
             messageLabel.setText(message.getMessageString());
         else messageLabel.setManaged(false);
@@ -131,8 +132,11 @@ public class TextMessageCellController {
         if (!drawUserPhoto) {
             userPhotoIV.setVisible(false);
             contentVB.setStyle("-fx-background-radius: 15px 15px 15px 15px; -fx-border-radius: 15px 15px 15px 15px;");
-        } else
+        } else {
+            userPhotoIV.setImage(message.getChannelUser().getUser().getPhotoImage());
+            userPhotoIV.setVisible(true);
             contentVB.setStyle("");
+        }
 
         setMouseListener();
 
@@ -148,7 +152,6 @@ public class TextMessageCellController {
 
         if (message.getMessageIdReplyTo() != null) {
             Message replyMessage = speechBaseController.getMessageService().getRowById(message.getMessageIdReplyTo());
-            replyMessageBtn.setPrefHeight(45);
             replyMessageBtn.setVisible(true);
             replyMessageBtn.setManaged(true);
 
@@ -156,13 +159,13 @@ public class TextMessageCellController {
             String messageContentReply = "";
             if (replyMessage != null) {
                 userName = replyMessage.getChannelUser().getUser().getNameUser();
-                if(replyMessage.getMessageString() != null && !replyMessage.getMessageString().isEmpty())
+                if (replyMessage.getMessageString() != null && !replyMessage.getMessageString().isEmpty())
                     messageContentReply = replyMessage.getMessageString();
                 else {
                     int countContents = replyMessage.getMessageContent().size();
-                    if(countContents == 1)
+                    if (countContents == 1)
                         messageContentReply = String.format("%d вложение", countContents);
-                    else if(countContents >= 2 && countContents <= 4)
+                    else if (countContents >= 2 && countContents <= 4)
                         messageContentReply = String.format("%d вложения", countContents);
                     else
                         messageContentReply = String.format("%d вложений", countContents);
@@ -176,23 +179,24 @@ public class TextMessageCellController {
             nameLabel.getStyleClass().add("reply-user-name");
 
             Label messageLabel = new Label("Удаленное сообщение");
-            if (displayMessage.isEmpty()) {
-                messageLabel.getStyleClass().add("reply-message-text");
+            messageLabel.getStyleClass().add("reply-message-text");
+            if (displayMessage.isEmpty())
                 messageLabel.setStyle("-fx-font-style: italic;");
-            } else {
+            else
                 messageLabel.setText(displayMessage);
-                messageLabel.getStyleClass().add("reply-message-text");
-            }
 
 
-            VBox textContainer = new VBox(nameLabel, messageLabel);
+            VBox textContainer = new VBox(messageLabel);
             textContainer.setSpacing(2);
-            textContainer.setAlignment(Pos.TOP_LEFT);
+            textContainer.setAlignment(Pos.CENTER_LEFT);
             textContainer.setMaxWidth(250);
-            textContainer.setMaxHeight(40);
+            if (nameLabel.getText() == null || nameLabel.getText().isEmpty())
+                textContainer.setMinHeight(25);
+            else
+                textContainer.getChildren().addFirst(nameLabel);
 
+            replyMessageBtn.prefHeightProperty().bind(textContainer.heightProperty().add(5));
             replyMessageBtn.setGraphic(textContainer);
-            replyMessageBtn.setContentDisplay(ContentDisplay.GRAPHIC_ONLY);
 
             replyMessageBtn.setOnAction(e -> {
                 Platform.runLater(() -> {
@@ -244,7 +248,7 @@ public class TextMessageCellController {
 
 
     public void highlightMessageTemporarily() {
-        if(highlightPane == null) {
+        if (highlightPane == null) {
             highlightPane = new Pane();
             highlightPane.setStyle("-fx-background-color: rgba(100, 149, 237, 0.3)");
             highlightPane.setOpacity(0.0);
@@ -366,8 +370,8 @@ public class TextMessageCellController {
 
         // Левая часть: иконка + прогресс
         StackPane stackPane = new StackPane();
-        stackPane.setMaxWidth(40);
-        stackPane.setMaxHeight(40);
+        stackPane.setMaxWidth(45);
+        stackPane.setMaxHeight(45);
         fileHB.getChildren().add(stackPane);
         stackPane.setMouseTransparent(true);
 
@@ -376,6 +380,7 @@ public class TextMessageCellController {
                 new Image(Objects.requireNonNull(getClass().getResourceAsStream("/com/example/speech/image/doc.png"))));
         fileImage.setFitHeight(40);
         fileImage.setFitWidth(40);
+        StackPane.setMargin(fileImage, new Insets(0, 0, 0, 5));
         stackPane.getChildren().add(fileImage);
         fileImage.setMouseTransparent(true);
 
@@ -435,7 +440,9 @@ public class TextMessageCellController {
             if (fileType.equals("png") || fileType.equals("jpg") || fileType.equals("gif")) {
                 fileNameLB.setVisible(false);
                 try {
-                    fileImage.setImage(new Image(new FileInputStream(localFile.toFile())));
+                    Image image = new Image(new FileInputStream(localFile.toFile()));
+                    imagesFromMessage.add(image);
+                    fileImage.setImage(image);
                 } catch (FileNotFoundException e) {
                     fileNameLB.setVisible(true);
                     fileNameLB.setText(fileType);
@@ -454,12 +461,7 @@ public class TextMessageCellController {
                     }
 
                     if (fileType2.equals("png") || fileType2.equals("jpg") || fileType2.equals("gif")) {
-                        try {
-                            ImageUtils.viewingImages(speechBaseController.getMessagesSP()
-                                    , List.of(new Image(new FileInputStream(file))));
-                        } catch (FileNotFoundException ex) {
-                            throw new RuntimeException(ex);
-                        }
+                        ImageUtils.viewingImages(speechBaseController.getMessagesSP(), imagesFromMessage);
                     } else {
                         if (Desktop.isDesktopSupported()) {
                             Desktop desktop = Desktop.getDesktop();
@@ -472,6 +474,7 @@ public class TextMessageCellController {
                             }
                         }
                     }
+                    e.consume();
                 }
             });
         } else {
@@ -495,7 +498,9 @@ public class TextMessageCellController {
                         if (fileType.equals("png") || fileType.equals("jpg") || fileType.equals("gif")) {
                             fileNameLB.setVisible(false);
                             try {
-                                fileImage.setImage(new Image(new FileInputStream(localFile.toFile())));
+                                Image image = new Image(new FileInputStream(localFile.toFile()));
+                                imagesFromMessage.add(image);
+                                fileImage.setImage(image);
                             } catch (FileNotFoundException e) {
                                 fileNameLB.setVisible(true);
                                 fileNameLB.setText(fileType);
@@ -505,7 +510,6 @@ public class TextMessageCellController {
 
                         fileHB.setOnMousePressed(e -> {
                             if (e.getButton() == MouseButton.PRIMARY) {
-                                System.out.println("Нажато на HB");
                                 String fileType2;
                                 File file = result.getResultNow().toFile();
                                 int dotIndex2 = file.getName().lastIndexOf('.');
@@ -516,12 +520,7 @@ public class TextMessageCellController {
                                 }
 
                                 if (fileType2.equals("png") || fileType2.equals("jpg") || fileType2.equals("gif")) {
-                                    try {
-                                        ImageUtils.viewingImages(speechBaseController.getMessagesSP()
-                                                , List.of(new Image(new FileInputStream(file))));
-                                    } catch (FileNotFoundException ex) {
-                                        throw new RuntimeException(ex);
-                                    }
+                                    ImageUtils.viewingImages(speechBaseController.getMessagesSP(), imagesFromMessage);
                                 } else {
                                     if (Desktop.isDesktopSupported()) {
                                         Desktop desktop = Desktop.getDesktop();
@@ -534,6 +533,7 @@ public class TextMessageCellController {
                                         }
                                     }
                                 }
+                                e.consume();
                             }
                         });
                     });
@@ -547,6 +547,7 @@ public class TextMessageCellController {
             // Запускаем запись (start уже вызывается в saveToDefaultDirAsync)
         }
     }
+
     public void setSelected(boolean selected) {
         selectIV.setVisible(selected);
         highlightMessageTemporarilySP.setStyle(

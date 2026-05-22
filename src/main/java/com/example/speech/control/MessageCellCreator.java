@@ -40,16 +40,15 @@ public class MessageCellCreator implements Callback<ListView<Message>, ListCell<
             @Override
             protected void updateItem(Message message, boolean empty) {
                 super.updateItem(message, empty);
+                container.getChildren().clear();
+                getStyleClass().add("list-cell-transparent");
 
                 if (empty || message == null) {
                     setText(null);
                     setGraphic(null);
-                    container.getChildren().clear();
                     dateNode = null;
                     messageNode = null;
                 } else {
-                    container.getChildren().clear();
-
                     boolean shouldShowDate = shouldShowDate(message, getIndex());
 
                     if (shouldShowDate) {
@@ -61,7 +60,6 @@ public class MessageCellCreator implements Callback<ListView<Message>, ListCell<
                     container.getChildren().add(messageNode);
 
                     setGraphic(container);
-                    setStyle("-fx-background-color: transparent; -fx-border-color: transparent;");
                 }
             }
 

@@ -107,7 +107,6 @@ public class ImageUtils {
         Button prevImage = new Button();
         prevImage.setMaxHeight(30);
         prevImage.setMaxWidth(30);
-        prevImage.setDisable(true);
         prevImage.getStyleClass().addAll("image-btn", "paging-btn");
         StackPane.setAlignment(prevImage, Pos.CENTER_LEFT);
         StackPane.setMargin(prevImage, new Insets(0, 0, 0, 10));
@@ -128,8 +127,6 @@ public class ImageUtils {
         StackPane.setAlignment(nextImage, Pos.CENTER_RIGHT);
         StackPane.setMargin(nextImage, new Insets(0, 10, 0, 0));
         stackPane.getChildren().add(nextImage);
-        if (imageList.size() <= 1)
-            nextImage.setDisable(true);
 
         ImageView rightArrow = new ImageView(
                 new Image(Objects.requireNonNull(EntranceController.class.getResourceAsStream("/com/example/speech/image/right-arrow.png"))));
@@ -139,15 +136,19 @@ public class ImageUtils {
 
         nextImage.setGraphic(rightArrow);
 
+        if(currInd.get() == 0)
+            prevImage.setVisible(false);
+        if (imageList.size() <= 1)
+            nextImage.setVisible(false);
+
         prevImage.setOnAction(e -> {
             currInd.updateAndGet(i -> i - 1);
             centralImageView.setImage(imageList.get(currInd.get()));
 
             if(currInd.get() == 0)
-                prevImage.setDisable(true);
+                prevImage.setVisible(false);
 
-            if(nextImage.isDisable())
-                nextImage.setDisable(false);
+            nextImage.setVisible(true);
         });
 
         nextImage.setOnAction(e -> {
@@ -155,16 +156,14 @@ public class ImageUtils {
             centralImageView.setImage(imageList.get(currInd.get()));
 
             if(currInd.get() == imageList.size() - 1)
-                nextImage.setDisable(true);
+                nextImage.setVisible(false);
 
-            if(prevImage.isDisable())
-                prevImage.setDisable(false);
+            prevImage.setVisible(true);
         });
 
         Button delBtn = new Button();
         delBtn.setMaxHeight(30);
         delBtn.setMaxWidth(30);
-        delBtn.setStyle("-fx-background-color: white; -fx-background-radius: 30;");
         delBtn.getStyleClass().add("image-btn");
         StackPane.setAlignment(delBtn, Pos.TOP_RIGHT);
         StackPane.setMargin(delBtn, new Insets(10, 10, 0, 0));
@@ -173,21 +172,34 @@ public class ImageUtils {
         });
 
         stackPane.addEventFilter(MouseEvent.MOUSE_PRESSED, e -> {
-            // Если клик пришёлся на prevImage / nextImage или их содержимое (стрелки) — ничего не делаем
             if (isAncestor(prevImage, (Node) e.getTarget()) || isAncestor(nextImage, (Node) e.getTarget())) {
                 return;
             }
-            // Иначе закрываем просмотр
+
             delBtn.fire();
         });
 
-        ImageView btnImageView = new ImageView(
-                new Image(Objects.requireNonNull(EntranceController.class.getResourceAsStream("/com/example/speech/image/delFile.png"))));
-        btnImageView.setFitHeight(30);
-        btnImageView.setFitWidth(30);
-        btnImageView.setPreserveRatio(true);
+        ImageView btnImageViewNotFocused = new ImageView(
+                new Image(Objects.requireNonNull(ImageUtils.class.getResourceAsStream("/com/example/speech/image/del-file-not-focused.png"))));
+        btnImageViewNotFocused.setFitHeight(30);
+        btnImageViewNotFocused.setFitWidth(30);
+        btnImageViewNotFocused.setPreserveRatio(true);
 
-        delBtn.setGraphic(btnImageView);
+        ImageView btnImageViewFocused = new ImageView(
+                new Image(Objects.requireNonNull(ImageUtils.class.getResourceAsStream("/com/example/speech/image/del-file-focused.png"))));
+        btnImageViewFocused.setFitHeight(30);
+        btnImageViewFocused.setFitWidth(30);
+        btnImageViewFocused.setPreserveRatio(true);
+
+        delBtn.setGraphic(btnImageViewNotFocused);
+
+        delBtn.setOnMouseEntered(e ->{
+            delBtn.setGraphic(btnImageViewFocused);
+        });
+
+        delBtn.setOnMouseExited(e ->{
+            delBtn.setGraphic(btnImageViewNotFocused);
+        });
 
         stackPane.getChildren().add(delBtn);
     }

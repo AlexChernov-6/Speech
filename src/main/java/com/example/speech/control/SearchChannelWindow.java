@@ -62,6 +62,7 @@ public class SearchChannelWindow extends VBox {
         maxHeightProperty().bind(parentStackPane.heightProperty().subtract(200));
         setAlignment(Pos.TOP_CENTER);
         setOpacity(0.0);
+        setManaged(false);
         setSpacing(5);
 
         createInfoLB();
@@ -182,11 +183,11 @@ public class SearchChannelWindow extends VBox {
 
     private <T> FilteredList<T> setStateListView(ListView<T> listView, Callback<ListView<T>, ListCell<T>> cellFactory, Class<T> model) {
         listView.setCellFactory(cellFactory);
-        listView.getStyleClass().setAll("search-list-view");
         AnchorPane.setTopAnchor(listView, 0.0);
         AnchorPane.setRightAnchor(listView, 10.0);
         AnchorPane.setBottomAnchor(listView, 0.0);
         AnchorPane.setLeftAnchor(listView, 10.0);
+        Platform.runLater(() -> HelpfulStylingClass.scrollPaneAnimation(listView));
         listView.setManaged(false);
         listView.setVisible(false);
 
@@ -373,6 +374,7 @@ public class SearchChannelWindow extends VBox {
     public void show() {
         shadowPane.setVisible(true);
         setManaged(true);
+        toFront();
         FadeTransition fadeIn = new FadeTransition(Duration.millis(600), this);
         fadeIn.setToValue(1.0);
         fadeIn.play();
@@ -384,6 +386,7 @@ public class SearchChannelWindow extends VBox {
         fadeOut.setOnFinished(e -> {
             shadowPane.setVisible(false);
             setManaged(false);
+            toBack();
         });
         fadeOut.play();
     }

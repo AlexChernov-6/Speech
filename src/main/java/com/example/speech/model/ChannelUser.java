@@ -1,7 +1,10 @@
 package com.example.speech.model;
 
 import jakarta.persistence.*;
+import javafx.scene.image.Image;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.util.Objects;
 
 @Entity
@@ -15,13 +18,19 @@ public class ChannelUser {
     private User user;
     @ManyToOne @JoinColumn(name = "channel_id")
     private Channel channel;
+    @Column(name = "background_image")
+    private byte[] backgroundImage;
+
+    @Transient
+    private Image imageBackground;
 
     public ChannelUser() { }
 
-    public ChannelUser(long channelUserId, User user, Channel channel) {
+    public ChannelUser(long channelUserId, User user, Channel channel, byte[] backgroundImage) {
         this.channelUserId = channelUserId;
         this.user = user;
         this.channel = channel;
+        this.backgroundImage = backgroundImage;
     }
 
     public long getChannelUserId() {
@@ -46,6 +55,27 @@ public class ChannelUser {
 
     public void setChannel(Channel channel) {
         this.channel = channel;
+    }
+
+    public byte[] getBackgroundImageBytes() {
+        return backgroundImage;
+    }
+
+    public void setBackgroundImageBytes(byte[] backgroundImage) {
+        this.backgroundImage = backgroundImage;
+    }
+
+    public Image getBackgroundImage() {
+        if(imageBackground == null)
+            imageBackground = new Image(new ByteArrayInputStream(backgroundImage));
+
+        return imageBackground;
+    }
+
+    public void setBackgroundImage(Image imageBackground) {
+        if(imageBackground.equals(this.imageBackground))
+            return;
+        this.imageBackground = imageBackground;
     }
 
     @Override

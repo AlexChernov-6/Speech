@@ -45,7 +45,6 @@ public class ListChannelsCellController extends ListCell<ChannelUser> {
                 controller.initialize(channelUser, speechBaseController);
                 setGraphic(root);
 
-                // Установите высоту ячейки
                 setPrefHeight(60);
                 setMinHeight(60);
             } catch (Exception e) {

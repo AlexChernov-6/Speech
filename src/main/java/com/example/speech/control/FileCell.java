@@ -1,5 +1,6 @@
 package com.example.speech.control;
 
+import com.example.speech.util.HelpfulClass;
 import com.example.speech.util.ImageUtils;
 import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
@@ -10,6 +11,7 @@ import javafx.scene.control.ListCell;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.MouseButton;
+import javafx.scene.layout.Pane;
 import javafx.scene.layout.StackPane;
 
 import java.awt.*;
@@ -20,10 +22,15 @@ public class FileCell extends ListCell<File> {
     private final StackPane rootSP;
     private final Label fileNameLB;
     private final ImageView imageView;
+    private final Pane errorPane;
 
     private File file;
+    private final SpeechBaseController speechBaseController;
 
     public FileCell(SpeechBaseController speechBaseController) {
+        this.speechBaseController = speechBaseController;
+        getStyleClass().add("list-cell-transparent");
+        setPadding(new Insets(0, 5, 0, 5));
         setOnMouseClicked(e -> {
             if (e.getButton() == MouseButton.PRIMARY && file != null) {
                 String fileType;
@@ -48,13 +55,10 @@ public class FileCell extends ListCell<File> {
                                         }
                                     }).toList());
                 } else {
-                    // 1. Проверяем, поддерживает ли платформа класс Desktop
                     if (Desktop.isDesktopSupported()) {
                         Desktop desktop = Desktop.getDesktop();
-                        // 2. Проверяем, существует ли файл
                         if (file.exists()) {
                             try {
-                                // 3. Открываем файл в программе по умолчанию
                                 desktop.open(file);
                             } catch (IOException e1) {
 
@@ -66,14 +70,26 @@ public class FileCell extends ListCell<File> {
         });
 
         rootSP = new StackPane();
-        rootSP.setMaxHeight(60);
-        rootSP.setMaxWidth(60);
+        rootSP.setMaxHeight(65);
+        rootSP.setMaxWidth(65);
+        rootSP.getStyleClass().add("file-list-cell");
+
+        errorPane = new Pane();
+        errorPane.setStyle("-fx-background-color: rgba(230, 0, 0, 0.3); -fx-background-radius: 12px;");
+        errorPane.setVisible(false);
+        errorPane.toFront();
+        errorPane.setMouseTransparent(true);
+        errorPane.maxWidthProperty().bind(rootSP.widthProperty().subtract(1));
+        errorPane.maxHeightProperty().bind(rootSP.heightProperty().subtract(1));
+        rootSP.getChildren().add(errorPane);
 
         imageView = new ImageView(
                 new Image(Objects.requireNonNull(getClass().getResourceAsStream("/com/example/speech/image/doc.png"))));
         imageView.setFitHeight(40);
         imageView.setFitWidth(40);
+        imageView.setMouseTransparent(true);
         StackPane.setAlignment(imageView, Pos.BOTTOM_CENTER);
+        StackPane.setMargin(imageView, new Insets(0, 0, 5, 0));
         rootSP.getChildren().add(imageView);
 
         fileNameLB = new Label();
@@ -84,7 +100,7 @@ public class FileCell extends ListCell<File> {
         fileNameLB.setAlignment(Pos.CENTER);
         fileNameLB.setMouseTransparent(true);
         StackPane.setAlignment(fileNameLB, Pos.TOP_CENTER);
-        StackPane.setMargin(fileNameLB, new Insets(30, 0, 0, 0));
+        StackPane.setMargin(fileNameLB, new Insets(32.5, 0, 0, 0));
         rootSP.getChildren().add(fileNameLB);
 
         Button delBtn = new Button();
@@ -94,13 +110,27 @@ public class FileCell extends ListCell<File> {
             speechBaseController.selectedFile.remove(file);
         });
 
-        ImageView btnImageView = new ImageView(
-                new Image(Objects.requireNonNull(getClass().getResourceAsStream("/com/example/speech/image/delFile.png"))));
-        btnImageView.setFitHeight(20);
-        btnImageView.setFitWidth(20);
-        btnImageView.setPreserveRatio(true);
+        ImageView btnImageViewNotFocused = new ImageView(
+                new Image(Objects.requireNonNull(getClass().getResourceAsStream("/com/example/speech/image/del-file-not-focused.png"))));
+        btnImageViewNotFocused.setFitHeight(20);
+        btnImageViewNotFocused.setFitWidth(20);
+        btnImageViewNotFocused.setPreserveRatio(true);
 
-        delBtn.setGraphic(btnImageView);
+        ImageView btnImageViewFocused = new ImageView(
+                new Image(Objects.requireNonNull(getClass().getResourceAsStream("/com/example/speech/image/del-file-focused.png"))));
+        btnImageViewFocused.setFitHeight(20);
+        btnImageViewFocused.setFitWidth(20);
+        btnImageViewFocused.setPreserveRatio(true);
+
+        delBtn.setGraphic(btnImageViewNotFocused);
+
+        delBtn.setOnMouseEntered(e ->{
+            delBtn.setGraphic(btnImageViewFocused);
+        });
+
+        delBtn.setOnMouseExited(e ->{
+            delBtn.setGraphic(btnImageViewNotFocused);
+        });
 
         rootSP.getChildren().add(delBtn);
     }
@@ -128,12 +158,17 @@ public class FileCell extends ListCell<File> {
                 } catch (FileNotFoundException e) {
                     fileNameLB.setVisible(true);
                     fileNameLB.setText(fileType);
-                    System.err.println(e.getMessage());
                 }
             } else {
                 fileNameLB.setVisible(true);
                 fileNameLB.setText(fileType);
             }
+
+
+            if(file.length() >= 2 * 1024 * 1024 || speechBaseController.delFiles.contains(file))
+                errorPane.setVisible(true);
+            else errorPane.setVisible(false);
+
             setGraphic(rootSP);
         }
     }

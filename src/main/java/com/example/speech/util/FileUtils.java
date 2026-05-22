@@ -59,7 +59,9 @@ public final class FileUtils {
             if (file == null || !file.exists()) continue;
 
             Path targetFile = DEFAULT_STORAGE_DIR.resolve(file.getName());
-            Files.copy(file.toPath(), targetFile, StandardCopyOption.REPLACE_EXISTING);
+            try {
+                Files.copy(file.toPath(), targetFile, StandardCopyOption.REPLACE_EXISTING);
+            } catch (FileSystemException ignore) { }
         }
     }
 

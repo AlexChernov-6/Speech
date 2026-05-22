@@ -1,5 +1,6 @@
 package com.example.speech.model;
 
+import com.example.speech.util.CryptoConverter;
 import com.example.speech.util.ImageConverter;
 import jakarta.persistence.*;
 import javafx.scene.image.Image;
@@ -14,16 +15,24 @@ public class User {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id_user")
     private Integer idUser;
-    @Column(name = "email_user")
+
+    @Convert(converter = CryptoConverter.class)
+    @Column(name = "email_user", columnDefinition = "bytea")
     private String emailUser;
+
     @Column(name = "visible_name_user")
     private String visibleNameUser;
     @Column(name = "name_user")
     private String nameUser;
-    @Column(name = "password_user")
+
+    @Convert(converter = CryptoConverter.class)
+    @Column(name = "password_user", columnDefinition = "bytea")
     private String passwordUser;
-    @Column(name = "birthday_user")
-    private LocalDate birthdayUser;
+
+    @Convert(converter = CryptoConverter.class)
+    @Column(name = "birthday_user", columnDefinition = "bytea")
+    private String birthdayUser;
+
     @Column(name = "user_photo")
     private byte[] photoUser;
     @Column(name = "user_status")
@@ -47,7 +56,7 @@ public class User {
 
     public User() { }
 
-    public User(Integer idUser, String emailUser, String visibleNameUser, String nameUser, String passwordUser, LocalDate birthdayUser, byte[] photoUser, String statusUser) {
+    public User(Integer idUser, String emailUser, String visibleNameUser, String nameUser, String passwordUser, String birthdayUser, byte[] photoUser, String statusUser) {
         this.idUser = idUser;
         this.emailUser = emailUser;
         this.visibleNameUser = visibleNameUser;
@@ -99,11 +108,11 @@ public class User {
         this.passwordUser = passwordUser;
     }
 
-    public LocalDate getBirthdayUser() {
+    public String getBirthdayUser() {
         return birthdayUser;
     }
 
-    public void setBirthdayUser(LocalDate birthdayUser) {
+    public void setBirthdayUser(String birthdayUser) {
         this.birthdayUser = birthdayUser;
     }
 

@@ -12,6 +12,7 @@ import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
+import javafx.collections.transformation.SortedList;
 import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.geometry.*;
@@ -39,6 +40,8 @@ import javafx.util.Duration;
 
 import java.awt.*;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.nio.file.Files;
@@ -57,6 +60,9 @@ import static com.example.speech.util.HelpfulStylingClass.setupFullScreenListene
 public class SpeechBaseController {
     private Stage stage;
     private User currentUser;
+
+    private final Image defaultBackgroundImage = new Image(Objects.requireNonNull(
+            getClass().getResourceAsStream("/com/example/speech/image/messages-list-view-background-default.jpg")));
 
     @FXML
     public ListView<ChannelUser> chatsView;
@@ -201,6 +207,14 @@ public class SpeechBaseController {
 
     private VBox controlsWindowRootVB;
 
+    private final MessageContentService messageContentService = new MessageContentService();
+
+    private SortedList<File> fileSortedList;
+
+    public final List<File> delFiles = new ArrayList<>();
+
+    private CustomButton setDefaultBackgroundListViewBtn;
+
     public void initializeData(Stage stage, User currentUser) {
         this.stage = stage;
         this.currentUser = currentUser;
@@ -327,6 +341,7 @@ public class SpeechBaseController {
         });
 
         selectedFile = FXCollections.observableArrayList();
+        fileSortedList = new SortedList<>(selectedFile, (f1, f2) -> Long.compare(f1.length(), f2.length()));
         fileListView = new ListView<>();
         fileListView.setMaxHeight(75);
         fileListView.setMinHeight(75);
@@ -337,7 +352,7 @@ public class SpeechBaseController {
         fileListView.setOrientation(Orientation.HORIZONTAL);
         fileListView.prefWidthProperty().bind(selectedChatVB.widthProperty());
         fileListView.setCellFactory(f -> new FileCell(this));
-        fileListView.setItems(selectedFile);
+        fileListView.setItems(fileSortedList);
         selectedChatVB.getChildren().add(4, fileListView);
 
         // Слушатель размера списка
@@ -346,7 +361,6 @@ public class SpeechBaseController {
             }
             int size = selectedFile.size();
             Platform.runLater(() -> {
-
                 if (size > 0) {
                     sendMessageBtn.setVisible(true);
                     sendMessageBtn.setManaged(true);
@@ -354,6 +368,14 @@ public class SpeechBaseController {
                         fileListView.setVisible(true);
                         fileListView.setManaged(true);
                     }
+                    delFiles.clear();
+                    Platform.runLater(() -> {
+                        for (int i = 10; i < size; i++)
+                            if (!delFiles.contains(fileSortedList.get(i)))
+                                delFiles.add(fileSortedList.get(i));
+
+                        fileListView.refresh();
+                    });
                 } else {
                     if (!updateMessageHB.isVisible() || (updateMessageHB.isVisible() && contextPopUpBar != ContextPopUpBar.FORWARD_MESSAGE)) {
                         if (messageTA != null && (messageTA.getText() == null || messageTA.getText().isEmpty()
@@ -484,32 +506,48 @@ public class SpeechBaseController {
                     selectedChat.getUser().getStatusUser() :
                     String.format("Число участников: %d", selectedChat.getChannel().getChannelCountUser()));
             messageTA.requestFocus();
-        });
 
-        hideTheListOfPinnedMessages();
+            hideTheListOfPinnedMessages();
 
-        hideEmojiWindow();
+            hideEmojiWindow();
 
-        if (searchModeActive) {
-            for (Node node : hiddenList) {
-                node.setVisible(true);
-                node.setManaged(true);
+            updateVisibleChangeMessageHB();
+
+            if (searchModeActive) {
+                for (Node node : hiddenList) {
+                    node.setVisible(true);
+                    node.setManaged(true);
+                }
+                searchModeActive = false;
+                rightSP.getChildren().removeAll(topSearchModeHB, bottomSearchModeHB, buttonsVB);
+                filteredList.setPredicate(m -> true);
+                messagesLV.scrollTo(messages.getLast());
             }
-            searchModeActive = false;
-            rightSP.getChildren().removeAll(topSearchModeHB, bottomSearchModeHB, buttonsVB);
-            filteredList.setPredicate(m -> true);
-            messagesLV.scrollTo(messages.getLast());
-        }
 
-        updateVisibleChangeMessageHB();
 
-        if (pinnedMessagesHB.isVisible()) {
-            pinnedMessagesHB.setVisible(false);
-            pinnedMessagesHB.setManaged(false);
-        }
-        lastPinnedMessage = null;
+            if (pinnedMessagesHB.isVisible()) {
+                pinnedMessagesHB.setVisible(false);
+                pinnedMessagesHB.setManaged(false);
+            }
+            lastPinnedMessage = null;
 
-        setSelectionModeActive(false);
+            if (selectedChat.getBackgroundImageBytes() != null && selectedChat.getBackgroundImageBytes().length >= 1)
+                messagesLV.setBackground(new Background(new BackgroundImage(
+                        selectedChannelUser.getBackgroundImage(),
+                        BackgroundRepeat.NO_REPEAT,
+                        BackgroundRepeat.NO_REPEAT,
+                        BackgroundPosition.CENTER,
+                        BackgroundSize.DEFAULT)));
+            else
+                messagesLV.setBackground(new Background(new BackgroundImage(
+                        defaultBackgroundImage,
+                        BackgroundRepeat.NO_REPEAT,
+                        BackgroundRepeat.NO_REPEAT,
+                        BackgroundPosition.CENTER,
+                        BackgroundSize.DEFAULT)));
+
+            setSelectionModeActive(false);
+        });
 
         Thread loadChannelMessagesThread = new Thread(() -> {
             List<Message> messagesList = messageService.getAllMessageInChannel(
@@ -519,44 +557,57 @@ public class SpeechBaseController {
                             .contains(Long.valueOf(currentUser.getIdUser())))
                     .toList();
 
+            int startCountMessages = 20;
+            int total = filteredAll.size();
+            int takeLast = Math.min(total, startCountMessages);
+            List<Message> remaining;
+            try {
+                remaining = new ArrayList<>(filteredAll.subList(0, total - startCountMessages));
+            } catch (IllegalArgumentException e) {
+                remaining = null;
+            }
+
+            try {
+                Thread.sleep(150);
+            } catch (InterruptedException ignore) {
+            }
+            List<Message> finalRemaining = remaining;
             Platform.runLater(() -> {
-                PauseTransition pauseTransitionR = new PauseTransition(Duration.millis(100));
-                pauseTransitionR.play();
-                pauseTransitionR.setOnFinished(eR -> {
-                    messages.clear();
-                    int total = filteredAll.size();
-                    int takeLast = Math.min(total, 13);
-                    for (int i = total - takeLast; i < total; i++) {
-                        messages.add(filteredAll.get(i));
-                    }
+                messages.clear();
+                for (int i = total - takeLast; i < total; i++) {
+                    messages.add(filteredAll.get(i));
+                }
 
-                    PauseTransition pauseTransition = new PauseTransition(Duration.millis(300));
-                    pauseTransition.play();
-                    pauseTransition.setOnFinished(e -> {
-                        if (!messagesLV.getItems().isEmpty())
-                            messagesLV.scrollTo(messagesLV.getItems().size());
-                        if (firstVisible == 0)
-                            setPinnedMessagesHBVisible(messagesLV.getItems().size());
-                        else
-                            setPinnedMessagesHBVisible(firstVisible);
-                    });
+                PauseTransition pauseTransition = new PauseTransition(Duration.millis(400));
+                pauseTransition.play();
+                pauseTransition.setOnFinished(e -> {
+                    if (!messagesLV.getItems().isEmpty())
+                        messagesLV.scrollTo(messagesLV.getItems().size());
+                    if (firstVisible == 0)
+                        setPinnedMessagesHBVisible(messagesLV.getItems().size());
+                    else
+                        setPinnedMessagesHBVisible(firstVisible);
+                    messagesLV.refresh();
+                });
 
-                    if (total > 13) {
-                        List<Message> remaining = new ArrayList<>(filteredAll.subList(0, total - 13));
-                        Thread addRemainingThread = new Thread(() -> {
-                            try {
-                                Thread.sleep(2000);
-                            } catch (InterruptedException ignored) {
-                            }
+                ChannelUser channelUser = selectedChannelUser;
+
+                if (finalRemaining != null && !finalRemaining.isEmpty()) {
+                    Thread addRemainingThread = new Thread(() -> {
+                        try {
+                            Thread.sleep(2000);
+                        } catch (InterruptedException ignored) {
+                        }
+                        if (channelUser.equals(selectedChannelUser)) {
                             Platform.runLater(() -> {
-                                messages.addAll(0, remaining);
+                                messages.addAll(0, finalRemaining);
                                 setPinnedMessagesHBVisible(messagesLV.getItems().size());
                             });
-                        });
-                        addRemainingThread.setDaemon(true);
-                        addRemainingThread.start();
-                    }
-                });
+                        }
+                    });
+                    addRemainingThread.setDaemon(true);
+                    addRemainingThread.start();
+                }
             });
         });
 
@@ -636,7 +687,7 @@ public class SpeechBaseController {
         messageTA.setText("");
         messageTA.requestFocus();
 
-        // ----------------------- Обычная отправка -----------------------
+        // ----------------------- ОБЫЧНАЯ ОТПРАВКА -----------------------
         if (((!text.isEmpty() && !text.equals("Сообщение...")) || (selectedFile != null && !selectedFile.isEmpty()))
                 && chatsView.getSelectionModel().getSelectedItem() != null
                 && (!updateMessageHB.isVisible() || contextPopUpBar == ContextPopUpBar.REPLY_MESSAGE)) {
@@ -644,33 +695,31 @@ public class SpeechBaseController {
             ChannelUser selectedChat = chatsView.getSelectionModel().getSelectedItem();
 
             Message messageToSave = new Message();
-
             addContentsForMessage(messageToSave, text);
-
             messageToSave.setChannelUser(selectedChat);
             messageToSave.setMessageDatetime(LocalDateTime.now());
-            if (updateMessageHB.isVisible() && contextPopUpBar == ContextPopUpBar.REPLY_MESSAGE) {
+            boolean replyMessage = updateMessageHB.isVisible() && contextPopUpBar == ContextPopUpBar.REPLY_MESSAGE;
+            if (replyMessage)
                 messageToSave.setMessageIdReplyTo(messageIdReplyTo);
-            }
 
             Platform.runLater(() -> {
+                if (replyMessage) updateVisibleChangeMessageHB();
                 messages.add(messageToSave);
                 messagesLV.scrollTo(messagesLV.getItems().size());
             });
 
             Thread sendThread = new Thread(() -> {
                 try {
+                    Thread.sleep(150);
+                } catch (InterruptedException ignore) {
+                }
+                try {
                     boolean saved = messageService.save(messageToSave);
                     if (saved) {
-                        Message savedMessage = messageService.getRowById(messageToSave.getMessageId());
-                        savedMessage.setMessageStatus("отправлено");
-                        messageService.update(savedMessage);
-                        chatsView.refresh();
+                        messageToSave.setMessageStatus("отправлено");
+                        messageService.update(messageToSave);
                         Platform.runLater(() -> {
-                            int index = messages.indexOf(messageToSave);
-                            if (index >= 0) {
-                                messages.set(index, savedMessage);
-                            }
+                            chatsView.refresh();
                         });
                     }
                 } catch (Exception e) {
@@ -680,7 +729,6 @@ public class SpeechBaseController {
             sendThread.setDaemon(true);
             sendThread.start();
 
-            updateVisibleChangeMessageHB();
             return;
         }
 
@@ -689,6 +737,8 @@ public class SpeechBaseController {
                 && chatsView.getSelectionModel().getSelectedItem() != null
                 && updateMessageHB.isVisible()
                 && contextPopUpBar == ContextPopUpBar.CHANGE_MESSAGE) {
+            Platform.runLater(this::updateVisibleChangeMessageHB);
+
 
             String oldText = updateMessage.getMessageString();
             List<File> oldMessageContentList = updateMessage.getMessageContent().stream()
@@ -717,35 +767,25 @@ public class SpeechBaseController {
 
             if (!text.equals(oldText) || newContent) {
                 final Message messageToUpdate = updateMessage;
-
+                updateMessage = null;
                 addContentsForMessage(messageToUpdate, text);
-
                 messageToUpdate.setModifiedMessage(true);
 
-                // Асинхронное сохранение
                 Thread sendThread = new Thread(() -> {
                     try {
-                        messageService.update(messageToUpdate);
-                        chatsView.refresh();
-                        Platform.runLater(() -> {
-                            // Успешно – обнуляем глобальную переменную, скрываем панель
-                            updateMessage = null;
-                            updateVisibleChangeMessageHB();
-                        });
-                    } catch (Exception e) {
-
+                        Thread.sleep(50);
+                    } catch (InterruptedException ignore) {
                     }
+
+                    messageService.update(messageToUpdate);
+                    Platform.runLater(() -> {
+                        chatsView.refresh();
+                    });
                 });
                 sendThread.setDaemon(true);
                 sendThread.start();
 
-                messageTA.requestFocus();
-                messageTA.setText("");
-                messagesLV.refresh();
                 return;
-            } else {
-                messageTA.requestFocus();
-                updateVisibleChangeMessageHB();
             }
         }
 
@@ -754,83 +794,74 @@ public class SpeechBaseController {
                 && updateMessageHB.isVisible()
                 && contextPopUpBar == ContextPopUpBar.FORWARD_MESSAGE) {
 
+            Platform.runLater(this::updateVisibleChangeMessageHB);
+
             List<Message> tempMessages = new ArrayList<>();
 
-            // Создаём временные сообщения для немедленного отображения
             for (Message original : forwardMessages) {
                 Message temp = new Message();
                 temp.setMessageDatetime(LocalDateTime.now());
                 temp.setMessageString(original.getMessageString());
-                temp.setMessageContent(new ArrayList<>());  // пустой список, чтобы не тащить оригинальные объекты
+                temp.setMessageContent(original.getMessageContent());
                 temp.setChannelUser(selectedChannelUser);
                 temp.setMessageStatus("загружается");
                 temp.setForwardedFrom((long) original.getChannelUser().getUser().getIdUser());
-                messages.add(temp);
                 tempMessages.add(temp);
             }
 
-            Platform.runLater(() -> messagesLV.scrollTo(messagesLV.getItems().size()));
+            Platform.runLater(() -> {
+                messages.addAll(tempMessages);
+                messagesLV.scrollTo(messagesLV.getItems().size());
+            });
 
             // Асинхронное сохранение
             Thread sendThread = new Thread(() -> {
-                for (int i = 0; i < forwardMessages.size(); i++) {
-                    Message original = forwardMessages.get(i);
-                    Message tempMsg = tempMessages.get(i);
-                    try {
-                        // Копируем контент, создавая новые объекты
-                        List<MessageContent> newContents = new ArrayList<>();
-                        if (original.getMessageContent() != null) {
-                            for (MessageContent origContent : original.getMessageContent()) {
-                                String fileName = origContent.getMessageContentFileName();
-                                Path localFile = FileUtils.DEFAULT_STORAGE_DIR.resolve(fileName);
-                                byte[] bytes;
-                                if (Files.exists(localFile)) {
+                try {
+                    Thread.sleep(150);
+                } catch (InterruptedException ignore) {
+                }
+                for (Message newMsg : tempMessages) {
+                    List<MessageContent> newContents = null;
+                    if (newMsg.getMessageContent() != null) {
+                        newContents = new ArrayList<>();
+                        for (MessageContent origContent : newMsg.getMessageContent()) {
+                            String fileName = origContent.getMessageContentFileName();
+                            Path localFile = FileUtils.DEFAULT_STORAGE_DIR.resolve(fileName);
+                            byte[] bytes;
+                            if (Files.exists(localFile)) {
+                                try {
                                     bytes = FileUtils.readFileToByteArrayStream(localFile.toFile());
-                                } else {
-                                    bytes = new MessageContentService().getContentBytes(origContent.getMessageContentId());
+                                } catch (IOException e) {
+                                    bytes = new byte[0];
                                 }
-                                if (bytes != null) {
-                                    MessageContent newContent = new MessageContent();
-                                    newContent.setMessageContentBytes(bytes);
-                                    newContent.setMessageContentFileName(fileName);
-                                    newContents.add(newContent);
-                                }
+                            } else {
+                                bytes = messageContentService.getContentBytes(origContent.getMessageContentId());
+                            }
+                            if (bytes != null) {
+                                MessageContent newContent = new MessageContent();
+                                newContent.setMessageContentBytes(bytes);
+                                newContent.setMessageContentFileName(fileName);
+                                newContents.add(newContent);
                             }
                         }
-
-                        Message newMsg = new Message();
-                        newMsg.setMessageContent(newContents);
-                        newMsg.setChannelUser(selectedChannelUser);
-                        newMsg.setMessageString(original.getMessageString());
-                        newMsg.setMessageDatetime(LocalDateTime.now());
-                        newMsg.setForwardedFrom((long) original.getChannelUser().getUser().getIdUser());
-
-                        boolean saved = new MessageService().save(newMsg);
-                        if (saved) {
-                            Message savedMsg = messageService.getRowById(newMsg.getMessageId());
-                            savedMsg.setMessageStatus("отправлено");
-                            messageService.update(savedMsg);
-                            Platform.runLater(() -> {
-                                int idx = messages.indexOf(tempMsg);
-                                if (idx >= 0) {
-                                    messages.set(idx, savedMsg);
-                                }
-                            });
-                        } else {
-                            Platform.runLater(() -> tempMsg.setMessageStatus("ошибка отправки"));
-                        }
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                        Platform.runLater(() -> tempMsg.setMessageStatus("ошибка отправки"));
                     }
+                    if (newContents != null)
+                        newMsg.setMessageContent(newContents);
+
+                    boolean saved = messageService.save(newMsg);
+                    if (saved) {
+                        Message savedMsg = messageService.getRowById(newMsg.getMessageId());
+                        savedMsg.setMessageStatus("отправлено");
+                        messageService.update(savedMsg);
+                    } else
+                        Platform.runLater(() -> newMsg.setMessageStatus("ошибка отправки"));
                 }
-                chatsView.refresh();
+                Platform.runLater(() -> {
+                    chatsView.refresh();
+                });
             });
             sendThread.setDaemon(true);
             sendThread.start();
-
-            messageTA.requestFocus();
-            updateVisibleChangeMessageHB();
         }
     }
 
@@ -1631,14 +1662,13 @@ public class SpeechBaseController {
         try {
             FileUtils.copyFilesToDir(chosenFiles);
         } catch (IOException e) {
-            e.printStackTrace();
         }
     }
 
     private void addContentsForMessage(Message message, String actualTextInTextArea) throws IOException {
         List<MessageContent> contents = new ArrayList<>();
+        delFiles.clear();
         if (selectedFile != null && !selectedFile.isEmpty()) {
-            List<File> delFiles = new ArrayList<>();
             for (File f : selectedFile) {
                 if (f.length() <= 2 * 1024 * 1024) {
                     MessageContent newMC = new MessageContent();
@@ -1884,6 +1914,66 @@ public class SpeechBaseController {
             });
             controlsWindowRootVB.getChildren().add(selectMessagesBtn);
 
+            CustomButton selectBackgroundListViewBtn = new CustomButton(
+                    new Image(Objects.requireNonNull(getClass().getResourceAsStream("/com/example/speech/image/background-btn.png")))
+                    , "Выбрать обои");
+            selectBackgroundListViewBtn.setPrefWidth(vBoxWidth);
+            selectBackgroundListViewBtn.setPrefHeight(40);
+
+            setDefaultBackgroundListViewBtn = new CustomButton(
+                    new Image(Objects.requireNonNull(getClass().getResourceAsStream("/com/example/speech/image/delete-backgorund.png")))
+                    , "Обои по умолчанию");
+            setDefaultBackgroundListViewBtn.setPrefWidth(vBoxWidth);
+            setDefaultBackgroundListViewBtn.setPrefHeight(40);
+            if(selectedChannelUser.getBackgroundImageBytes() == null || selectedChannelUser.getBackgroundImageBytes().length < 1) {
+                setDefaultBackgroundListViewBtn.setVisible(false);
+                setDefaultBackgroundListViewBtn.setManaged(false);
+            }
+            setDefaultBackgroundListViewBtn.setOnAction(e -> {
+                messagesLV.setBackground(new Background(new BackgroundImage(
+                        defaultBackgroundImage,
+                        BackgroundRepeat.NO_REPEAT,
+                        BackgroundRepeat.NO_REPEAT,
+                        BackgroundPosition.CENTER,
+                        BackgroundSize.DEFAULT)));
+
+                selectedChannelUser.setBackgroundImageBytes(null);
+                channelUserService.update(selectedChannelUser);
+
+                setDefaultBackgroundListViewBtn.setVisible(false);
+                setDefaultBackgroundListViewBtn.setManaged(false);
+            });
+            controlsWindowRootVB.getChildren().add(setDefaultBackgroundListViewBtn);
+
+            selectBackgroundListViewBtn.setOnAction(e -> {
+                FileChooser fileChooser = new FileChooser();
+                fileChooser.setTitle("Выбор изображение для фона");
+                fileChooser.getExtensionFilters().addAll(
+                        new FileChooser.ExtensionFilter("Image Files", "*.png", "*.jpg", "*.gif"));
+
+                File chosenFile = fileChooser.showOpenDialog(rootAnchorPane.getScene().getWindow());
+                if (chosenFile == null) return;
+
+                setDefaultBackgroundListViewBtn.setVisible(true);
+                setDefaultBackgroundListViewBtn.setManaged(true);
+
+                try {
+                    selectedChannelUser.setBackgroundImageBytes(Files.readAllBytes(chosenFile.toPath()));
+                    channelUserService.update(selectedChannelUser);
+                    selectedChannelUser.setBackgroundImage(defaultBackgroundImage);
+                } catch (IOException ex) {
+                    throw new RuntimeException(ex);
+                }
+
+                messagesLV.setBackground(new Background(new BackgroundImage(
+                        selectedChannelUser.getBackgroundImage(),
+                        BackgroundRepeat.NO_REPEAT,
+                        BackgroundRepeat.NO_REPEAT,
+                        BackgroundPosition.CENTER,
+                        BackgroundSize.DEFAULT)));
+            });
+            controlsWindowRootVB.getChildren().add(selectBackgroundListViewBtn);
+
 
             CustomButton addSharingBtn = new CustomButton(
                     new Image(Objects.requireNonNull(getClass().getResourceAsStream("/com/example/speech/image/forward.png")))
@@ -1967,13 +2057,21 @@ public class SpeechBaseController {
 
                 messagesSP.addEventFilter(MouseEvent.MOUSE_PRESSED, removeControlsWindow);
             }
-        }
-        if (controlsWindowRootVB.isVisible()) {
-            controlsWindowRootVB.setVisible(false);
-            controlsWindowRootVB.setManaged(false);
         } else {
-            controlsWindowRootVB.setVisible(true);
-            controlsWindowRootVB.setManaged(true);
+            if (controlsWindowRootVB.isVisible()) {
+                controlsWindowRootVB.setVisible(false);
+                controlsWindowRootVB.setManaged(false);
+            } else {
+                if(selectedChannelUser.getBackgroundImageBytes() == null || selectedChannelUser.getBackgroundImageBytes().length < 1) {
+                    setDefaultBackgroundListViewBtn.setVisible(false);
+                    setDefaultBackgroundListViewBtn.setManaged(false);
+                } else {
+                    setDefaultBackgroundListViewBtn.setVisible(true);
+                    setDefaultBackgroundListViewBtn.setManaged(true);
+                }
+                controlsWindowRootVB.setVisible(true);
+                controlsWindowRootVB.setManaged(true);
+            }
         }
     }
 

@@ -128,6 +128,8 @@ public class EntranceController extends Application {
         if (startValuePassword == null)
             startValuePassword = passwordLb.getText();
 
+        System.out.println(userService.getAllRow());
+
         FXMLLoader fxmlLoader = new FXMLLoader(EntranceController.class.getResource(
                 "/com/example/speech/shape/SpeechBaseShape.fxml"
         ));

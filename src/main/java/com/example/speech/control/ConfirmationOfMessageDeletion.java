@@ -40,6 +40,11 @@ public class ConfirmationOfMessageDeletion extends Pane {
         Label questionLabel = new Label("Удалить это сообщение?");
         questionLabel.setStyle("-fx-font-size: 14px");
 
+        if(messages.size() == 1)
+            questionLabel.setText("Удалить это сообщение?");
+        else
+            questionLabel.setText("Удалить выбранные сообщения?");
+
         HBox centralHB = new HBox(10);
 
         CheckBox checkBox = new CheckBox();
@@ -76,7 +81,6 @@ public class ConfirmationOfMessageDeletion extends Pane {
                     MESSAGE_SERVICE.update(message);
                 }
             }
-            speechBaseController.getMessages().removeAll(messages);
             speechBaseController.getMessagesSP().getChildren().remove(this);
             if(speechBaseController.flag)
                 speechBaseController.setPinnedMessagesHBVisible(speechBaseController.firstVisible);
@@ -85,6 +89,8 @@ public class ConfirmationOfMessageDeletion extends Pane {
             Platform.runLater(() -> {
                 if (speechBaseController.isSelectionModeActive())
                     speechBaseController.setSelectionModeActive(false);
+
+                speechBaseController.getMessages().removeAll(messages);
             });
         });
         deleteButton.getStyleClass().add("login-button");
@@ -176,8 +182,9 @@ public class ConfirmationOfMessageDeletion extends Pane {
         rootVB.setLayoutY(speechBaseController.getMessagesSP().getScene().getWindow().getHeight() / 2 - vBoxHeight / 2);
         rootVB.setPadding(new Insets(15));
 
-        Label questionLabel = new Label("Вы уверены, что хотите удалить все сообщения?");
+        Label questionLabel = new Label("Вы уверены, что хотите удалить все сообщения?\nДанное действие невозможно будет отменить.");
         questionLabel.setStyle("-fx-font-size: 14px");
+        questionLabel.setWrapText(true);
 
         HBox centralHB = new HBox(10);
 
@@ -197,9 +204,14 @@ public class ConfirmationOfMessageDeletion extends Pane {
         Button deleteButton = new Button();
         deleteButton.setText("Удалить");
         deleteButton.setOnAction(e -> {
-            new Thread(() -> {
+            Platform.runLater(() -> {
+                speechBaseController.getMessages().clear();
+            });
+            Thread deleteThread = new Thread(() -> {
                 new MessageService().deleteAllMessage(messages);
-            }).start();
+            });
+            deleteThread.setDaemon(true);
+            deleteThread.start();
             speechBaseController.getMessagesSP().getChildren().remove(this);
         });
         deleteButton.getStyleClass().add("login-button");

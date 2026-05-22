@@ -11,7 +11,6 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import javafx.scene.shape.Circle;
-import javafx.scene.shape.Rectangle;
 
 public class UserCell extends ListCell<User> {
     private final HBox rootHB;
@@ -19,6 +18,7 @@ public class UserCell extends ListCell<User> {
     private Label modelNameLB, modelStateLB;
 
     public UserCell() {
+        getStyleClass().setAll("chats-user-list-view");
         rootHB = new HBox(10);
         rootHB.setPadding(new Insets(5));
         rootHB.setPrefHeight(60);

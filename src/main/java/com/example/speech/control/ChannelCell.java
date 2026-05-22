@@ -18,6 +18,7 @@ public class ChannelCell extends ListCell<Channel> {
     private Label modelNameLB, modelStateLB;
 
     public ChannelCell() {
+        getStyleClass().setAll("chats-user-list-view");
         rootHB = new HBox(10);
         rootHB.setPadding(new Insets(5));
         rootHB.setPrefHeight(60);

@@ -15,6 +15,7 @@ import java.nio.charset.StandardCharsets;
 import java.sql.SQLException;
 import java.time.DateTimeException;
 import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -37,9 +38,9 @@ public class HelpfulClass {
         }
     }
 
-    public static LocalDate getLocalDate(int day, String month, int year) {
+    public static String getLocalDate(int day, String month, int year) {
         try {
-            return LocalDate.of(year, MONTHS.indexOf(month) + 1, day);
+            return LocalDate.of(year, MONTHS.indexOf(month) + 1, day).format(DateTimeFormatter.ofPattern("dd.MM.yyyy"));
         } catch (DateTimeException e) {
             System.err.println(e.getMessage());
         }
