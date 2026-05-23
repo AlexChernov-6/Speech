@@ -96,13 +96,21 @@ public class ImageUtils {
 
         AtomicInteger currInd = new AtomicInteger();
 
+        StackPane whiteStackPane = new StackPane();
+        StackPane.setAlignment(whiteStackPane, Pos.CENTER);
+        stackPane.getChildren().add(whiteStackPane);
+        whiteStackPane.setStyle("-fx-background-color: white;");
+
         ImageView centralImageView = new ImageView(imageList.getFirst());
         centralImageView.setPreserveRatio(true);
         centralImageView.toFront();
         centralImageView.fitHeightProperty().bind(stackPane.heightProperty().subtract(100));
         StackPane.setAlignment(centralImageView, Pos.CENTER);
         round(centralImageView, 30);
-        stackPane.getChildren().add(centralImageView);
+        whiteStackPane.getChildren().add(centralImageView);
+
+        whiteStackPane.maxWidthProperty().bind(centralImageView.fitWidthProperty());
+        whiteStackPane.maxHeightProperty().bind(centralImageView.fitHeightProperty());
 
         Button prevImage = new Button();
         prevImage.setMaxHeight(30);
@@ -168,7 +176,7 @@ public class ImageUtils {
         StackPane.setAlignment(delBtn, Pos.TOP_RIGHT);
         StackPane.setMargin(delBtn, new Insets(10, 10, 0, 0));
         delBtn.setOnAction(e -> {
-            stackPane.getChildren().removeAll(shadowPane, centralImageView, prevImage, nextImage, delBtn);
+            stackPane.getChildren().removeAll(shadowPane, whiteStackPane, prevImage, nextImage, delBtn);
         });
 
         stackPane.addEventFilter(MouseEvent.MOUSE_PRESSED, e -> {

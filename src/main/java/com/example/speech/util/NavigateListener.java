@@ -7,7 +7,7 @@ import java.util.List;
 
 public class NavigateListener {
 
-    public static void setLinkListener(List<? extends TextInputControl> list) {
+    public static void setLinkListener(List<? extends TextInputControl> list, Button clickBtn) {
         for (int i = 0; i < list.size(); i++) {
             final int index = i;
             TextInputControl field = list.get(index);
@@ -33,6 +33,11 @@ public class NavigateListener {
                 // Ограничение одного символа
                 if (newValue.length() > 1) {
                     field.setText(newValue.substring(0, 1));
+                    return;
+                }
+
+                if(index + 1 == list.size() && !newValue.isEmpty()) {
+                    clickBtn.fire();
                     return;
                 }
 

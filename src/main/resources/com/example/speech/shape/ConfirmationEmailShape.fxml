@@ -25,9 +25,10 @@
         </columnConstraints>
 
 
-        <Button fx:id="closeBtn" onAction="#onCloseBtn" prefWidth="40" prefHeight="15" style="-fx-border-radius: 12;
-        -fx-background-radius: 12;" styleClass="window-control-button, close-button" GridPane.columnIndex="1"
-                GridPane.valignment="TOP">
+        <Button fx:id="closeBtn" onAction="#onCloseBtn" GridPane.columnIndex="1" GridPane.valignment="TOP">
+            <GridPane.margin>
+                <Insets top="5"/>
+            </GridPane.margin>
         </Button>
 
         <Label styleClass="basic-information" text="Подтверждение Email" prefHeight="30" GridPane.valignment="BOTTOM">

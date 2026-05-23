@@ -21,14 +21,19 @@
         <StackPane fx:id="messagesSP" AnchorPane.bottomAnchor="0" AnchorPane.leftAnchor="0" AnchorPane.rightAnchor="0"
                    AnchorPane.topAnchor="40">
             <AnchorPane>
-                <VBox fx:id="leftVB" prefWidth="300" AnchorPane.leftAnchor="0" AnchorPane.topAnchor="0"
-                      AnchorPane.bottomAnchor="0" alignment="TOP_CENTER" styleClass="left-panel">
-                    <Button text="Найти или начать беседу" prefWidth="300" prefHeight="40" styleClass="find-or-start-chat-btn"
-                            onAction="#showSearchChannelWindow"/>
-                    <ListView fx:id="chatsView" prefWidth="300" VBox.vgrow="ALWAYS"/>
-                </VBox>
+                <StackPane fx:id="leftSP" prefWidth="310" AnchorPane.leftAnchor="0" AnchorPane.topAnchor="0"
+                           AnchorPane.bottomAnchor="0" alignment="TOP_CENTER" styleClass="left-panel">
+                    <VBox fx:id="leftVB" StackPane.alignment="TOP_LEFT" prefWidth="300">
+                        <StackPane.margin>
+                            <Insets left="10"/>
+                        </StackPane.margin>
+                        <Button text="Найти или начать беседу" prefWidth="300" prefHeight="40" styleClass="find-or-start-chat-btn"
+                                onAction="#showSearchChannelWindow"/>
+                        <ListView fx:id="chatsView" prefWidth="300" VBox.vgrow="ALWAYS"/>
+                    </VBox>
+                </StackPane>
 
-                <StackPane fx:id="rightSP" AnchorPane.leftAnchor="300" AnchorPane.topAnchor="0"
+                <StackPane fx:id="rightSP" AnchorPane.leftAnchor="310" AnchorPane.topAnchor="0"
                            AnchorPane.bottomAnchor="5" AnchorPane.rightAnchor="5">
                     <VBox fx:id="selectedChatVB" visible="false">
                         <AnchorPane styleClass="chat-info-bar" prefHeight="40" minHeight="40" maxHeight="40"

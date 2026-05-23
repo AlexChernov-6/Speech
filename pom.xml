@@ -15,6 +15,12 @@
     </properties>
 
     <dependencies>
+        <!--Зависимость для получения идентификатора ПК-->
+        <dependency>
+            <groupId>com.github.oshi</groupId>
+            <artifactId>oshi-core</artifactId>
+            <version>6.4.10</version>
+        </dependency>
         <dependency>
             <groupId>org.openjfx</groupId>
             <artifactId>javafx-controls</artifactId>

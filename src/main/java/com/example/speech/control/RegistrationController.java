@@ -10,10 +10,14 @@ import javafx.scene.control.*;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.HBox;
 import javafx.stage.Stage;
+import oshi.SystemInfo;
+import oshi.hardware.HardwareAbstractionLayer;
 
 import java.io.IOException;
 import java.util.Map;
 
+import static com.example.speech.control.EntranceController.CONFIG_MANAGER;
+import static com.example.speech.control.EntranceController.HARDWARE_ABSTRACTION_LAYER;
 import static com.example.speech.util.HelpfulInitializationClass.setValuesComboBox;
 import static com.example.speech.util.HelpfulStylingClass.setRedEndChar;
 import static com.example.speech.util.HelpfulStylingClass.setupFullScreenListener;
@@ -85,7 +89,10 @@ public class RegistrationController {
                 && userNameLb.getText().equals(startValueUserName) && passwordLb.getText().equals(startValuePassword)) {
             User newUser = new User(null, mailTF.getText(), visibleNameTF.getText(), userNameTF.getText(), passwordF.getText(),
                     HelpfulClass.getLocalDate(dayBirthdayCB.getValue(), monthBirthdayCB.getValue(), yearBirthdayCB.getValue()),
-                    null, null);
+                    null, null, passwordF.getText(), HARDWARE_ABSTRACTION_LAYER.getComputerSystem().getHardwareUUID());
+            CONFIG_MANAGER.setUserEmail(mailTF.getText());
+            CONFIG_MANAGER.setUserPassword(passwordF.getText());
+            CONFIG_MANAGER.save();
             new ConfirmationEmailController().showModalConfirmationEmailStage(stage, newUser);
         }
     }

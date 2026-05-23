@@ -733,3 +733,25 @@
 .file-list-cell:hover {
     -fx-background-color: rgba(230, 230, 230);
 }
+
+.left-border-pane {
+    -fx-background-color: rgba(220, 220, 220);
+    -fx-effect: dropshadow(gaussian, rgba(0, 59, 20, 0.3), 10, 0, 0, 4);
+}
+
+.profile-vbox {
+    -fx-background-color: rgba(245, 245, 245);
+    -fx-background-radius: 12px;
+    -fx-border-width: 1px;
+    -fx-border-color: rgba(130, 130, 130);
+    -fx-border-radius: 12px;
+    -fx-effect: dropshadow(gaussian, rgba(0, 59, 20, 0.3), 10, 0, 0, 4);
+}
+
+.button-logo {
+    -fx-background-radius: 12 12 0 0;
+    -fx-background-color: transparent;
+    -fx-cursor: hand;
+    -fx-border-width: 0 0 2 0;
+    -fx-border-color: rgba(0, 160, 0);
+}

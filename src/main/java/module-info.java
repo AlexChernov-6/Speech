@@ -14,6 +14,7 @@ module com.example.speech {
     requires org.postgresql.jdbc;
     requires javafx.base;
     requires java.rmi;
+    requires com.github.oshi;
 
     opens com.example.speech to javafx.fxml;
     exports com.example.speech.control;

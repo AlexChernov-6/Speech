@@ -121,5 +121,7 @@ public class HelpfulClass {
         buttonImage.setPreserveRatio(true);
 
         btn.setGraphic(buttonImage);
+
+        btn.setStyle("-fx-cursor: hand;");
     }
 }

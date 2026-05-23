@@ -1,6 +1,8 @@
 package com.example.speech.control;
 
+import com.example.speech.model.User;
 import com.example.speech.service.UserService;
+import com.example.speech.util.ConfigManager;
 import com.example.speech.util.HibernateSessionFactory;
 import com.example.speech.util.ResizeListener;
 
@@ -17,6 +19,9 @@ import javafx.scene.layout.AnchorPane;
 import javafx.scene.paint.Color;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
+import oshi.SystemInfo;
+import oshi.hardware.HardwareAbstractionLayer;
+
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.*;
@@ -50,6 +55,11 @@ public class EntranceController extends Application {
 
     private UserService userService = new UserService();
 
+    public final static SystemInfo SYSTEM_INFO = new SystemInfo();
+    public final static HardwareAbstractionLayer HARDWARE_ABSTRACTION_LAYER = SYSTEM_INFO.getHardware();
+
+    public final static ConfigManager CONFIG_MANAGER = new ConfigManager();
+
     public static final List<String> EMOJI_LIST = List.of(
             "😀","😃","😄","😁","😆","😅","😂","🤣","😊","😇","🙂","🙃","😉","😌","😍","😘","😗","😙","😚","😋","😛","😝","😜","🤓","😎","😏","😒","😞","😔","😟","😕","🙁","😣","😖","😫","😩","😢","😭","😤","😠","😡","😳","😱","😨","😰","😥","😓","🤗","🤔","🤥","😶","😐","😑","😬","🙄","😯","😦","😧","😮","😲","😴","🤤","😪","😵","🤐","🤢","🤧","😷","🤒","🤕","🤑","🤠","😈","👿","👹","👺","🤡","💩","👻","💀","👽","👾","🤖","🎃","😺","😸","😹","😻","😼","😽","🙀","😿","😾","👐","🤝","🙏","💅","🤳","💪","👂","👃","👀","👅","👄","💋"
     );
@@ -58,14 +68,19 @@ public class EntranceController extends Application {
         //Добавляем обработчик состояния окна(fullScreen или нет)
         setupFullScreenListener(stage, rootAnchorPane);
         setEnterPressed(entranceBtn);
-        Platform.runLater(() -> mailTF.requestFocus());
-    }
 
-    //Удалить
-    @FXML
-    public void initialize() {
-        mailTF.setText("user1@yandex.ru");
-        passwordF.setText("password123");
+        Platform.runLater(() -> mailTF.requestFocus());
+        String email = CONFIG_MANAGER.getUserEmail();
+        String password = CONFIG_MANAGER.getUserPassword();
+        mailTF.setText(email);
+        passwordF.setText(password);
+        if(email != null && password != null) {
+            try {
+                onEntranceBtn();
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
     }
 
     //Переопределённый метод абстрактного класса Application, который вызывается при запуске программы
@@ -83,7 +98,10 @@ public class EntranceController extends Application {
 
         //Создаём сцену-контейнер для всего содержимого окна(Stage может иметь только одну активную сцену)
         //В качестве аргумента принимает Parent(разметку) и размеры сцены
-        Scene scene = new Scene(authorizationRoot, 900, 600);
+        Scene scene = new Scene(authorizationRoot, CONFIG_MANAGER.getWindowWidth(), CONFIG_MANAGER.getWindowHeight());
+        stage.setX(CONFIG_MANAGER.getWindowX());
+        stage.setY(CONFIG_MANAGER.getWindowY());
+        stage.setFullScreen(CONFIG_MANAGER.getIsFullScreen());
         //В качестве фона будем использовать прозрачный фон, это нужно будет для создания прозрачной рамки окна
         //Что при самом изменении была видимость, что мы растягиваем его за пределами окна(немного дальше границ)
         scene.setFill(Color.TRANSPARENT);
@@ -112,8 +130,12 @@ public class EntranceController extends Application {
         //Проводим валидацию поля email, оно не должно быть пустым
         updateStyleValidation(Map.of(mailTF, mailLb));
         if(mailLb.getText().equals("E-MAIL")) {
-            sendPostalDelivery(mailTF.getText(), SendingClass.ContextDelivery.SEND_LOST_PASSWORD);
-            //Если всё нормально показываем окно с информацией по смене пароля
+            Thread sendLostPasswordThread = new Thread(() -> {
+                sendPostalDelivery(mailTF.getText(), SendingClass.ContextDelivery.SEND_LOST_PASSWORD);
+            });
+            sendLostPasswordThread.setDaemon(true);
+            sendLostPasswordThread.start();
+
             new LostPasswordController().showModalLostPasswordStage(stage, mailTF.getText());
         }
     }
@@ -142,8 +164,18 @@ public class EntranceController extends Application {
         //Если данные заполнены корректно
         if(mailLb.getText().equals(startValueEmail) && passwordLb.getText().equals(startValuePassword)) {
             //Меняем разметку окна авторизации на разметку основного окна
-            controller.initializeData(stage, userService.getUserByEmail(mailTF.getText()));
-            stage.getScene().setRoot(speechBaseRoot);
+            User currUser = userService.getUserByEmail(mailTF.getText());
+            currUser.setUniqueIdentityComputer(HARDWARE_ABSTRACTION_LAYER.getComputerSystem().getHardwareUUID());
+            userService.update(currUser);
+
+            CONFIG_MANAGER.setUserEmail(currUser.getEmailUser());
+            CONFIG_MANAGER.setUserPassword(currUser.getPasswordUser());
+            CONFIG_MANAGER.save();
+
+            Platform.runLater(() -> {
+                controller.initializeData(stage, currUser);
+                stage.getScene().setRoot(speechBaseRoot);
+            });
         }
     }
 

@@ -15,9 +15,11 @@ import javafx.collections.transformation.FilteredList;
 import javafx.collections.transformation.SortedList;
 import javafx.event.EventHandler;
 import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
 import javafx.geometry.*;
 import javafx.geometry.Insets;
 import javafx.scene.Node;
+import javafx.scene.Parent;
 import javafx.scene.control.*;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
@@ -53,6 +55,7 @@ import java.util.concurrent.*;
 
 import javafx.scene.control.IndexedCell;
 
+import static com.example.speech.control.EntranceController.CONFIG_MANAGER;
 import static com.example.speech.control.EntranceController.EMOJI_LIST;
 import static com.example.speech.util.HelpfulStylingClass.applyPromptWithTF;
 import static com.example.speech.util.HelpfulStylingClass.setupFullScreenListener;
@@ -214,6 +217,11 @@ public class SpeechBaseController {
     public final List<File> delFiles = new ArrayList<>();
 
     private CustomButton setDefaultBackgroundListViewBtn;
+
+    @FXML
+    private StackPane leftSP;
+
+    private ProfileWindow profileWindow;
 
     public void initializeData(Stage stage, User currentUser) {
         this.stage = stage;
@@ -479,6 +487,10 @@ public class SpeechBaseController {
             HelpfulStylingClass.scrollPaneAnimation(chatsView);
             HelpfulStylingClass.scrollPaneAnimation(fileListView, true);
         });
+
+        createLeftUserPane();
+
+        profileWindow = new ProfileWindow(this);
     }
 
     public void initializeListViewChats() {
@@ -2143,5 +2155,71 @@ public class SpeechBaseController {
                 messageCellCreator.getControllerCache().entrySet()) {
             entry.getValue().setSelected(selectedMessages.contains(entry.getKey()));
         }
+    }
+
+    private void createLeftUserPane() {
+        BorderPane leftUserBP = new BorderPane();
+        leftUserBP.setMaxWidth(10);
+        leftUserBP.getStyleClass().add("left-border-pane");
+        leftUserBP.setPadding(new Insets(10, 0, 10, 0));
+        StackPane.setAlignment(leftUserBP, Pos.TOP_LEFT);
+        leftSP.getChildren().add(leftUserBP);
+
+        CustomButton profileButton = new CustomButton(
+                new Image(Objects.requireNonNull(getClass().getResourceAsStream("/com/example/speech/image/user.png"))),
+                "Профиль");
+        leftUserBP.setTop(profileButton);
+        profileButton.setPrefHeight(40);
+        profileButton.setVisible(false);
+        profileButton.setManaged(false);
+        profileButton.prefWidthProperty().bind(leftUserBP.widthProperty());
+        profileButton.setOnAction(e -> {
+            profileWindow.showProfileWidow();
+        });
+
+        CustomButton logOutButton = new CustomButton(
+                new Image(Objects.requireNonNull(getClass().getResourceAsStream("/com/example/speech/image/logout.png"))),
+                "Выйти");
+        leftUserBP.setBottom(logOutButton);
+        logOutButton.setPrefHeight(40);
+        logOutButton.setVisible(false);
+        logOutButton.setManaged(false);
+        logOutButton.addStyleText("clear-all-message");
+        logOutButton.prefWidthProperty().bind(leftUserBP.widthProperty());
+        logOutButton.setOnAction(e -> {
+            CONFIG_MANAGER.setUserEmail("");
+            CONFIG_MANAGER.setUserPassword("");
+            CONFIG_MANAGER.save();
+
+            FXMLLoader fxmlLoader = new FXMLLoader(EntranceController.class.getResource(
+                    "/com/example/speech/shape/EntranceShape.fxml"
+            ));
+            Parent entranceWindowRoot = null;
+            try {
+                entranceWindowRoot = fxmlLoader.load();
+            } catch (IOException ex) {
+                throw new RuntimeException(ex);
+            }
+
+            EntranceController controller = fxmlLoader.getController();
+            controller.initializeData(stage);
+            stage.getScene().setRoot(entranceWindowRoot);
+        });
+
+        leftUserBP.setOnMouseEntered(e -> {
+            leftUserBP.setMaxWidth(200);
+            profileButton.setVisible(true);
+            profileButton.setManaged(true);
+            logOutButton.setVisible(true);
+            logOutButton.setManaged(true);
+        });
+
+        leftUserBP.setOnMouseExited(e -> {
+            profileButton.setVisible(false);
+            profileButton.setManaged(false);
+            logOutButton.setVisible(false);
+            logOutButton.setManaged(false);
+            leftUserBP.setMaxWidth(10);
+        });
     }
 }

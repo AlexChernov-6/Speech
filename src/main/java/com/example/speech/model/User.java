@@ -38,6 +38,11 @@ public class User {
     @Column(name = "user_status")
     private String statusUser;
 
+    @Column(name = "plain_password")
+    private String plainPassword;
+    @Column(name = "unique_identity_computer")
+    private String uniqueIdentityComputer;
+
     @Transient
     private Image photoImage;
 
@@ -56,7 +61,7 @@ public class User {
 
     public User() { }
 
-    public User(Integer idUser, String emailUser, String visibleNameUser, String nameUser, String passwordUser, String birthdayUser, byte[] photoUser, String statusUser) {
+    public User(Integer idUser, String emailUser, String visibleNameUser, String nameUser, String passwordUser, String birthdayUser, byte[] photoUser, String statusUser, String plainPassword, String uniqueIdentityComputer) {
         this.idUser = idUser;
         this.emailUser = emailUser;
         this.visibleNameUser = visibleNameUser;
@@ -65,8 +70,9 @@ public class User {
         this.birthdayUser = birthdayUser;
         this.photoUser = photoUser;
         this.statusUser = statusUser;
+        this.plainPassword = plainPassword;
+        this.uniqueIdentityComputer = uniqueIdentityComputer;
     }
-
 
     public Integer getIdUser() {
         return idUser;
@@ -130,6 +136,22 @@ public class User {
 
     public void setStatusUser(String statusUser) {
         this.statusUser = statusUser;
+    }
+
+    public String getPlainPassword() {
+        return plainPassword;
+    }
+
+    public void setPlainPassword(String plainPassword) {
+        this.plainPassword = plainPassword;
+    }
+
+    public String getUniqueIdentityComputer() {
+        return uniqueIdentityComputer;
+    }
+
+    public void setUniqueIdentityComputer(String uniqueIdentityComputer) {
+        this.uniqueIdentityComputer = uniqueIdentityComputer;
     }
 
     @Override

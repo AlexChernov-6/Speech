@@ -2,6 +2,7 @@ package com.example.speech.control;
 
 import com.example.speech.model.User;
 import com.example.speech.service.UserService;
+import com.example.speech.util.HelpfulClass;
 import com.example.speech.util.HelpfulInitializationClass;
 import com.example.speech.util.SendingClass;
 import javafx.application.Platform;
@@ -65,9 +66,13 @@ public class ConfirmationEmailController {
         this.mainStage = mainStage;
         this.newUser = newUser;
         initializeContentLb();
-        setLinkListener(List.of(num1, num2, num3, num4, num5, num6));
+        setLinkListener(List.of(num1, num2, num3, num4, num5, num6), confirmBtn);
         Platform.runLater(() -> num1.requestFocus());
         setEnterPressed(confirmBtn);
+        HelpfulClass.setImageWithButton(closeBtn, "close-application.png","window-control-button", 25, 25);
+        closeBtn.getStyleClass().add("close-button");
+        closeBtn.setStyle("-fx-background-radius: 8px;");
+        Platform.runLater(this::onGetCodeBtn);
     }
 
     private void initializeContentLb() {
@@ -102,17 +107,24 @@ public class ConfirmationEmailController {
                 return;
             }
 
-            // ОТПРАВЛЯЕМ email
-            boolean sent = SendingClass.sendPostalDelivery(mail, ContextDelivery.SEND_CONFIRMATION_CODE);
+            startCountdown(60);
 
-            if (sent) {
-                informationLb.setText("Код отправлен на вашу почту");
-                informationLb.setStyle("-fx-text-fill: green");
-                startCountdown(60); // Запускаем таймер на 60 секунд
-            } else {
-                informationLb.setText("Ошибка отправки кода");
-                informationLb.setStyle("-fx-text-fill: red");
-            }
+            // ОТПРАВЛЯЕМ email в отдельном потоке, чтобы не блокировать UI
+            Thread sentPostalDeliveryThread = new Thread(() -> {
+                boolean sent = SendingClass.sendPostalDelivery(mail, ContextDelivery.SEND_CONFIRMATION_CODE);
+
+                Platform.runLater(() -> {
+                    if (sent) {
+                        informationLb.setText("Код отправлен на вашу почту");
+                        informationLb.setStyle("-fx-text-fill: green");
+                    } else {
+                        informationLb.setText("Ошибка отправки кода");
+                        informationLb.setStyle("-fx-text-fill: red");
+                    }
+                });
+            });
+            sentPostalDeliveryThread.setDaemon(true);
+            sentPostalDeliveryThread.start();
         }
     }
 
