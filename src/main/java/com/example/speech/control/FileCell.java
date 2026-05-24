@@ -8,6 +8,7 @@ import javafx.geometry.Pos;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListCell;
+import javafx.scene.control.Tooltip;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.MouseButton;
@@ -165,9 +166,13 @@ public class FileCell extends ListCell<File> {
             }
 
 
-            if(file.length() >= 2 * 1024 * 1024 || speechBaseController.delFiles.contains(file))
+            if(file.length() >= 2 * 1024 * 1024 || speechBaseController.delFiles.contains(file)) {
                 errorPane.setVisible(true);
-            else errorPane.setVisible(false);
+                setTooltip(new Tooltip("Файл не будет отправлен"));
+            } else {
+                errorPane.setVisible(false);
+                setTooltip(null);
+            }
 
             setGraphic(rootSP);
         }

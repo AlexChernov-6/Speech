@@ -25,6 +25,8 @@ public class Channel {
     private String channel_name_unique;
     @Column
     private boolean disable_sharing;
+    @ManyToOne @JoinColumn(name = "owner_id")
+    private User ownerUser;
 
     @Transient
     private Image photoChannel;
@@ -44,7 +46,7 @@ public class Channel {
 
     public Channel() { }
 
-    public Channel(int channelID, String channelName, byte[] channelLogo, int channelCountUser, ChannelType channelType, String channel_name_unique, boolean disable_sharing) {
+    public Channel(int channelID, String channelName, byte[] channelLogo, int channelCountUser, ChannelType channelType, String channel_name_unique, boolean disable_sharing, User ownerUser) {
         this.channelID = channelID;
         this.channelName = channelName;
         this.channelLogo = channelLogo;
@@ -52,6 +54,7 @@ public class Channel {
         this.channelType = channelType;
         this.channel_name_unique = channel_name_unique;
         this.disable_sharing = disable_sharing;
+        this.ownerUser = ownerUser;
     }
 
     public int getChannelID() {
@@ -71,6 +74,7 @@ public class Channel {
     }
 
     public byte[] getChannelLogo() {
+        photoChannel = null;
         return channelLogo;
     }
 
@@ -108,6 +112,14 @@ public class Channel {
 
     public void setDisable_sharing(boolean disable_sharing) {
         this.disable_sharing = disable_sharing;
+    }
+
+    public User getOwnerUser() {
+        return ownerUser;
+    }
+
+    public void setOwnerUser(User ownerUser) {
+        this.ownerUser = ownerUser;
     }
 
     @Override

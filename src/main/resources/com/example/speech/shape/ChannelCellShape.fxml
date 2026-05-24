@@ -10,7 +10,7 @@
 <HBox xmlns:fx="http://javafx.com/fxml" fx:controller="com.example.speech.control.ChannelCellController"
       prefHeight="60" prefWidth="295" alignment="CENTER_LEFT" fx:id="rootContainer">
     <padding>
-        <Insets left="5" top="5" right="5" bottom="5"/>
+        <Insets left="5" top="5" right="10" bottom="5"/>
     </padding>
 
 
@@ -42,5 +42,5 @@
         <Label fx:id="timeLastMessageLB" styleClass="chat-time" text="00:00"/>
     </VBox>
 
-    <Button fx:id="deleteChanelBtn" prefWidth="40" prefHeight="15" onAction="#onDeleteChanelBtn" visible="false"/>
+    <Button fx:id="deleteChanelBtn" onAction="#onDeleteChanelBtn" visible="false"/>
 </HBox>

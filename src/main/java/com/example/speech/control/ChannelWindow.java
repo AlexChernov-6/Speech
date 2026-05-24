@@ -1,10 +1,13 @@
 package com.example.speech.control;
 
+import com.example.speech.model.Channel;
+import com.example.speech.model.ChannelUser;
 import com.example.speech.model.User;
-import com.example.speech.service.UserService;
+import com.example.speech.service.ChannelService;
+import com.example.speech.service.ChannelTypeService;
+import com.example.speech.service.ChannelUserService;
 import com.example.speech.util.HelpfulStylingClass;
 import com.example.speech.util.ImageUtils;
-import com.example.speech.util.InputControlMaskFormatter;
 import javafx.animation.FadeTransition;
 import javafx.geometry.Insets;
 import javafx.geometry.Point2D;
@@ -26,42 +29,36 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
-import static com.example.speech.util.HelpfulValidationClass.validateUserNameShort;
-import static com.example.speech.util.InputControlMaskFormatter.MASK_DATE;
+import static com.example.speech.util.HelpfulValidationClass.validateChannelNameShort;
 
-public class ProfileWindow extends VBox {
+public class ChannelWindow extends VBox {
     private final Pane shadowPane;
-    private final SpeechBaseController speechBaseController;
     private final StackPane parentStackPane;
 
     private final User currentUser;
 
     private HBox bottomHB;
 
-    private TextField visibleNameTF, userNameTF, birthdayTF;
-    private ImageView logoUser;
+    private TextField channelNameTF, channelNameUniqueTF;
+    private ImageView logoChannel;
 
     private final List<Label> hintLabels = new ArrayList<>();
 
-    private byte[] newUserLogo;
-    private String newVisibleName;
-    private String newUserName;
-    private String newUserBirthday;
+    private final ChannelService channelService = new ChannelService();
 
-    private final UserService userService = new UserService();
+    private final ChannelUserService channelUserService = new ChannelUserService();
 
-    public ProfileWindow(SpeechBaseController speechBaseController) {
-        this.speechBaseController = speechBaseController;
+    private final Channel newChannel = new Channel();
+
+    public ChannelWindow(SpeechBaseController speechBaseController) {
         this.parentStackPane = speechBaseController.getMessagesSP();
         this.currentUser = speechBaseController.getCurrentUser();
         setOpacity(0.0);
         setManaged(false);
-        setMouseTransparent(true);
         setMaxWidth(300);
-        setMaxHeight(500);
+        setMaxHeight(400);
         getStyleClass().add("profile-vbox");
 
         shadowPane = new Pane();
@@ -71,80 +68,55 @@ public class ProfileWindow extends VBox {
         shadowPane.setManaged(false);
         parentStackPane.getChildren().add(shadowPane);
 
-        newUserLogo = currentUser.getPhotoUser();
-        newVisibleName = currentUser.getVisibleNameUser();
-        newUserName = currentUser.getNameUser();
-        newUserBirthday = currentUser.getBirthdayUser();
-
         createButtonLogo();
 
-        TextField emailTF = createTextFields("E-MAIL", currentUser.getEmailUser());
-        emailTF.setDisable(true);
-
-        visibleNameTF = createTextFields("ОТОБРАЖАЕМОЕ ИМЯ", currentUser.getVisibleNameUser());
-        visibleNameTF.textProperty().addListener((ob, oldV, newV) -> {
-            if(newV.isEmpty() || newV.equals("ОТОБРАЖАЕМОЕ ИМЯ")) {
-                if(visibleNameTF.getUserData() != null && visibleNameTF.getUserData() instanceof Label)
-                    ((Label) visibleNameTF.getUserData()).setText("Поле не может быть пустым");
+        channelNameTF = createTextFields("НАЗВАНИЕ ГРУППЫ");
+        channelNameTF.textProperty().addListener((ob, oldV, newV) -> {
+            if (newV.isEmpty() || newV.equals("НАЗВАНИЕ ГРУППЫ")) {
+                if (channelNameTF.getUserData() != null && channelNameTF.getUserData() instanceof Label)
+                    ((Label) channelNameTF.getUserData()).setText("Поле не может быть пустым");
             } else {
-                if(visibleNameTF.getUserData() != null && visibleNameTF.getUserData() instanceof Label)
-                    ((Label) visibleNameTF.getUserData()).setText("ОТОБРАЖАЕМОЕ ИМЯ");
-                newVisibleName = newV;
+                if (channelNameTF.getUserData() != null && channelNameTF.getUserData() instanceof Label)
+                    ((Label) channelNameTF.getUserData()).setText("НАЗВАНИЕ ГРУППЫ");
+                newChannel.setChannelName(newV);
             }
         });
 
-        userNameTF = createTextFields("ИМЯ ПОЛЬЗОВАТЕЛЯ", currentUser.getNameUser());
-        userNameTF.textProperty().addListener((ob, oldV, newV) -> {
-            if(newV.equals("ИМЯ ПОЛЬЗОВАТЕЛЯ")) {
-                if(userNameTF.getUserData() != null && userNameTF.getUserData() instanceof Label)
-                    ((Label) userNameTF.getUserData()).setText("Поле не может быть пустым");
+        channelNameUniqueTF = createTextFields("ИМЯ ГРУППЫ(уникальное)");
+        channelNameUniqueTF.textProperty().addListener((ob, oldV, newV) -> {
+            if (newV.isEmpty() || newV.equals("ИМЯ ГРУППЫ(уникальное)")) {
+                if (channelNameUniqueTF.getUserData() != null && channelNameUniqueTF.getUserData() instanceof Label)
+                    ((Label) channelNameUniqueTF.getUserData()).setText("Поле не может быть пустым");
             } else {
-                if (userNameTF.getUserData() != null && userNameTF.getUserData() instanceof Label) {
-                    String valid = validateUserNameShort(newV);
+                if (channelNameUniqueTF.getUserData() != null && channelNameUniqueTF.getUserData() instanceof Label) {
+                    String valid = validateChannelNameShort(newV);
                     if (valid == null) {
-                        ((Label) userNameTF.getUserData()).setText("ИМЯ ПОЛЬЗОВАТЕЛЯ");
-                        newUserName = newV;
-                    } else ((Label) userNameTF.getUserData()).setText(valid);
+                        ((Label) channelNameUniqueTF.getUserData()).setText("ИМЯ ГРУППЫ(уникальное)");
+                        newChannel.setChannel_name_unique(newV);
+                    } else ((Label) channelNameUniqueTF.getUserData()).setText(valid);
                 }
-            }
-        });
-
-        birthdayTF = createTextFields("ДАТА РОЖДЕНИЯ", currentUser.getBirthdayUser());
-        InputControlMaskFormatter maskBirthday = new InputControlMaskFormatter();
-        maskBirthday.apply(birthdayTF, InputControlMaskFormatter.MaskContext.DATE_MASK);
-        birthdayTF.setOnMouseEntered(e -> {
-            birthdayTF.setPromptText("__.__.____");
-        });
-        birthdayTF.setOnMouseExited(e -> {
-            birthdayTF.setPromptText("ДАТА РОЖДЕНИЯ");
-        });
-        birthdayTF.textProperty().addListener((ob, oldV, newV) -> {
-            newUserBirthday = newV;
-            if(newV.equals("ДАТА РОЖДЕНИЯ") || newV.equals(MASK_DATE)) {
-                if(birthdayTF.getUserData() != null && birthdayTF.getUserData() instanceof Label)
-                    ((Label) birthdayTF.getUserData()).setText("Поле не может быть пустым");
             }
         });
 
         createBottomHB();
 
         shadowPane.addEventFilter(MouseEvent.MOUSE_PRESSED, e -> {
-            if(!isVisible()) return;
+            if (!isVisible()) return;
 
             Point2D point2D = screenToLocal(e.getScreenX(), e.getScreenY());
-            if(point2D != null && contains(point2D)) return;
-            else if(getOpacity() == 1.0) hideProfileWidow();
+            if (point2D != null && contains(point2D)) return;
+            else if (getOpacity() == 1.0) hideCreateChannelWidow();
         });
         parentStackPane.getChildren().add(this);
     }
 
-    public void showProfileWidow() {
+    public void showCreateChannelWidow() {
         setManaged(true);
         setMouseTransparent(false);
         shadowPane.setVisible(true);
         shadowPane.setManaged(true);
-        for(Node node : getChildren()) {
-            if(node.getUserData() != null && node.getUserData().equals("bottomHB")) {
+        for (Node node : getChildren()) {
+            if (node.getUserData() != null && node.getUserData().equals("bottomHB")) {
                 node.setVisible(false);
                 node.setManaged(false);
             } else {
@@ -157,7 +129,7 @@ public class ProfileWindow extends VBox {
         fadeIn.play();
     }
 
-    public void hideProfileWidow() {
+    public void hideCreateChannelWidow() {
         FadeTransition fadeOut = new FadeTransition(Duration.millis(200), this);
         fadeOut.setToValue(0.0);
         fadeOut.setOnFinished(e -> {
@@ -165,7 +137,7 @@ public class ProfileWindow extends VBox {
             setMouseTransparent(true);
             shadowPane.setVisible(false);
             shadowPane.setManaged(false);
-            for(Node node : getChildren()) {
+            for (Node node : getChildren()) {
                 node.setVisible(false);
                 node.setManaged(false);
             }
@@ -187,15 +159,15 @@ public class ProfileWindow extends VBox {
         logoBtn.setPrefWidth(300);
         logoBtn.setAlignment(Pos.CENTER);
         logoBtn.setOnAction(e -> {
-            if(speechBaseController.getCurrentUser().getPhotoUser() != null && currentUser.getPhotoUser().length > 1)
-                ImageUtils.viewingImages(parentStackPane, List.of(currentUser.getPhotoImage()));
+            if (newChannel.getChannelLogo() != null && newChannel.getChannelLogo().length > 1)
+                ImageUtils.viewingImages(parentStackPane, List.of(newChannel.getPhotoImage()));
         });
 
-        logoUser = new ImageView(currentUser.getPhotoImage());
-        logoUser.setFitWidth(300);
-        logoUser.setFitHeight(200);
+        logoChannel = new ImageView(newChannel.getPhotoImage());
+        logoChannel.setFitWidth(300);
+        logoChannel.setFitHeight(200);
 
-        logoBtn.setGraphic(logoUser);
+        logoBtn.setGraphic(logoChannel);
 
         logoSP.getChildren().add(logoBtn);
 
@@ -208,21 +180,21 @@ public class ProfileWindow extends VBox {
         logoSP.getChildren().add(choseLogoBtn);
         choseLogoBtn.setOnAction(e -> {
             FileChooser fileChooser = new FileChooser();
-            fileChooser.setTitle("Выбор иконки пользователя");
+            fileChooser.setTitle("Выбор иконки чата");
             fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("images", "*.png", "*.jpg"));
 
             File chosenFile = fileChooser.showOpenDialog(choseLogoBtn.getScene().getWindow());
 
-            if(chosenFile == null) return;
+            if (chosenFile == null) return;
 
             try {
-                newUserLogo = Files.readAllBytes(chosenFile.toPath());
+                newChannel.setChannelLogo(Files.readAllBytes(chosenFile.toPath()));
             } catch (IOException ex) {
                 throw new RuntimeException(ex);
             }
 
             try {
-                logoUser.setImage(new Image(new FileInputStream(chosenFile)));
+                logoChannel.setImage(new Image(new FileInputStream(chosenFile)));
             } catch (FileNotFoundException ex) {
                 throw new RuntimeException(ex);
             }
@@ -243,7 +215,7 @@ public class ProfileWindow extends VBox {
         getChildren().add(logoSP);
     }
 
-    private TextField createTextFields(String promptText, String content) {
+    private TextField createTextFields(String promptText) {
         VBox textFieldVB = new VBox();
         textFieldVB.setAlignment(Pos.TOP_LEFT);
         textFieldVB.setVisible(false);
@@ -256,17 +228,16 @@ public class ProfileWindow extends VBox {
         textFieldVB.getChildren().add(hintLB);
         hintLB.setUserData(true);
         hintLB.textProperty().addListener((ob, oldV, newV) -> {
-            if(!promptText.equals(newV)) {
+            if (!promptText.equals(newV)) {
                 hintLB.setStyle("-fx-text-fill: rgba(115,0,0);");
                 hintLB.setUserData(false);
-            }
-            else {
+            } else {
                 hintLB.setStyle("");
                 hintLB.setUserData(true);
             }
         });
 
-        TextField textField = new TextField(content);
+        TextField textField = new TextField();
         textField.setUserData(hintLB);
         textField.setPromptText(promptText);
         textField.getStyleClass().add("text-field");
@@ -274,7 +245,7 @@ public class ProfileWindow extends VBox {
         textFieldVB.getChildren().add(textField);
 
         textField.textProperty().addListener((ob, o, n) -> {
-            if(n != null && !n.equals(o)) {
+            if (n != null && !n.equals(o)) {
                 bottomHB.setVisible(true);
                 bottomHB.setManaged(true);
             }
@@ -299,40 +270,35 @@ public class ProfileWindow extends VBox {
         saveBtn.setOnAction(e -> {
             boolean isValid = true;
             for (Label label : hintLabels) {
-                if(!((Boolean) label.getUserData())) {
+                if (!((Boolean) label.getUserData())) {
                     isValid = false;
                     break;
                 }
             }
 
-            if(!currentUser.getNameUser().equals(newUserName) && userService.getUserByUserName(newUserName) != null) {
-                ((Label) userNameTF.getUserData()).setText("Пользователь с таким именем уже существует");
+            if (channelService.getChatWithName(newChannel.getChannel_name_unique()) != null) {
+                ((Label) channelNameUniqueTF.getUserData()).setText("Группа с таким именем уже существует");
                 isValid = false;
             }
 
-            if(isValid) {
-                boolean isNewData = false;
-                if(!Arrays.equals(currentUser.getPhotoUser(), newUserLogo)) {
-                    isNewData = true;
-                    currentUser.setPhotoUser(newUserLogo);
-                }
-                if(!currentUser.getVisibleNameUser().equals(newVisibleName)) {
-                    isNewData = true;
-                    currentUser.setVisibleNameUser(newVisibleName);
-                }
-                if(!currentUser.getNameUser().equals(newUserName)) {
-                    isNewData = true;
-                    currentUser.setNameUser(newUserName);
-                }
-                if(!currentUser.getBirthdayUser().equals(newUserBirthday)) {
-                    isNewData = true;
-                    currentUser.setBirthdayUser(newUserBirthday);
+            if (isValid) {
+                newChannel.setChannelType(new ChannelTypeService().getRowById(2L));
+                newChannel.setOwnerUser(currentUser);
+                boolean save = channelService.save(newChannel);
+
+                if(save) {
+                    ChannelUser newChannelUser = new ChannelUser();
+                    newChannelUser.setChannel(newChannel);
+                    newChannelUser.setUser(currentUser);
+                    channelUserService.save(newChannelUser);
                 }
 
-                if(isNewData)
-                    userService.update(currentUser);
                 bottomHB.setVisible(false);
                 bottomHB.setManaged(false);
+
+                resetAll();
+
+                hideCreateChannelWidow();
             }
         });
 
@@ -340,21 +306,22 @@ public class ProfileWindow extends VBox {
         resetBtn.getStyleClass().add("login-button");
         bottomHB.getChildren().add(resetBtn);
         resetBtn.setOnAction(e -> {
-            newUserLogo = currentUser.getPhotoUser();
-            newVisibleName = currentUser.getVisibleNameUser();
-            newUserName = currentUser.getNameUser();
-            newUserBirthday = currentUser.getBirthdayUser();
-
-            logoUser.setImage(currentUser.getPhotoImage());
-            visibleNameTF.setText(currentUser.getVisibleNameUser());
-            userNameTF.setText(currentUser.getNameUser());
-            birthdayTF.setText(currentUser.getBirthdayUser());
-            ((Label) birthdayTF.getUserData()).setText("ДАТА РОЖДЕНИЯ");
-
-            bottomHB.setVisible(false);
-            bottomHB.setManaged(false);
+            resetAll();
         });
 
         getChildren().add(bottomHB);
+    }
+
+    private void resetAll() {
+        newChannel.setChannelName(null);
+        newChannel.setChannel_name_unique(null);
+        newChannel.setChannelLogo(null);
+
+        logoChannel.setImage(newChannel.getPhotoImage());
+        channelNameTF.setText(null);
+        channelNameUniqueTF.setText(null);
+
+        bottomHB.setVisible(false);
+        bottomHB.setManaged(false);
     }
 }

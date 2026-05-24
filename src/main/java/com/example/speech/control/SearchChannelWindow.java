@@ -46,8 +46,6 @@ public class SearchChannelWindow extends VBox {
 
     private final ChannelUserService channelUserService = new ChannelUserService();
 
-    private ChannelType correspondenceChannelType = new ChannelTypeService().getRowById(3L);
-
     public SearchChannelWindow(SpeechBaseController speechBaseController) {
         this.speechBaseController = speechBaseController;
 
@@ -241,7 +239,7 @@ public class SearchChannelWindow extends VBox {
                             Channel channel = new Channel();
                             channel.setChannelName(((User) selectedObject).getVisibleNameUser());
                             channel.setChannelLogo(((User) selectedObject).getPhotoUser());
-                            channel.setChannelType(correspondenceChannelType);
+                            channel.setChannelType(new ChannelTypeService().getRowById(3L));
                             channel.setChannel_name_unique(speechBaseController.getCurrentUser().getNameUser() + "_" + ((User) selectedObject).getNameUser());
                             channel.setDisable_sharing(false);
 

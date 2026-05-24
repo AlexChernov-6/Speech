@@ -1,8 +1,11 @@
 package com.example.speech.service;
 
 import com.example.speech.model.Channel;
+import com.example.speech.model.User;
 import com.example.speech.util.HibernateSessionFactory;
 import org.hibernate.Session;
+
+import java.util.List;
 
 public class ChannelService extends BaseService<Channel> {
     public ChannelService() {
@@ -21,10 +24,19 @@ public class ChannelService extends BaseService<Channel> {
     }
 
     public Channel getChatWithName(String name) {
-        String queryHQL = "from Channel where channel_name_unique = :CHANNEL_NAME_UNIQUE";
+        String queryHQL = "from Channel where channel_name_unique = '@' || :CHANNEL_NAME_UNIQUE";
 
         try(Session session = HibernateSessionFactory.getSessionFactory().openSession()) {
             return session.createQuery(queryHQL, Channel.class).setParameter("CHANNEL_NAME_UNIQUE", name).uniqueResult();
+        }
+    }
+
+    public List<User> getAllUserInChannel(long channelID) {
+        String queryHQL = "select user from ChannelUser where channel.channelID = :CHANNEL_ID";
+
+        try (Session session = HibernateSessionFactory.getSessionFactory().openSession()) {
+            return session.createQuery(queryHQL, User.class)
+                    .setParameter("CHANNEL_ID", channelID).list();
         }
     }
 }

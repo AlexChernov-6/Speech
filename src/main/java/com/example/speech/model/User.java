@@ -128,6 +128,7 @@ public class User {
 
     public void setPhotoUser(byte[] photoUser) {
         this.photoUser = photoUser;
+        this.photoImage = null;
     }
 
     public String getStatusUser() {

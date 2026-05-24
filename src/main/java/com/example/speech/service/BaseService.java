@@ -35,7 +35,8 @@ public class BaseService<T> {
             transaction.commit();
             return true;
         } catch (HibernateException e) {
-            System.err.println(e.getMessage());
+            System.out.println(e.getMessage());
+            e.printStackTrace();
             return false;
         }
     }

@@ -755,3 +755,16 @@
     -fx-border-width: 0 0 2 0;
     -fx-border-color: rgba(0, 160, 0);
 }
+
+.button-chose-logo {
+    -fx-background-color: #003B14;
+    -fx-text-fill: #FFFFFF;
+    -fx-background-radius: 8;
+    -fx-font-size: 12px;
+    -fx-font-weight: bold;
+    -fx-padding: 5 10;
+}
+
+.button-chose-logo:hover {
+    -fx-background-color: #00290E;
+}

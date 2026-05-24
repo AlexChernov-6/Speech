@@ -36,6 +36,8 @@ public class HelpfulValidationClass {
 
     private static final Pattern USER_NAME = Pattern.compile("^[A-Za-z]+[\\.-_]?[A-Za-z0-9]+$");
 
+    private static final Pattern CHANNEL_NAME = Pattern.compile("^[A-Za-z]+[\\.-_]?[A-Za-z0-9]+$");
+
     private static final Pattern CONFIRM_CODE = Pattern.compile("^[0-9]$");
 
     private static UserService userService = new UserService();
@@ -213,10 +215,51 @@ public class HelpfulValidationClass {
             return "Имя пользователя может содержать только англ. буквы, цифры и 1 спец. символ";
         }
 
-        User user = userService.getUserByUserName(userName);
+        return null;
+    }
 
-        if (user != null)
-            return "Пользователь с таким именем уже существует";
+    public static String validateUserNameShort(String userName) {
+        if (userName.isEmpty())
+            return "Имя пользователя не может быть пустым";
+
+        if (userName.length() < 4)
+            return "Имя пользователя не должно быть короче 4-ых символов";
+
+        if (userName.length() > 20)
+            return "Имя пользователя не должно быть длиннее 20-ти символов";
+
+        if (!USER_NAME.matcher(userName).matches()) {
+            if (!Character.isLetterOrDigit(userName.charAt(0)))
+                return "Имя пользователя не должно начинаться со специального символа";
+
+            if (!Character.isLetterOrDigit(userName.charAt(userName.length() - 1)))
+                return "Имя пользователя не должно заканчиваться специальным символом";
+
+            return "Имя пользователя может содержать только англ. буквы, цифры и 1 спец. символ";
+        }
+
+        return null;
+    }
+
+    public static String validateChannelNameShort(String channelName) {
+        if (channelName.isEmpty())
+            return "Поле не может быть пустым";
+
+        if (channelName.length() < 4)
+            return "Имя группы не должно быть короче 4-ых символов";
+
+        if (channelName.length() > 20)
+            return "Имя группы не должно быть длиннее 20-ти символов";
+
+        if (!CHANNEL_NAME.matcher(channelName).matches()) {
+            if (!Character.isLetterOrDigit(channelName.charAt(0)))
+                return "Имя группы не должно начинаться со специального символа";
+
+            if (!Character.isLetterOrDigit(channelName.charAt(channelName.length() - 1)))
+                return "Имя группы не должно заканчиваться специальным символом";
+
+            return "Доступны только англ. буквы, цифры и 1 спец. символ";
+        }
 
         return null;
     }

@@ -5,7 +5,6 @@ import com.example.speech.service.*;
 import com.example.speech.util.FileUtils;
 import com.example.speech.util.HelpfulClass;
 import com.example.speech.util.HelpfulStylingClass;
-import javafx.animation.FadeTransition;
 import javafx.animation.PauseTransition;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
@@ -42,8 +41,6 @@ import javafx.util.Duration;
 
 import java.awt.*;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.nio.file.Files;
@@ -51,7 +48,6 @@ import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.List;
-import java.util.concurrent.*;
 
 import javafx.scene.control.IndexedCell;
 
@@ -83,7 +79,7 @@ public class SpeechBaseController {
 
     private FilteredList<Message> filteredList;
 
-    private List<Node> hiddenList = new ArrayList<>();
+    private final List<Node> hiddenList = new ArrayList<>();
 
     private boolean searchModeActive = false;
 
@@ -182,10 +178,6 @@ public class SpeechBaseController {
     private double dragStartX, dragStartY;
     private static final double DRAG_DISTANCE_THRESHOLD = 5.0; // пикселей
 
-    public boolean isDragSelecting() {
-        return dragSelecting;
-    }
-
     private List<Message> baseSelection = new ArrayList<>();
 
     private VirtualFlow<?> currentFlow;
@@ -222,6 +214,12 @@ public class SpeechBaseController {
     private StackPane leftSP;
 
     private ProfileWindow profileWindow;
+
+    private ChannelWindow channelWindow;
+
+    private OtherProfileWindow otherProfileWindow;
+
+    private final ChannelService channelService = new ChannelService();
 
     public void initializeData(Stage stage, User currentUser) {
         this.stage = stage;
@@ -323,7 +321,7 @@ public class SpeechBaseController {
                     field.setAccessible(true);
                     currentFlow = (VirtualFlow<?>) field.get(newSkin);
                 } catch (Exception e) {
-                    e.printStackTrace();
+                    System.err.println(e.getMessage());
                 }
                 ScrollBar scrollBar = (ScrollBar) messagesLV.lookup(".scroll-bar:vertical");
                 if (scrollBar != null) {
@@ -363,7 +361,6 @@ public class SpeechBaseController {
         fileListView.setItems(fileSortedList);
         selectedChatVB.getChildren().add(4, fileListView);
 
-        // Слушатель размера списка
         selectedFile.addListener((ListChangeListener<File>) change -> {
             while (change.next()) {
             }
@@ -409,7 +406,7 @@ public class SpeechBaseController {
                     try {
                         FileUtils.copyFilesToDir(files);
                     } catch (IOException ex) {
-                        ex.printStackTrace();
+                        System.err.println(ex.getMessage());
                     }
                 }
             }
@@ -490,7 +487,20 @@ public class SpeechBaseController {
 
         createLeftUserPane();
 
-        profileWindow = new ProfileWindow(this);
+        channelStateAP.setOnMouseClicked(e -> {
+            if(e.getButton() == MouseButton.PRIMARY) {
+                List<User> allUserInSelectedChat = channelService.getAllUserInChannel(selectedChannelUser.getChannel().getChannelID());
+                if(selectedChannelUser.getChannel().getChannelType().getChannelTypeId() == 3) {
+                    if (otherProfileWindow == null)
+                        otherProfileWindow = new OtherProfileWindow(this);
+
+                    otherProfileWindow.showOtherProfileWindow(
+                            allUserInSelectedChat.stream().filter(u -> !u.equals(currentUser)).toList().getFirst());
+                } else {
+
+                }
+            }
+        });
     }
 
     public void initializeListViewChats() {
@@ -755,7 +765,10 @@ public class SpeechBaseController {
             String oldText = updateMessage.getMessageString();
             List<File> oldMessageContentList = updateMessage.getMessageContent().stream()
                     .map(mC -> FileUtils.getFileFromDefaultDir(mC.getMessageContentFileName()))
-                    .sorted((f1, f2) -> f1.getName().compareTo(f2.getName()))
+                    .sorted((f1, f2) -> {
+                        assert f1 != null;
+                        return f1.getName().compareTo(f2.getName());
+                    })
                     .toList();
 
             List<File> newMessageContentList = selectedFile.stream()
@@ -1937,7 +1950,7 @@ public class SpeechBaseController {
                     , "Обои по умолчанию");
             setDefaultBackgroundListViewBtn.setPrefWidth(vBoxWidth);
             setDefaultBackgroundListViewBtn.setPrefHeight(40);
-            if(selectedChannelUser.getBackgroundImageBytes() == null || selectedChannelUser.getBackgroundImageBytes().length < 1) {
+            if (selectedChannelUser.getBackgroundImageBytes() == null || selectedChannelUser.getBackgroundImageBytes().length < 1) {
                 setDefaultBackgroundListViewBtn.setVisible(false);
                 setDefaultBackgroundListViewBtn.setManaged(false);
             }
@@ -2023,18 +2036,42 @@ public class SpeechBaseController {
             });
             controlsWindowRootVB.getChildren().add(disableSharingBtn);
 
-            if (selectedChannelUser.getChannel().isDisable_sharing()) {
-                addSharingBtn.setVisible(true);
-                addSharingBtn.setManaged(true);
+            if(selectedChannelUser.getChannel().getChannelType().getChannelTypeId() == 3) {
+                if (selectedChannelUser.getChannel().isDisable_sharing()) {
+                    addSharingBtn.setVisible(true);
+                    addSharingBtn.setManaged(true);
 
-                disableSharingBtn.setVisible(false);
-                disableSharingBtn.setManaged(false);
+                    disableSharingBtn.setVisible(false);
+                    disableSharingBtn.setManaged(false);
+                } else {
+                    addSharingBtn.setVisible(false);
+                    addSharingBtn.setManaged(false);
+
+                    disableSharingBtn.setVisible(true);
+                    disableSharingBtn.setManaged(true);
+                }
             } else {
-                addSharingBtn.setVisible(false);
-                addSharingBtn.setManaged(false);
+                if(selectedChannelUser.getChannel().getOwnerUser() != null
+                        && selectedChannelUser.getChannel().getOwnerUser().equals(currentUser)) {
+                    if (selectedChannelUser.getChannel().isDisable_sharing()) {
+                        addSharingBtn.setVisible(true);
+                        addSharingBtn.setManaged(true);
 
-                disableSharingBtn.setVisible(true);
-                disableSharingBtn.setManaged(true);
+                        disableSharingBtn.setVisible(false);
+                        disableSharingBtn.setManaged(false);
+                    } else {
+                        addSharingBtn.setVisible(false);
+                        addSharingBtn.setManaged(false);
+
+                        disableSharingBtn.setVisible(true);
+                        disableSharingBtn.setManaged(true);
+                    }
+                } else {
+                    addSharingBtn.setVisible(false);
+                    addSharingBtn.setManaged(false);
+                    disableSharingBtn.setVisible(false);
+                    disableSharingBtn.setManaged(false);
+                }
             }
 
 
@@ -2074,7 +2111,7 @@ public class SpeechBaseController {
                 controlsWindowRootVB.setVisible(false);
                 controlsWindowRootVB.setManaged(false);
             } else {
-                if(selectedChannelUser.getBackgroundImageBytes() == null || selectedChannelUser.getBackgroundImageBytes().length < 1) {
+                if (selectedChannelUser.getBackgroundImageBytes() == null || selectedChannelUser.getBackgroundImageBytes().length < 1) {
                     setDefaultBackgroundListViewBtn.setVisible(false);
                     setDefaultBackgroundListViewBtn.setManaged(false);
                 } else {
@@ -2165,17 +2202,36 @@ public class SpeechBaseController {
         StackPane.setAlignment(leftUserBP, Pos.TOP_LEFT);
         leftSP.getChildren().add(leftUserBP);
 
+        VBox topVB = new VBox();
+        topVB.setVisible(false);
+        topVB.setManaged(false);
+        leftUserBP.setTop(topVB);
+
         CustomButton profileButton = new CustomButton(
                 new Image(Objects.requireNonNull(getClass().getResourceAsStream("/com/example/speech/image/user.png"))),
                 "Профиль");
-        leftUserBP.setTop(profileButton);
         profileButton.setPrefHeight(40);
-        profileButton.setVisible(false);
-        profileButton.setManaged(false);
         profileButton.prefWidthProperty().bind(leftUserBP.widthProperty());
         profileButton.setOnAction(e -> {
+            if (profileWindow == null)
+                profileWindow = new ProfileWindow(this);
+
             profileWindow.showProfileWidow();
         });
+        topVB.getChildren().add(profileButton);
+
+        CustomButton createChannelButton = new CustomButton(
+                new Image(Objects.requireNonNull(getClass().getResourceAsStream("/com/example/speech/image/create-group.png"))),
+                "Создать группу");
+        createChannelButton.setPrefHeight(40);
+        createChannelButton.prefWidthProperty().bind(leftUserBP.widthProperty());
+        createChannelButton.setOnAction(e -> {
+            if (channelWindow == null)
+                channelWindow = new ChannelWindow(this);
+
+            channelWindow.showCreateChannelWidow();
+        });
+        topVB.getChildren().add(createChannelButton);
 
         CustomButton logOutButton = new CustomButton(
                 new Image(Objects.requireNonNull(getClass().getResourceAsStream("/com/example/speech/image/logout.png"))),
@@ -2208,15 +2264,15 @@ public class SpeechBaseController {
 
         leftUserBP.setOnMouseEntered(e -> {
             leftUserBP.setMaxWidth(200);
-            profileButton.setVisible(true);
-            profileButton.setManaged(true);
+            topVB.setVisible(true);
+            topVB.setManaged(true);
             logOutButton.setVisible(true);
             logOutButton.setManaged(true);
         });
 
         leftUserBP.setOnMouseExited(e -> {
-            profileButton.setVisible(false);
-            profileButton.setManaged(false);
+            topVB.setVisible(false);
+            topVB.setManaged(false);
             logOutButton.setVisible(false);
             logOutButton.setManaged(false);
             leftUserBP.setMaxWidth(10);
