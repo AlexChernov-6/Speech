@@ -12,10 +12,14 @@ import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import javafx.scene.shape.Circle;
 
+import static com.example.speech.util.ImageUtils.setCircularImage;
+
 public class ChannelCell extends ListCell<Channel> {
     private final HBox rootHB;
     private ImageView logoCell;
     private Label modelNameLB, modelStateLB;
+
+    private double logoSize = 45.0;
 
     public ChannelCell() {
         getStyleClass().setAll("chats-user-list-view");
@@ -25,10 +29,9 @@ public class ChannelCell extends ListCell<Channel> {
         rootHB.setAlignment(Pos.CENTER_LEFT);
 
         logoCell = new ImageView();
-        logoCell.setFitWidth(45);
-        logoCell.setFitHeight(45);
+        logoCell.setFitWidth(logoSize);
+        logoCell.setFitHeight(logoSize);
         logoCell.setPreserveRatio(true);
-        ImageUtils.round(logoCell, (double) 45 / 2);
         rootHB.getChildren().add(logoCell);
 
         Circle clip = new Circle();
@@ -64,7 +67,7 @@ public class ChannelCell extends ListCell<Channel> {
     }
 
     private void setDataInCell(Channel channel) {
-        logoCell.setImage(channel.getPhotoImage());
+        setCircularImage(logoCell, channel.getPhotoImage(), logoSize);
         modelNameLB.setText(channel.getChannel_name_unique());
         modelStateLB.setText(channel.getChannelType().getChannelTypeName());
     }

@@ -38,6 +38,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static com.example.speech.control.WorkingWithAMessageListController.replyI;
+import static com.example.speech.util.ImageUtils.setCircularImage;
 
 
 public class TextMessageCellController {
@@ -133,7 +134,7 @@ public class TextMessageCellController {
             userPhotoIV.setVisible(false);
             contentVB.setStyle("-fx-background-radius: 15px 15px 15px 15px; -fx-border-radius: 15px 15px 15px 15px;");
         } else {
-            userPhotoIV.setImage(message.getChannelUser().getUser().getPhotoImage());
+            setCircularImage(userPhotoIV, message.getChannelUser().getUser().getPhotoImage(), 45);
             userPhotoIV.setVisible(true);
             contentVB.setStyle("");
         }
@@ -219,7 +220,7 @@ public class TextMessageCellController {
             User user = userService.getRowById(message.getForwardedFrom());
             forwardHB.setVisible(true);
             forwardHB.setManaged(true);
-            userLogo.setImage(user.getPhotoImage());
+            setCircularImage(userLogo, user.getPhotoImage(), 45);
             userInfoBtn.setText(user.getNameUser());
         }
 

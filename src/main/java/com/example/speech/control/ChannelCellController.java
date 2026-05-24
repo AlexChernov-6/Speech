@@ -14,6 +14,8 @@ import javafx.scene.layout.HBox;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 
+import static com.example.speech.util.ImageUtils.setCircularImage;
+
 public class ChannelCellController {
     @FXML
     private HBox rootContainer;
@@ -33,7 +35,7 @@ public class ChannelCellController {
         this.channelUser = channelUser;
 
         if (channelUser.getChannel().getChannelLogo() != null && channelUser.getChannel().getChannelLogo().length > 0)
-            channelPhotoIV.setImage(channelUser.getChannel().getPhotoImage());
+            setCircularImage(channelPhotoIV, channelUser.getChannel().getPhotoImage(), 45);
         channelNameLb.setText(channelUser.getChannel().getChannelName());
         List<Message> listMessage = new MessageService().getAllMessageInChannel(channelUser.getChannel().getChannelID());
         if(listMessage == null || listMessage.isEmpty()) {

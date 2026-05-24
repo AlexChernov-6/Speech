@@ -31,12 +31,14 @@ public class OtherProfileWindow extends VBox {
 
     private Button logoBtn;
 
+    private double width = 450.0;
+
     public OtherProfileWindow(SpeechBaseController speechBaseController) {
         this.parentStackPane = speechBaseController.getMessagesSP();
 
         setOpacity(0.0);
         setManaged(false);
-        setMaxWidth(300);
+        setMaxWidth(width);
         setMaxHeight(500);
         getStyleClass().add("profile-vbox");
 
@@ -111,7 +113,7 @@ public class OtherProfileWindow extends VBox {
 
     private void createButtonLogo() {
         StackPane logoSP = new StackPane();
-        logoSP.setMaxWidth(300);
+        logoSP.setMaxWidth(width);
         logoSP.setMaxHeight(200);
         logoSP.setManaged(false);
         logoSP.setVisible(false);
@@ -120,7 +122,7 @@ public class OtherProfileWindow extends VBox {
         logoBtn = new Button();
         logoBtn.getStyleClass().add("button-logo");
         logoBtn.setPrefHeight(200);
-        logoBtn.setPrefWidth(300);
+        logoBtn.setPrefWidth(width);
         logoBtn.setDisable(true);
         logoBtn.setAlignment(Pos.CENTER);
         logoBtn.setOnAction(e -> {
@@ -128,8 +130,10 @@ public class OtherProfileWindow extends VBox {
         });
 
         logoChannel = new ImageView();
-        logoChannel.setFitWidth(300);
+        logoChannel.setFitWidth(width);
         logoChannel.setFitHeight(200);
+        logoChannel.setSmooth(true);
+        logoChannel.setPreserveRatio(true);
 
         logoBtn.setGraphic(logoChannel);
 

@@ -215,9 +215,11 @@ public class SpeechBaseController {
 
     private ProfileWindow profileWindow;
 
-    private ChannelWindow channelWindow;
+    private CreateChannelWindow createChannelWindow;
 
     private OtherProfileWindow otherProfileWindow;
+
+    private ChannelGroupWindow channelGroupWindow;
 
     private final ChannelService channelService = new ChannelService();
 
@@ -497,7 +499,10 @@ public class SpeechBaseController {
                     otherProfileWindow.showOtherProfileWindow(
                             allUserInSelectedChat.stream().filter(u -> !u.equals(currentUser)).toList().getFirst());
                 } else {
+                    if(channelGroupWindow == null)
+                        channelGroupWindow = new ChannelGroupWindow(this);
 
+                    channelGroupWindow.showChannelGroupWidow(allUserInSelectedChat);
                 }
             }
         });
@@ -2226,10 +2231,10 @@ public class SpeechBaseController {
         createChannelButton.setPrefHeight(40);
         createChannelButton.prefWidthProperty().bind(leftUserBP.widthProperty());
         createChannelButton.setOnAction(e -> {
-            if (channelWindow == null)
-                channelWindow = new ChannelWindow(this);
+            if (createChannelWindow == null)
+                createChannelWindow = new CreateChannelWindow(this);
 
-            channelWindow.showCreateChannelWidow();
+            createChannelWindow.showCreateChannelWidow();
         });
         topVB.getChildren().add(createChannelButton);
 

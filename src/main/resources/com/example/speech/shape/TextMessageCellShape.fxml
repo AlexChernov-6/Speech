@@ -13,8 +13,8 @@
 <StackPane maxHeight="600" fx:id="highlightMessageTemporarilySP" xmlns:fx="http://javafx.com/fxml"
            fx:controller="com.example.speech.control.TextMessageCellController">
     <AnchorPane fx:id="rootMessageAP">
-        <ImageView fx:id="userPhotoIV" fitHeight="45" fitWidth="45" preserveRatio="true" AnchorPane.leftAnchor="10"
-                   AnchorPane.bottomAnchor="0" visible="false">
+        <ImageView fx:id="userPhotoIV" fitHeight="45" fitWidth="45" AnchorPane.leftAnchor="10" AnchorPane.bottomAnchor="0"
+                   visible="false">
             <clip>
                 <Circle radius="22.5" centerX="22.5" centerY="22.5"/>
             </clip>

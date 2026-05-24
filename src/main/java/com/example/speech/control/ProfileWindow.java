@@ -53,6 +53,8 @@ public class ProfileWindow extends VBox {
 
     private final UserService userService = new UserService();
 
+    private double width = 450.0;
+
     public ProfileWindow(SpeechBaseController speechBaseController) {
         this.speechBaseController = speechBaseController;
         this.parentStackPane = speechBaseController.getMessagesSP();
@@ -60,7 +62,7 @@ public class ProfileWindow extends VBox {
         setOpacity(0.0);
         setManaged(false);
         setMouseTransparent(true);
-        setMaxWidth(300);
+        setMaxWidth(width);
         setMaxHeight(500);
         getStyleClass().add("profile-vbox");
 
@@ -175,7 +177,7 @@ public class ProfileWindow extends VBox {
 
     private void createButtonLogo() {
         StackPane logoSP = new StackPane();
-        logoSP.setMaxWidth(300);
+        logoSP.setMaxWidth(width);
         logoSP.setMaxHeight(200);
         logoSP.setManaged(false);
         logoSP.setVisible(false);
@@ -184,7 +186,7 @@ public class ProfileWindow extends VBox {
         Button logoBtn = new Button();
         logoBtn.getStyleClass().add("button-logo");
         logoBtn.setPrefHeight(200);
-        logoBtn.setPrefWidth(300);
+        logoBtn.setPrefWidth(width);
         logoBtn.setAlignment(Pos.CENTER);
         logoBtn.setOnAction(e -> {
             if(speechBaseController.getCurrentUser().getPhotoUser() != null && currentUser.getPhotoUser().length > 1)
@@ -192,8 +194,10 @@ public class ProfileWindow extends VBox {
         });
 
         logoUser = new ImageView(currentUser.getPhotoImage());
-        logoUser.setFitWidth(300);
+        logoUser.setFitWidth(width);
         logoUser.setFitHeight(200);
+        logoUser.setPreserveRatio(true);
+        logoUser.setSmooth(true);
 
         logoBtn.setGraphic(logoUser);
 

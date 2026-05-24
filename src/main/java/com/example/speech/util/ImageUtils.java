@@ -6,6 +6,7 @@ import javafx.event.EventHandler;
 import javafx.geometry.Insets;
 import javafx.geometry.Point2D;
 import javafx.geometry.Pos;
+import javafx.geometry.Rectangle2D;
 import javafx.scene.Group;
 import javafx.scene.Node;
 import javafx.scene.control.Button;
@@ -14,6 +15,7 @@ import javafx.scene.image.ImageView;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.StackPane;
+import javafx.scene.shape.Circle;
 import javafx.scene.shape.Rectangle;
 
 import java.util.List;
@@ -218,5 +220,26 @@ public class ImageUtils {
             node = node.getParent();
         }
         return false;
+    }
+
+    public static void setCircularImage(ImageView imageView, Image original, double size) {
+        if (original == null) {
+            imageView.setImage(null);
+            return;
+        }
+        double imgW = original.getWidth();
+        double imgH = original.getHeight();
+        double cropSize = Math.min(imgW, imgH);
+        double x = (imgW - cropSize) / 2;
+        double y = (imgH - cropSize) / 2;
+
+        imageView.setImage(original);
+        imageView.setViewport(new Rectangle2D(x, y, cropSize, cropSize));
+        imageView.setFitWidth(size);
+        imageView.setFitHeight(size);
+        imageView.setPreserveRatio(false); // важно!
+        // Круглый клип
+        Circle clip = new Circle(size / 2, size / 2, size / 2);
+        imageView.setClip(clip);
     }
 }

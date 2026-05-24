@@ -33,7 +33,7 @@ import java.util.List;
 
 import static com.example.speech.util.HelpfulValidationClass.validateChannelNameShort;
 
-public class ChannelWindow extends VBox {
+public class CreateChannelWindow extends VBox {
     private final Pane shadowPane;
     private final StackPane parentStackPane;
 
@@ -52,12 +52,14 @@ public class ChannelWindow extends VBox {
 
     private final Channel newChannel = new Channel();
 
-    public ChannelWindow(SpeechBaseController speechBaseController) {
+    private double width = 450.0;
+
+    public CreateChannelWindow(SpeechBaseController speechBaseController) {
         this.parentStackPane = speechBaseController.getMessagesSP();
         this.currentUser = speechBaseController.getCurrentUser();
         setOpacity(0.0);
         setManaged(false);
-        setMaxWidth(300);
+        setMaxWidth(width);
         setMaxHeight(400);
         getStyleClass().add("profile-vbox");
 
@@ -147,7 +149,7 @@ public class ChannelWindow extends VBox {
 
     private void createButtonLogo() {
         StackPane logoSP = new StackPane();
-        logoSP.setMaxWidth(300);
+        logoSP.setMaxWidth(width);
         logoSP.setMaxHeight(200);
         logoSP.setManaged(false);
         logoSP.setVisible(false);
@@ -156,7 +158,7 @@ public class ChannelWindow extends VBox {
         Button logoBtn = new Button();
         logoBtn.getStyleClass().add("button-logo");
         logoBtn.setPrefHeight(200);
-        logoBtn.setPrefWidth(300);
+        logoBtn.setPrefWidth(width);
         logoBtn.setAlignment(Pos.CENTER);
         logoBtn.setOnAction(e -> {
             if (newChannel.getChannelLogo() != null && newChannel.getChannelLogo().length > 1)
@@ -164,8 +166,10 @@ public class ChannelWindow extends VBox {
         });
 
         logoChannel = new ImageView(newChannel.getPhotoImage());
-        logoChannel.setFitWidth(300);
+        logoChannel.setFitWidth(width);
         logoChannel.setFitHeight(200);
+        logoChannel.setPreserveRatio(true);
+        logoChannel.setSmooth(true);
 
         logoBtn.setGraphic(logoChannel);
 
