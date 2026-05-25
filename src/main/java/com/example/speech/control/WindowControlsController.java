@@ -40,8 +40,9 @@ public class WindowControlsController {
     @FXML
     private void onCloseBtn() {
         Thread updateStatusThread = new Thread(() -> {
-            currentUser.setStatusUser("в сети");
             ChannelUserService channelUserService = new ChannelUserService();
+
+            currentUser.setStatusUser("не в сети");
             new UserService().update(currentUser);
 
             List<Channel> channels = channelUserService.getAllChatsByUser(currentUser).stream()
@@ -51,7 +52,7 @@ public class WindowControlsController {
             for (Channel channel : channels) {
                 ChannelUser channelUser = channelUserService
                         .getInterlocutorUserChannelInChannel(channel.getChannelID(), currentUser.getIdUser());
-                channelUser.setVisibleNameChat(currentUser.getVisibleNameUser());
+                channelUser.setStatusOfTheInterlocutor(currentUser.getStatusUser());
                 channelUserService.update(channelUser);
             }
         });

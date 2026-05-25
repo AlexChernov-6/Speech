@@ -41,7 +41,7 @@ public class ChannelCellController {
         if(listMessage == null || listMessage.isEmpty()) {
             String stateLBText;
             if(channelUser.getChannel().getChannelType().getChannelTypeId() == 3) {
-                stateLBText = channelUserService.getInterlocutorStatus(channelUser.getChannel(), channelUser.getUser());
+                stateLBText = channelUser.getStatusOfTheInterlocutor();
                 if(stateLBText.equals("в сети"))
                     stateLb.setStyle("-fx-text-fill: #00C49A;");
                 else stateLb.setStyle("");
@@ -50,6 +50,7 @@ public class ChannelCellController {
 
             timeLastMessageLB.setVisible(false);
         } else {
+            stateLb.setStyle("");
             Message lastMessage = listMessage.getLast();
             String resultStr;
             if(lastMessage.getChannelUser().getUser().equals(speechBaseController.getCurrentUser())) {

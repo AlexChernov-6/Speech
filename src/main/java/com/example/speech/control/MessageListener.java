@@ -3,6 +3,7 @@ package com.example.speech.control;
 import com.example.speech.model.ChannelUser;
 import com.example.speech.service.ChannelUserService;
 import javafx.application.Platform;
+import javafx.collections.ObservableList;
 import org.postgresql.PGConnection;
 import org.postgresql.PGNotification;
 
@@ -184,8 +185,11 @@ public class MessageListener implements Runnable {
                                     });
                                 } else {
                                     Platform.runLater(() -> {
-                                        speechBaseController.chatsView.refresh();
-                                        System.out.println("Обновляем список каналов");
+                                        ObservableList<ChannelUser> userChats = speechBaseController.userChats;
+                                        userChats.set(userChats.indexOf(userChats.stream()
+                                                .filter(uC -> uC.getChannelUserId() == channelUserId)
+                                                        .findFirst().orElse(newCu)), newCu);
+                                        speechBaseController.updateNameAndStatusChannel(newCu);
                                     });
                                 }
                             }

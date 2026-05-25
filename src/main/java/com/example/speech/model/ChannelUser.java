@@ -25,6 +25,8 @@ public class ChannelUser {
     private String visibleNameChat;
     @Column(name = "visible_logo_chat")
     private byte[] visibleLogoChat;
+    @Column(name = "status_of_the_interlocutor")
+    private String statusOfTheInterlocutor;
 
     @Transient
     private Image imageBackground;
@@ -34,14 +36,14 @@ public class ChannelUser {
 
     public ChannelUser() { }
 
-    public ChannelUser(long channelUserId, User user, Channel channel, byte[] backgroundImage, String visibleNameChat, byte[] visibleLogoChat, Image imageBackground) {
-        this.channelUserId = channelUserId;
-        this.user = user;
-        this.channel = channel;
-        this.backgroundImage = backgroundImage;
-        this.visibleNameChat = visibleNameChat;
+    public ChannelUser(String statusOfTheInterlocutor, byte[] visibleLogoChat, String visibleNameChat, byte[] backgroundImage, Channel channel, User user, long channelUserId) {
+        this.statusOfTheInterlocutor = statusOfTheInterlocutor;
         this.visibleLogoChat = visibleLogoChat;
-        this.imageBackground = imageBackground;
+        this.visibleNameChat = visibleNameChat;
+        this.backgroundImage = backgroundImage;
+        this.channel = channel;
+        this.user = user;
+        this.channelUserId = channelUserId;
     }
 
     public long getChannelUserId() {
@@ -115,6 +117,14 @@ public class ChannelUser {
             }
         }
         return photoImage != null ? photoImage : ImageConverter.getDefaultImage();
+    }
+
+    public String getStatusOfTheInterlocutor() {
+        return statusOfTheInterlocutor;
+    }
+
+    public void setStatusOfTheInterlocutor(String statusOfTheInterlocutor) {
+        this.statusOfTheInterlocutor = statusOfTheInterlocutor;
     }
 
     @Override

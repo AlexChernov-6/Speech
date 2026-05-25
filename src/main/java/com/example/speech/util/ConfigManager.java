@@ -38,9 +38,10 @@ public class ConfigManager {
     }
 
     public String getUserEmail() {
-        if(get("user.email", null).isEmpty())
+        String configEmail = get("user.email", null);
+        if(configEmail == null || configEmail.isEmpty())
             return null;
-        return get("user.email", null);
+        return configEmail;
     }
 
     public void setUserEmail(String userEmail) {
@@ -48,9 +49,10 @@ public class ConfigManager {
     }
 
     public String getUserPassword() {
-        if(get("user.password", null).isEmpty())
+        String configPassword = get("user.password", null);
+        if(configPassword == null || configPassword.isEmpty())
             return null;
-        return get("user.password", null);
+        return configPassword;
     }
 
     public void setUserPassword(String userPassword) {

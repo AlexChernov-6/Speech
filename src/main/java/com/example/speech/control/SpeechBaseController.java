@@ -240,7 +240,7 @@ public class SpeechBaseController {
             for (Channel channel : channels) {
                 ChannelUser channelUser = channelUserService
                         .getInterlocutorUserChannelInChannel(channel.getChannelID(), currentUser.getIdUser());
-                channelUser.setVisibleNameChat(currentUser.getVisibleNameUser());
+                channelUser.setStatusOfTheInterlocutor(currentUser.getStatusUser());
                 channelUserService.update(channelUser);
             }
         });
@@ -548,14 +548,12 @@ public class SpeechBaseController {
         Platform.runLater(() -> {
             messageCellCreator.clearCache();
             selectedChatVB.setVisible(true);
-            channelName.textProperty().bind(Bindings.selectString(selectedChat, "visibleNameChat"));
+            channelName.setText(selectedChat.getVisibleNameChat());
             messageTA.setText("");
             if(selectedChat.getChannel().getChannelType().getChannelTypeId() == 3)
-                channelStatus.textProperty().bind(Bindings.selectString(selectedChat.getUser(), "statusUser"));
-            else {
-                channelStatus.textProperty().unbind();
+                channelStatus.setText(selectedChat.getStatusOfTheInterlocutor());
+            else
                 channelStatus.setText(String.format("Число участников: %d", selectedChat.getChannel().getChannelCountUser()));
-            }
             messageTA.requestFocus();
 
             hideTheListOfPinnedMessages();
@@ -2306,7 +2304,7 @@ public class SpeechBaseController {
         logOutButton.prefWidthProperty().bind(leftUserBP.widthProperty());
         logOutButton.setOnAction(e -> {
             Thread updateStatusThread = new Thread(() -> {
-                currentUser.setStatusUser("в сети");
+                currentUser.setStatusUser("не в сети");
                 new UserService().update(currentUser);
 
                 List<Channel> channels = channelUserService.getAllChatsByUser(currentUser).stream()
@@ -2316,7 +2314,7 @@ public class SpeechBaseController {
                 for (Channel channel : channels) {
                     ChannelUser channelUser = channelUserService
                             .getInterlocutorUserChannelInChannel(channel.getChannelID(), currentUser.getIdUser());
-                    channelUser.setVisibleNameChat(currentUser.getVisibleNameUser());
+                    channelUser.setStatusOfTheInterlocutor(currentUser.getStatusUser());
                     channelUserService.update(channelUser);
                 }
             });
@@ -2357,5 +2355,17 @@ public class SpeechBaseController {
             logOutButton.setManaged(false);
             leftUserBP.setMaxWidth(10);
         });
+    }
+
+    public void updateNameAndStatusChannel(ChannelUser channelUser) {
+        if(selectedChannelUser != null && selectedChannelUser.equals(channelUser)) {
+            channelName.setText(channelUser.getVisibleNameChat());
+            if (selectedChannelUser.getChannel().getChannelType().getChannelTypeId() == 3)
+                channelStatus.setText(channelUser.getStatusOfTheInterlocutor());
+            else
+                channelStatus.setText(String.format("Число участников: %d", channelUser.getChannel().getChannelCountUser()));
+
+            System.out.println("Обновляем шапку");
+        }
     }
 }
