@@ -60,7 +60,7 @@ public class UserCell extends ListCell<User> {
         rightHB.setAlignment(Pos.TOP_RIGHT);
         rootHB.getChildren().add(rightHB);
 
-        Label isOwnerLB = new Label("Владелец");
+        isOwnerLB = new Label("Владелец");
         isOwnerLB.setStyle("-fx-padding: 0 5; -fx-background-radius: 15; -fx-text-fill: white; -fx-background-color: blue;");
         isOwnerLB.setVisible(false);
         rightHB.getChildren().add(isOwnerLB);

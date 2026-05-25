@@ -10,6 +10,8 @@ import com.example.speech.util.HelpfulStylingClass;
 import com.example.speech.util.ImageUtils;
 import javafx.animation.FadeTransition;
 import javafx.application.Platform;
+import javafx.beans.property.ObjectProperty;
+import javafx.beans.property.SimpleObjectProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
@@ -17,6 +19,7 @@ import javafx.geometry.Insets;
 import javafx.geometry.Point2D;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
+import javafx.scene.Parent;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
@@ -34,6 +37,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -56,8 +60,6 @@ public class ChannelGroupWindow extends StackPane {
 
     private final ChannelUserService channelUserService = new ChannelUserService();
 
-    private final Channel newChannel = new Channel();
-
     private boolean isOwner = false;
 
     private Channel currentChannel;
@@ -69,10 +71,22 @@ public class ChannelGroupWindow extends StackPane {
 
     private double width = 450.0;
 
+    private final ObjectProperty<Boolean> isUpdatingMode = new SimpleObjectProperty<>();
+
+    private byte[] newChannelLogo;
+    private String newChannelName, newChannelNameUnique;
+
+    private StackPane logoSP;
+
+    private Button choseLogoBtn;
+
+    private VBox startVB;
+
     public ChannelGroupWindow(SpeechBaseController speechBaseController) {
         this.speechBaseController = speechBaseController;
         this.parentStackPane = speechBaseController.getMessagesSP();
         this.currentUser = speechBaseController.getCurrentUser();
+        isUpdatingMode.setValue(false);
 
         setOpacity(0.0);
         setManaged(false);
@@ -89,6 +103,92 @@ public class ChannelGroupWindow extends StackPane {
         parentStackPane.getChildren().add(shadowPane);
 
         createStartVB();
+
+        isUpdatingMode.addListener((ob, oldV, newV) -> {
+            if(newV && isOwner) {
+                logoSP.setOnMouseEntered(e -> {
+                    choseLogoBtn.setVisible(true);
+                    choseLogoBtn.setManaged(true);
+                });
+
+                logoSP.setOnMouseExited(e -> {
+                    choseLogoBtn.setVisible(false);
+                    choseLogoBtn.setManaged(false);
+                });
+
+                userListView.setVisible(false);
+                userListView.setManaged(false);
+
+                if(channelNameTF == null) {
+                    channelNameTF = createTextFields("НАЗВАНИЕ ГРУППЫ", currentChannel.getChannelName(), startVB);
+                    channelNameTF.textProperty().addListener((ob1, oldV1, newV1) -> {
+                        if (newV1.isEmpty() || newV1.equals("НАЗВАНИЕ ГРУППЫ")) {
+                            if (channelNameTF.getUserData() != null && channelNameTF.getUserData() instanceof Label)
+                                ((Label) channelNameTF.getUserData()).setText("Поле не может быть пустым");
+                        } else {
+                            if (channelNameTF.getUserData() != null && channelNameTF.getUserData() instanceof Label)
+                                ((Label) channelNameTF.getUserData()).setText("НАЗВАНИЕ ГРУППЫ");
+                            newChannelName = newV1;
+                        }
+                    });
+                } else {
+                    channelNameTF.getParent().setVisible(true);
+                    channelNameTF.getParent().setManaged(true);
+                    channelNameTF.setText(currentChannel.getChannelName());
+                }
+
+                if(channelNameUniqueTF == null) {
+                    channelNameUniqueTF = createTextFields("ИМЯ ГРУППЫ(уникальное)"
+                            , currentChannel.getChannel_name_unique().replace("@", ""), startVB);
+                    channelNameUniqueTF.textProperty().addListener((ob1, oldV1, newV1) -> {
+                        if (newV1.isEmpty() || newV1.equals("ИМЯ ГРУППЫ(уникальное)")) {
+                            if (channelNameUniqueTF.getUserData() != null && channelNameUniqueTF.getUserData() instanceof Label)
+                                ((Label) channelNameUniqueTF.getUserData()).setText("Поле не может быть пустым");
+                        } else {
+                            if (channelNameUniqueTF.getUserData() != null && channelNameUniqueTF.getUserData() instanceof Label) {
+                                String valid = validateChannelNameShort(newV1);
+                                if (valid == null) {
+                                    ((Label) channelNameUniqueTF.getUserData()).setText("ИМЯ ГРУППЫ(уникальное)");
+                                    newChannelNameUnique = newV1;
+                                } else ((Label) channelNameUniqueTF.getUserData()).setText(valid);
+                            }
+                        }
+                    });
+                } else {
+                    channelNameUniqueTF.getParent().setVisible(true);
+                    channelNameUniqueTF.getParent().setManaged(true);
+                    channelNameUniqueTF.setText(currentChannel.getChannel_name_unique().replace("@", ""));
+                }
+
+                if(bottomHB == null)
+                    createBottomHB(startVB);
+                else if(!Arrays.equals(newChannelLogo, currentChannel.getChannelLogo())) {
+                    bottomHB.setVisible(true);
+                    bottomHB.setManaged(true);
+                }
+            } else {
+                logoSP.setOnMouseEntered(null);
+                logoSP.setOnMouseExited(null);
+
+                userListView.setVisible(true);
+                userListView.setManaged(true);
+
+                if(channelNameTF != null) {
+                    channelNameTF.getParent().setVisible(false);
+                    channelNameTF.getParent().setManaged(false);
+                }
+
+                if(channelNameUniqueTF != null) {
+                    channelNameUniqueTF.getParent().setVisible(false);
+                    channelNameUniqueTF.getParent().setManaged(false);
+                }
+
+                if(bottomHB != null) {
+                    bottomHB.setVisible(false);
+                    bottomHB.setManaged(false);
+                }
+            }
+        });
 
         shadowPane.addEventFilter(MouseEvent.MOUSE_PRESSED, e -> {
             if (!isVisible()) return;
@@ -113,6 +213,19 @@ public class ChannelGroupWindow extends StackPane {
             buttonsHB.setManaged(false);
             buttonsHB.setVisible(false);
         }
+
+        logoChannel.setImage(currentChannel.getPhotoImage());
+
+        if(channelNameTF != null)
+            channelNameTF.setText(currentChannel.getChannelName());
+
+        if(channelNameUniqueTF != null)
+            channelNameUniqueTF.setText(currentChannel.getChannel_name_unique().replace("@", ""));
+
+        newChannelLogo = currentChannel.getChannelLogo();
+        newChannelName = currentChannel.getChannelName();
+        newChannelNameUnique = currentChannel.getChannel_name_unique().replace("@", "");
+
         userListView.setCellFactory(e -> new UserCell(currentChannel.getOwnerUser(), speechBaseController));
         setManaged(true);
         setMouseTransparent(false);
@@ -149,13 +262,13 @@ public class ChannelGroupWindow extends StackPane {
     }
 
     private void createStartVB() {
-        VBox startVB = new VBox();
+        startVB = new VBox();
         startVB.setManaged(false);
         startVB.setVisible(false);
         startVB.toFront();
         startVB.setMaxHeight(550);
 
-        createButtonLogo(startVB, false);
+        createButtonLogo(startVB);
 
         buttonsHB = new HBox(5);
         buttonsHB.setAlignment(Pos.CENTER);
@@ -165,14 +278,23 @@ public class ChannelGroupWindow extends StackPane {
         Button addUserInGroupBtn = new Button("Добавить");
         addUserInGroupBtn.getStyleClass().add("button-chose-logo");
         buttonsHB.getChildren().add(addUserInGroupBtn);
+        addUserInGroupBtn.setOnAction(e -> {
+            isUpdatingMode.setValue(false);
+        });
 
         Button updateGroupBtn = new Button("Изменить");
         updateGroupBtn.getStyleClass().add("button-chose-logo");
         buttonsHB.getChildren().add(updateGroupBtn);
+        updateGroupBtn.setOnAction(e -> {
+            isUpdatingMode.setValue(true);
+        });
 
         Button deleteGroupBtn = new Button("Удалить");
         deleteGroupBtn.getStyleClass().add("button-chose-logo");
         buttonsHB.getChildren().add(deleteGroupBtn);
+        deleteGroupBtn.setOnAction(e -> {
+            new ConfirmationOfMessageDeletion().initializeShapeDeletionGroup(speechBaseController, currentChannel, this);
+        });
 
         userListView = new ListView<>();
         VBox.setMargin(userListView, new Insets(10, 10, 10, 10));
@@ -185,8 +307,8 @@ public class ChannelGroupWindow extends StackPane {
         getChildren().add(startVB);
     }
 
-    private void createButtonLogo(Pane parent, boolean isUpdatingMode) {
-        StackPane logoSP = new StackPane();
+    private void createButtonLogo(Pane parent) {
+        logoSP = new StackPane();
         logoSP.setMaxWidth(width);
         logoSP.setMaxHeight(200);
         logoSP.setStyle("-fx-background-radius: 12 12 0 0;");
@@ -197,11 +319,11 @@ public class ChannelGroupWindow extends StackPane {
         logoBtn.setPrefWidth(width);
         logoBtn.setAlignment(Pos.CENTER);
         logoBtn.setOnAction(e -> {
-            if (newChannel.getChannelLogo() != null && newChannel.getChannelLogo().length > 1)
-                ImageUtils.viewingImages(parentStackPane, List.of(newChannel.getPhotoImage()));
+            if (currentChannel.getChannelLogo() != null && currentChannel.getChannelLogo().length > 1)
+                ImageUtils.viewingImages(parentStackPane, List.of(currentChannel.getPhotoImage()));
         });
 
-        logoChannel = new ImageView(newChannel.getPhotoImage());
+        logoChannel = new ImageView();
         logoChannel.setFitWidth(width);
         logoChannel.setFitHeight(200);
         logoChannel.setPreserveRatio(true);
@@ -211,7 +333,7 @@ public class ChannelGroupWindow extends StackPane {
 
         logoSP.getChildren().add(logoBtn);
 
-        Button choseLogoBtn = new Button("Выбрать фото");
+        choseLogoBtn = new Button("Выбрать фото");
         choseLogoBtn.getStyleClass().add("button-chose-logo");
         StackPane.setAlignment(choseLogoBtn, Pos.BOTTOM_RIGHT);
         StackPane.setMargin(choseLogoBtn, new Insets(0, 10, 10, 0));
@@ -228,7 +350,7 @@ public class ChannelGroupWindow extends StackPane {
             if (chosenFile == null) return;
 
             try {
-                newChannel.setChannelLogo(Files.readAllBytes(chosenFile.toPath()));
+                newChannelLogo = Files.readAllBytes(chosenFile.toPath());
             } catch (IOException ex) {
                 throw new RuntimeException(ex);
             }
@@ -242,26 +364,12 @@ public class ChannelGroupWindow extends StackPane {
             bottomHB.setManaged(true);
         });
 
-        if(isUpdatingMode) {
-            logoSP.setOnMouseEntered(e -> {
-                choseLogoBtn.setVisible(true);
-                choseLogoBtn.setManaged(true);
-            });
-
-            logoSP.setOnMouseExited(e -> {
-                choseLogoBtn.setVisible(false);
-                choseLogoBtn.setManaged(false);
-            });
-        }
-
         parent.getChildren().add(logoSP);
     }
 
-    private TextField createTextFields(String promptText) {
+    private TextField createTextFields(String promptText, String content, Pane parent) {
         VBox textFieldVB = new VBox();
         textFieldVB.setAlignment(Pos.TOP_LEFT);
-        textFieldVB.setVisible(false);
-        textFieldVB.setManaged(false);
         VBox.setMargin(textFieldVB, new Insets(7, 10, 7, 10));
 
         Label hintLB = new Label(promptText);
@@ -279,7 +387,7 @@ public class ChannelGroupWindow extends StackPane {
             }
         });
 
-        TextField textField = new TextField();
+        TextField textField = new TextField(content);
         textField.setUserData(hintLB);
         textField.setPromptText(promptText);
         textField.getStyleClass().add("text-field");
@@ -293,11 +401,11 @@ public class ChannelGroupWindow extends StackPane {
             }
         });
 
-        getChildren().add(textFieldVB);
+        parent.getChildren().add(textFieldVB);
         return textField;
     }
 
-    private void createBottomHB() {
+    private void createBottomHB(Pane parent) {
         bottomHB = new HBox(10);
         bottomHB.setAlignment(Pos.BOTTOM_CENTER);
         VBox.setVgrow(bottomHB, Priority.ALWAYS);
@@ -318,29 +426,47 @@ public class ChannelGroupWindow extends StackPane {
                 }
             }
 
-            if (channelService.getChatWithName(newChannel.getChannel_name_unique()) != null) {
+            if (channelService.getChatWithName(newChannelNameUnique) != null
+                    && !currentChannel.getChannel_name_unique().replace("@", "").equals(newChannelNameUnique)) {
                 ((Label) channelNameUniqueTF.getUserData()).setText("Группа с таким именем уже существует");
                 isValid = false;
             }
 
             if (isValid) {
-                newChannel.setChannelType(new ChannelTypeService().getRowById(2L));
-                newChannel.setOwnerUser(currentUser);
-                boolean save = channelService.save(newChannel);
+                boolean isNewData = false;
+                if(!Arrays.equals(newChannelLogo, currentChannel.getChannelLogo())) {
+                    currentChannel.setChannelLogo(newChannelLogo);
+                    isNewData = true;
+                }
 
-                if (save) {
-                    ChannelUser newChannelUser = new ChannelUser();
-                    newChannelUser.setChannel(newChannel);
-                    newChannelUser.setUser(currentUser);
-                    channelUserService.save(newChannelUser);
+                if(!currentChannel.getChannelName().equals(newChannelName)) {
+                    currentChannel.setChannelName(newChannelName);
+                    isNewData = true;
+                }
+
+                if(!currentChannel.getChannel_name_unique().replace("@", "").equals(newChannelNameUnique)) {
+                    currentChannel.setChannel_name_unique(newChannelNameUnique);
+                    isNewData = true;
+                }
+
+                if(isNewData) {
+                    Thread updateChannelThread = new Thread(() -> {
+                        channelService.update(currentChannel);
+                        List<ChannelUser> subscribers = channelUserService.getAllChannelUserByChannelID(currentChannel.getChannelID());
+                        for(ChannelUser subscriber : subscribers) {
+                            subscriber.setVisibleNameChat(currentChannel.getChannelName());
+                            subscriber.setVisibleLogoChat(currentChannel.getChannelLogo());
+                            channelUserService.update(subscriber);
+                        }
+                    });
+                    updateChannelThread.setDaemon(true);
+                    updateChannelThread.start();
                 }
 
                 bottomHB.setVisible(false);
                 bottomHB.setManaged(false);
 
                 resetAll();
-
-                hideChannelGroupWidow();
             }
         });
 
@@ -351,17 +477,17 @@ public class ChannelGroupWindow extends StackPane {
             resetAll();
         });
 
-        getChildren().add(bottomHB);
+        parent.getChildren().add(bottomHB);
     }
 
     private void resetAll() {
-        newChannel.setChannelName(null);
-        newChannel.setChannel_name_unique(null);
-        newChannel.setChannelLogo(null);
+        newChannelLogo = currentChannel.getChannelLogo();
+        newChannelName = currentChannel.getChannelName();
+        newChannelNameUnique = currentChannel.getChannel_name_unique().replace("@", "");
 
-        logoChannel.setImage(newChannel.getPhotoImage());
-        channelNameTF.setText(null);
-        channelNameUniqueTF.setText(null);
+        logoChannel.setImage(currentChannel.getPhotoImage());
+        channelNameTF.setText(currentChannel.getChannelName());
+        channelNameUniqueTF.setText(currentChannel.getChannel_name_unique().replace("@", ""));
 
         bottomHB.setVisible(false);
         bottomHB.setManaged(false);

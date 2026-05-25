@@ -1,6 +1,9 @@
 package com.example.speech.control;
 
+import com.example.speech.model.Channel;
+import com.example.speech.model.ChannelUser;
 import com.example.speech.model.User;
+import com.example.speech.service.ChannelUserService;
 import com.example.speech.service.UserService;
 import com.example.speech.util.HelpfulStylingClass;
 import com.example.speech.util.ImageUtils;
@@ -52,6 +55,8 @@ public class ProfileWindow extends VBox {
     private String newUserBirthday;
 
     private final UserService userService = new UserService();
+
+    private final ChannelUserService channelUserService = new ChannelUserService();
 
     private double width = 450.0;
 
@@ -333,8 +338,25 @@ public class ProfileWindow extends VBox {
                     currentUser.setBirthdayUser(newUserBirthday);
                 }
 
-                if(isNewData)
-                    userService.update(currentUser);
+                if(isNewData) {
+                    Thread updatePersonalCorrespondenceWithTheUserThread = new Thread(() -> {
+                        userService.update(currentUser);
+                        //Получаем список личных переписок, в которых мы участвуем
+                        List<Channel> channels = channelUserService.getAllChatsByUser(currentUser).stream()
+                                .map(cU -> cU.getChannel())
+                                .filter(channel -> channel.getChannelType().getChannelTypeId() == 3)
+                                .toList();
+                        for (Channel channel : channels) {
+                            ChannelUser channelUser = channelUserService
+                                    .getInterlocutorUserChannelInChannel(channel.getChannelID(), currentUser.getIdUser());
+                            channelUser.setVisibleLogoChat(currentUser.getPhotoUser());
+                            channelUser.setVisibleNameChat(currentUser.getVisibleNameUser());
+                            channelUserService.update(channelUser);
+                        }
+                    });
+                    updatePersonalCorrespondenceWithTheUserThread.setDaemon(true);
+                    updatePersonalCorrespondenceWithTheUserThread.start();
+                }
                 bottomHB.setVisible(false);
                 bottomHB.setManaged(false);
             }

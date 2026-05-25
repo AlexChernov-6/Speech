@@ -40,7 +40,8 @@ public class MessageListener implements Runnable {
     private final BlockingQueue<Runnable> commandQueue = new LinkedBlockingQueue<>();
 
     public MessageListener(String jdbcUrl, String dbUser, String userPassword,
-                           Consumer<Long> onNewMessage, List<ChannelUser> initialChannels, SpeechBaseController speechBaseController) {
+                           Consumer<Long> onNewMessage, List<ChannelUser> initialChannels,
+                           SpeechBaseController speechBaseController) {
         this.jdbcUrl = jdbcUrl;
         this.dbUser = dbUser;
         this.userPassword = userPassword;
@@ -155,18 +156,39 @@ public class MessageListener implements Runnable {
                         } catch (NumberFormatException e) {
                             System.err.println("Неверный формат messageId: " + payload);
                         }
-                    }
-                    else if (channelName.startsWith("new_channel_for_user_")) {
+                    } else if (channelName.startsWith("new_channel_for_user_")) {
                         try {
                             long channelUserId = Long.parseLong(payload);
-                            ChannelUser newCu = new ChannelUserService().getRowById(channelUserId);
+                            boolean isDelete = (channelUserId < 0);
+                            long absId = Math.abs(channelUserId);
 
-                            addChannelAsync(newCu);
-
-                            Platform.runLater(() -> {
-                                if(!speechBaseController.userChats.contains(newCu))
-                                    speechBaseController.userChats.add(newCu);
-                            });
+                            if (isDelete) {
+                                // Удаление: ищем ChannelUser в локальном списке и убираем
+                                ChannelUser toRemove = speechBaseController.userChats.stream()
+                                        .filter(cu -> cu.getChannelUserId() == absId)
+                                        .findFirst()
+                                        .orElse(null);
+                                if (toRemove != null) {
+                                    removeChannel(toRemove);
+                                    Platform.runLater(() -> {
+                                        speechBaseController.userChats.remove(toRemove);
+                                    });
+                                }
+                            } else {
+                                // Добавление: загружаем свежий ChannelUser
+                                ChannelUser newCu = new ChannelUserService().getRowById(channelUserId);
+                                if (newCu != null && !speechBaseController.userChats.contains(newCu)) {
+                                    addChannelAsync(newCu);
+                                    Platform.runLater(() -> {
+                                        speechBaseController.userChats.add(newCu);
+                                    });
+                                } else {
+                                    Platform.runLater(() -> {
+                                        speechBaseController.chatsView.refresh();
+                                        System.out.println("Обновляем список каналов");
+                                    });
+                                }
+                            }
                         } catch (NumberFormatException e) {
                             System.err.println("Неверный формат channelId: " + payload);
                         }

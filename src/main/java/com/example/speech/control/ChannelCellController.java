@@ -35,8 +35,8 @@ public class ChannelCellController {
         this.channelUser = channelUser;
 
         if (channelUser.getChannel().getChannelLogo() != null && channelUser.getChannel().getChannelLogo().length > 0)
-            setCircularImage(channelPhotoIV, channelUser.getChannel().getPhotoImage(), 45);
-        channelNameLb.setText(channelUser.getChannel().getChannelName());
+            setCircularImage(channelPhotoIV, channelUser.getPhotoImage(), 45);
+        channelNameLb.setText(channelUser.getVisibleNameChat());
         List<Message> listMessage = new MessageService().getAllMessageInChannel(channelUser.getChannel().getChannelID());
         if(listMessage == null || listMessage.isEmpty()) {
             String stateLBText;
@@ -115,6 +115,7 @@ public class ChannelCellController {
     private void onDeleteChanelBtn() {
         new ChannelUserService().delete(channelUser);
         speechBaseController.userChats.remove(channelUser);
+        speechBaseController.getMessageListener().removeChannel(channelUser);
     }
 
     public void notVisibleDelBtn() {

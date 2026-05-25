@@ -41,7 +41,7 @@ public class CreateChannelWindow extends VBox {
 
     private HBox bottomHB;
 
-    private TextField channelNameTF, channelNameUniqueTF;
+    private final TextField channelNameTF, channelNameUniqueTF;
     private ImageView logoChannel;
 
     private final List<Label> hintLabels = new ArrayList<>();
@@ -50,9 +50,9 @@ public class CreateChannelWindow extends VBox {
 
     private final ChannelUserService channelUserService = new ChannelUserService();
 
-    private final Channel newChannel = new Channel();
+    private Channel newChannel;
 
-    private double width = 450.0;
+    private final double width = 450.0;
 
     public CreateChannelWindow(SpeechBaseController speechBaseController) {
         this.parentStackPane = speechBaseController.getMessagesSP();
@@ -113,6 +113,8 @@ public class CreateChannelWindow extends VBox {
     }
 
     public void showCreateChannelWidow() {
+        newChannel = new Channel();
+        logoChannel.setImage(newChannel.getPhotoImage());
         setManaged(true);
         setMouseTransparent(false);
         shadowPane.setVisible(true);
@@ -165,7 +167,7 @@ public class CreateChannelWindow extends VBox {
                 ImageUtils.viewingImages(parentStackPane, List.of(newChannel.getPhotoImage()));
         });
 
-        logoChannel = new ImageView(newChannel.getPhotoImage());
+        logoChannel = new ImageView();
         logoChannel.setFitWidth(width);
         logoChannel.setFitHeight(200);
         logoChannel.setPreserveRatio(true);
@@ -294,6 +296,8 @@ public class CreateChannelWindow extends VBox {
                     ChannelUser newChannelUser = new ChannelUser();
                     newChannelUser.setChannel(newChannel);
                     newChannelUser.setUser(currentUser);
+                    newChannelUser.setVisibleLogoChat(newChannel.getChannelLogo());
+                    newChannelUser.setVisibleNameChat(newChannel.getChannelName());
                     channelUserService.save(newChannelUser);
                 }
 

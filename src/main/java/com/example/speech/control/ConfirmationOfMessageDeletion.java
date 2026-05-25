@@ -1,7 +1,11 @@
 package com.example.speech.control;
 
+import com.example.speech.model.Channel;
 import com.example.speech.model.Message;
+import com.example.speech.service.ChannelService;
+import com.example.speech.service.ChannelTypeService;
 import com.example.speech.service.MessageService;
+import com.example.speech.util.HibernateSessionFactory;
 import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -14,6 +18,8 @@ import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.control.Label;
 import javafx.scene.text.TextFlow;
+import org.hibernate.Session;
+import org.hibernate.Transaction;
 
 import java.util.List;
 import java.util.Set;
@@ -171,7 +177,7 @@ public class ConfirmationOfMessageDeletion extends Pane {
         this.setStyle("-fx-background-color: rgba(0, 0, 0, 0.6);");
 
         double vBoxWidth = 350;
-        double vBoxHeight = 120;
+        double vBoxHeight = 200;
 
         VBox rootVB = new VBox(15);
         rootVB.setPrefWidth(vBoxWidth);
@@ -213,6 +219,108 @@ public class ConfirmationOfMessageDeletion extends Pane {
             deleteThread.setDaemon(true);
             deleteThread.start();
             speechBaseController.getMessagesSP().getChildren().remove(this);
+        });
+        deleteButton.getStyleClass().add("login-button");
+        bottomHB.getChildren().addAll(cancellationButton, deleteButton);
+
+        rootVB.getChildren().addAll(questionLabel, centralHB, bottomHB);
+        this.getChildren().add(rootVB);
+
+        this.setOnMousePressed(event -> {
+            if(rootVB.getBoundsInParent().contains(event.getX(), event.getY()))
+                event.consume();
+            else
+                speechBaseController.getMessagesSP().getChildren().remove(this);
+        });
+
+        speechBaseController.getMessagesSP().getChildren().add(this);
+    }
+
+    public void initializeShapeDeletionGroup(SpeechBaseController speechBaseController, Channel group, ChannelGroupWindow channelGroupWindow) {
+        this.setStyle("-fx-background-color: rgba(0, 0, 0, 0.6);");
+
+        double vBoxWidth = 350;
+        double vBoxHeight = 200;
+
+        VBox rootVB = new VBox(15);
+        rootVB.setPrefWidth(vBoxWidth);
+        rootVB.setPrefHeight(vBoxHeight);
+        rootVB.setAlignment(Pos.CENTER_LEFT);
+        rootVB.getStyleClass().add("working-with-a-message-root-pane");
+        rootVB.setLayoutX(speechBaseController.getMessagesSP().getScene().getWindow().getWidth() / 2 - vBoxWidth / 2);
+        rootVB.setLayoutY(speechBaseController.getMessagesSP().getScene().getWindow().getHeight() / 2 - vBoxHeight / 2);
+        rootVB.setPadding(new Insets(15));
+
+        Label questionLabel = new Label("Вы уверены, что хотите удалить группу?\nДанное действие невозможно будет отменить.");
+        questionLabel.setStyle("-fx-font-size: 14px");
+        questionLabel.setWrapText(true);
+
+        HBox centralHB = new HBox(10);
+
+        CheckBox checkBox = new CheckBox();
+        checkBox.getStyleClass().add("check-box");
+
+        HBox bottomHB = new HBox(10);
+        bottomHB.setAlignment(Pos.CENTER_RIGHT);
+
+        Button cancellationButton = new Button();
+        cancellationButton.setText("Отмена");
+        cancellationButton.setOnAction(e -> {
+            speechBaseController.getMessagesSP().getChildren().remove(this);
+        });
+        cancellationButton.getStyleClass().add("login-button");
+
+        Button deleteButton = new Button();
+        deleteButton.setText("Удалить");
+        deleteButton.setOnAction(e -> {
+            speechBaseController.getMessagesSP().getChildren().remove(this);
+            channelGroupWindow.hideChannelGroupWidow();
+
+            Thread deleteThread = new Thread(() -> {
+                int channelId = group.getChannelID();
+                // внутри deleteThread
+                try (Session entityManager = HibernateSessionFactory.getSessionFactory().openSession()) {
+                    Transaction transaction = entityManager.beginTransaction();
+
+                    List<Long> channelUserIds = entityManager.createQuery(
+                                    "SELECT cu.channelUserId FROM ChannelUser cu WHERE cu.channel.channelID = :channelId", Long.class)
+                            .setParameter("channelId", channelId)
+                            .getResultList();
+
+                    if (!channelUserIds.isEmpty()) {
+                        entityManager.createQuery(
+                                        "DELETE FROM MessageContent mc WHERE mc.message.messageId IN " +
+                                                "(SELECT m.messageId FROM Message m WHERE m.channelUser.channelUserId IN :userIds)")
+                                .setParameter("userIds", channelUserIds)
+                                .executeUpdate();
+
+                        entityManager.createQuery(
+                                        "DELETE FROM Message m WHERE m.channelUser.channelUserId IN :userIds")
+                                .setParameter("userIds", channelUserIds)
+                                .executeUpdate();
+
+                        entityManager.createQuery(
+                                        "DELETE FROM ChannelUser cu WHERE cu.channel.channelID = :channelId")
+                                .setParameter("channelId", channelId)
+                                .executeUpdate();
+                    }
+
+                    entityManager.createQuery(
+                                    "DELETE FROM UsersInSilentMode usm WHERE usm.channelID = :channelId")
+                            .setParameter("channelId", channelId)
+                            .executeUpdate();
+
+                    // Удаляем сам канал
+                    Channel managedChannel = entityManager.find(Channel.class, channelId);
+                    if (managedChannel != null) {
+                        entityManager.remove(managedChannel);
+                    }
+
+                    transaction.commit();
+                }
+            });
+            deleteThread.setDaemon(true);
+            deleteThread.start();
         });
         deleteButton.getStyleClass().add("login-button");
         bottomHB.getChildren().addAll(cancellationButton, deleteButton);

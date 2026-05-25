@@ -208,6 +208,8 @@ public class SearchChannelWindow extends VBox {
                             ChannelUser newChannelUser = new ChannelUser();
                             newChannelUser.setUser(speechBaseController.getCurrentUser());
                             newChannelUser.setChannel((Channel) selectedObject);
+                            newChannelUser.setVisibleLogoChat(((Channel) selectedObject).getChannelLogo());
+                            newChannelUser.setVisibleNameChat(((Channel) selectedObject).getChannelName());
 
                             speechBaseController.getMessageListener().addChannelAsync(newChannelUser);
 
@@ -254,6 +256,12 @@ public class SearchChannelWindow extends VBox {
                             newChannelUser2.setUser(((User) selectedObject));
                             newChannelUser2.setChannel(channel);
 
+                            newChannelUser1.setVisibleLogoChat(((User) selectedObject).getPhotoUser());
+                            newChannelUser1.setVisibleNameChat(((User) selectedObject).getVisibleNameUser());
+
+                            newChannelUser2.setVisibleLogoChat(speechBaseController.getCurrentUser().getPhotoUser());
+                            newChannelUser2.setVisibleNameChat(speechBaseController.getCurrentUser().getVisibleNameUser());
+
                             boolean save = channelUserService.save(newChannelUser1);
 
                             channelUserService.save(newChannelUser2);
@@ -285,6 +293,8 @@ public class SearchChannelWindow extends VBox {
                                 ChannelUser newChannelUser = new ChannelUser();
                                 newChannelUser.setUser(speechBaseController.getCurrentUser());
                                 newChannelUser.setChannel(oldChannel);
+                                newChannelUser.setVisibleLogoChat(((User) selectedObject).getPhotoUser());
+                                newChannelUser.setVisibleNameChat(((User) selectedObject).getVisibleNameUser());
 
                                 speechBaseController.getMessageListener().addChannelAsync(newChannelUser);
 
@@ -303,6 +313,8 @@ public class SearchChannelWindow extends VBox {
                                 ChannelUser newChannelUser = new ChannelUser();
                                 newChannelUser.setUser(((User) selectedObject));
                                 newChannelUser.setChannel(oldChannel);
+                                newChannelUser.setVisibleLogoChat(speechBaseController.getCurrentUser().getPhotoUser());
+                                newChannelUser.setVisibleNameChat(speechBaseController.getCurrentUser().getVisibleNameUser());
 
                                 channelUserService.save(newChannelUser);
                             }

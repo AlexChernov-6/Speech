@@ -7,6 +7,8 @@ import com.example.speech.util.HelpfulClass;
 import com.example.speech.util.HelpfulStylingClass;
 import javafx.animation.PauseTransition;
 import javafx.application.Platform;
+import javafx.beans.binding.Bindings;
+import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
@@ -527,11 +529,15 @@ public class SpeechBaseController {
         Platform.runLater(() -> {
             messageCellCreator.clearCache();
             selectedChatVB.setVisible(true);
-            channelName.setText(selectedChat.getChannel().getChannelName());
+            channelName.textProperty().bind(Bindings.selectString(selectedChat.getChannel(), "channelName"));
+            //channelName.setText(selectedChat.getChannel().getChannelName());
             messageTA.setText("");
-            channelStatus.setText(selectedChat.getChannel().getChannelType().getChannelTypeId() == 3 ?
-                    selectedChat.getUser().getStatusUser() :
-                    String.format("Число участников: %d", selectedChat.getChannel().getChannelCountUser()));
+            if(selectedChat.getChannel().getChannelType().getChannelTypeId() == 3)
+                channelStatus.textProperty().bind(Bindings.selectString(selectedChat.getUser(), "statusUser"));
+            else {
+                channelStatus.textProperty().unbind();
+                channelStatus.setText(String.format("Число участников: %d", selectedChat.getChannel().getChannelCountUser()));
+            }
             messageTA.requestFocus();
 
             hideTheListOfPinnedMessages();
