@@ -68,31 +68,33 @@ public class OtherProfileWindow extends VBox {
     }
 
     public void showOtherProfileWindow(User user) {
-        if(lastViewingUser == null) {
-            lastViewingUser = user;
-            updateState(user);
-        }
-
-        if(!lastViewingUser.equals(user)) {
-            lastViewingUser = user;
-            updateState(user);
-        }
-        setManaged(true);
-        setMouseTransparent(false);
-        shadowPane.setVisible(true);
-        shadowPane.setManaged(true);
-        for (Node node : getChildren()) {
-            if (node.getUserData() != null && node.getUserData().equals("bottomHB")) {
-                node.setVisible(false);
-                node.setManaged(false);
-            } else {
-                node.setVisible(true);
-                node.setManaged(true);
+        if(user != null) {
+            if (lastViewingUser == null) {
+                lastViewingUser = user;
+                updateState(user);
             }
+
+            if (!lastViewingUser.equals(user)) {
+                lastViewingUser = user;
+                updateState(user);
+            }
+            setManaged(true);
+            setMouseTransparent(false);
+            shadowPane.setVisible(true);
+            shadowPane.setManaged(true);
+            for (Node node : getChildren()) {
+                if (node.getUserData() != null && node.getUserData().equals("bottomHB")) {
+                    node.setVisible(false);
+                    node.setManaged(false);
+                } else {
+                    node.setVisible(true);
+                    node.setManaged(true);
+                }
+            }
+            FadeTransition fadeIn = new FadeTransition(Duration.millis(400), this);
+            fadeIn.setToValue(1.0);
+            fadeIn.play();
         }
-        FadeTransition fadeIn = new FadeTransition(Duration.millis(400), this);
-        fadeIn.setToValue(1.0);
-        fadeIn.play();
     }
 
     public void hideOtherProfileWindow() {
@@ -167,7 +169,7 @@ public class OtherProfileWindow extends VBox {
 
     private void updateState(User user) {
         logoChannel.setImage(user.getPhotoImage());
-        if(user.getPhotoUser() != null && user.getPhotoUser().length > 1)
+        if (user.getPhotoUser() != null && user.getPhotoUser().length > 1)
             logoBtn.setDisable(false);
         emailUserTF.setText(user.getEmailUser());
         visibleNameTF.setText(user.getVisibleNameUser());

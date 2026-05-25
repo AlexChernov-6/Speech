@@ -60,7 +60,7 @@ import static com.example.speech.util.HelpfulStylingClass.setupFullScreenListene
 
 public class SpeechBaseController {
     private Stage stage;
-    private User currentUser;
+    public static User currentUser;
 
     private final Image defaultBackgroundImage = new Image(Objects.requireNonNull(
             getClass().getResourceAsStream("/com/example/speech/image/messages-list-view-background-default.jpg")));
@@ -228,6 +228,25 @@ public class SpeechBaseController {
     public void initializeData(Stage stage, User currentUser) {
         this.stage = stage;
         this.currentUser = currentUser;
+
+        Thread updateStatusThread = new Thread(() -> {
+            currentUser.setStatusUser("в сети");
+            new UserService().update(currentUser);
+
+            List<Channel> channels = channelUserService.getAllChatsByUser(currentUser).stream()
+                    .map(cU -> cU.getChannel())
+                    .filter(channel -> channel.getChannelType().getChannelTypeId() == 3)
+                    .toList();
+            for (Channel channel : channels) {
+                ChannelUser channelUser = channelUserService
+                        .getInterlocutorUserChannelInChannel(channel.getChannelID(), currentUser.getIdUser());
+                channelUser.setVisibleNameChat(currentUser.getVisibleNameUser());
+                channelUserService.update(channelUser);
+            }
+        });
+        updateStatusThread.setDaemon(true);
+        updateStatusThread.start();
+
         applyPromptWithTF(messageTA);
         messages.addListener((ListChangeListener<Message>) change -> {
             while (change.next()) {
@@ -286,15 +305,15 @@ public class SpeechBaseController {
         listenerThread.start();
 
         messagesSP.widthProperty().addListener((ch, oldValue, newValue) -> {
-            double newWidth = newValue.doubleValue() - 300;
+            double newWidth = newValue.doubleValue() - 310;
 
             if (newWidth <= 450) {
                 if (selectedChatVB.isVisible()) {
-                    AnchorPane.setLeftAnchor(rightSP, 5.0);
+                    AnchorPane.setLeftAnchor(rightSP, 0.0);
                     leftVB.setVisible(false);
                 }
             } else {
-                AnchorPane.setLeftAnchor(rightSP, 300.0);
+                AnchorPane.setLeftAnchor(rightSP, 310.0);
                 leftVB.setVisible(true);
             }
 
@@ -529,8 +548,7 @@ public class SpeechBaseController {
         Platform.runLater(() -> {
             messageCellCreator.clearCache();
             selectedChatVB.setVisible(true);
-            channelName.textProperty().bind(Bindings.selectString(selectedChat.getChannel(), "channelName"));
-            //channelName.setText(selectedChat.getChannel().getChannelName());
+            channelName.textProperty().bind(Bindings.selectString(selectedChat, "visibleNameChat"));
             messageTA.setText("");
             if(selectedChat.getChannel().getChannelType().getChannelTypeId() == 3)
                 channelStatus.textProperty().bind(Bindings.selectString(selectedChat.getUser(), "statusUser"));
@@ -574,8 +592,8 @@ public class SpeechBaseController {
             else
                 messagesLV.setBackground(new Background(new BackgroundImage(
                         defaultBackgroundImage,
-                        BackgroundRepeat.NO_REPEAT,
-                        BackgroundRepeat.NO_REPEAT,
+                        BackgroundRepeat.REPEAT,
+                        BackgroundRepeat.REPEAT,
                         BackgroundPosition.CENTER,
                         BackgroundSize.DEFAULT)));
 
@@ -948,8 +966,9 @@ public class SpeechBaseController {
         pinnedMessagesHB.setVisible(true);
         pinnedMessagesHB.setManaged(true);
         if ((lastPinnedMessage.getMessageString() != null && !lastPinnedMessage.getMessageString().isEmpty()) ||
-                (lastPinnedMessage.getMessageContent() != null && !lastPinnedMessage.getMessageContent().isEmpty())) {
-            String contentMessage;
+                (lastPinnedMessage.getMessageContent() != null && !lastPinnedMessage.getMessageContent().isEmpty()) ||
+                (lastPinnedMessage.getChannelInvitations() != null)) {
+            String contentMessage = "Содержимое";
 
             if (lastPinnedMessage.getMessageString() != null && !lastPinnedMessage.getMessageString().isEmpty())
                 contentMessage = lastPinnedMessage.getMessageString();
@@ -961,8 +980,8 @@ public class SpeechBaseController {
                     contentMessage = String.format("%d вложения", countContents);
                 else
                     contentMessage = String.format("%d вложений", countContents);
-            } else
-                contentMessage = "";
+            } else if (lastPinnedMessage.getChannelInvitations() != null)
+                contentMessage = "Приглашение на вступление в " + lastPinnedMessage.getChannelInvitations().getChannel_name_unique();
 
             if (contentMessage.length() > 50) {
                 contentMessage = contentMessage.substring(0, 47) + "...";
@@ -1239,6 +1258,38 @@ public class SpeechBaseController {
 
     public void setMessageListener(MessageListener messageListener) {
         this.messageListener = messageListener;
+    }
+
+    public ProfileWindow getProfileWindow() {
+        return profileWindow;
+    }
+
+    public void setProfileWindow(ProfileWindow profileWindow) {
+        this.profileWindow = profileWindow;
+    }
+
+    public CreateChannelWindow getCreateChannelWindow() {
+        return createChannelWindow;
+    }
+
+    public void setCreateChannelWindow(CreateChannelWindow createChannelWindow) {
+        this.createChannelWindow = createChannelWindow;
+    }
+
+    public OtherProfileWindow getOtherProfileWindow() {
+        return otherProfileWindow;
+    }
+
+    public void setOtherProfileWindow(OtherProfileWindow otherProfileWindow) {
+        this.otherProfileWindow = otherProfileWindow;
+    }
+
+    public ChannelGroupWindow getChannelGroupWindow() {
+        return channelGroupWindow;
+    }
+
+    public void setChannelGroupWindow(ChannelGroupWindow channelGroupWindow) {
+        this.channelGroupWindow = channelGroupWindow;
     }
 
     public void setSelectionModeActive(boolean active) {
@@ -1996,7 +2047,7 @@ public class SpeechBaseController {
                 try {
                     selectedChannelUser.setBackgroundImageBytes(Files.readAllBytes(chosenFile.toPath()));
                     channelUserService.update(selectedChannelUser);
-                    selectedChannelUser.setBackgroundImage(defaultBackgroundImage);
+                    selectedChannelUser.setBackgroundImage(null);
                 } catch (IOException ex) {
                     throw new RuntimeException(ex);
                 }
@@ -2254,6 +2305,24 @@ public class SpeechBaseController {
         logOutButton.addStyleText("clear-all-message");
         logOutButton.prefWidthProperty().bind(leftUserBP.widthProperty());
         logOutButton.setOnAction(e -> {
+            Thread updateStatusThread = new Thread(() -> {
+                currentUser.setStatusUser("в сети");
+                new UserService().update(currentUser);
+
+                List<Channel> channels = channelUserService.getAllChatsByUser(currentUser).stream()
+                        .map(cU -> cU.getChannel())
+                        .filter(channel -> channel.getChannelType().getChannelTypeId() == 3)
+                        .toList();
+                for (Channel channel : channels) {
+                    ChannelUser channelUser = channelUserService
+                            .getInterlocutorUserChannelInChannel(channel.getChannelID(), currentUser.getIdUser());
+                    channelUser.setVisibleNameChat(currentUser.getVisibleNameUser());
+                    channelUserService.update(channelUser);
+                }
+            });
+            updateStatusThread.setDaemon(true);
+            updateStatusThread.start();
+
             CONFIG_MANAGER.setUserEmail("");
             CONFIG_MANAGER.setUserPassword("");
             CONFIG_MANAGER.save();

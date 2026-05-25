@@ -225,32 +225,32 @@ public class WorkingWithAMessageListController extends Pane {
             speechBaseController.toggleMessageSelection(message);
         });
 
-        if (isCurrentUserMessage) {
-            CustomButton change = new CustomButton(changeI, "Изменить");
-            change.setPrefWidth(vBoxWidth);
-            change.setPrefHeight(40);
-            change.setOnAction(e -> {
-                if (message.getMessageString() != null && !message.getMessageString().isEmpty())
-                    messageTA.setText(message.getMessageString());
-                if (message.getMessageContent() != null && !message.getMessageContent().isEmpty())
-                    speechBaseController.selectedFile.setAll(message.getMessageContent().stream()
-                            .map(messageContent -> {
-                                return FileUtils.getFileFromDefaultDir(messageContent.getMessageContentFileName());
-                            }).toList());
-                HintIV.setImage(changeI);
-                HintLB.setText("Редактирование");
-                speechBaseController.setContextPopUpBar(ContextPopUpBar.CHANGE_MESSAGE);
-                contentUpdateMessageLB.setText(contentMessage);
-                updateMessageHB.setVisible(true);
-                updateMessageHB.setManaged(true);
-                speechBaseController.setUpdateMessage(message);
-                messagesSP.getChildren().remove(this);
-                Platform.runLater(() -> {
-                    messageTA.requestFocus();
-                    messageTA.positionCaret(messageTA.getText().length());
-                });
+        CustomButton change = new CustomButton(changeI, "Изменить");
+        change.setPrefWidth(vBoxWidth);
+        change.setPrefHeight(40);
+        change.setOnAction(e -> {
+            if (message.getMessageString() != null && !message.getMessageString().isEmpty())
+                messageTA.setText(message.getMessageString());
+            if (message.getMessageContent() != null && !message.getMessageContent().isEmpty())
+                speechBaseController.selectedFile.setAll(message.getMessageContent().stream()
+                        .map(messageContent -> {
+                            return FileUtils.getFileFromDefaultDir(messageContent.getMessageContentFileName());
+                        }).toList());
+            HintIV.setImage(changeI);
+            HintLB.setText("Редактирование");
+            speechBaseController.setContextPopUpBar(ContextPopUpBar.CHANGE_MESSAGE);
+            contentUpdateMessageLB.setText(contentMessage);
+            updateMessageHB.setVisible(true);
+            updateMessageHB.setManaged(true);
+            speechBaseController.setUpdateMessage(message);
+            messagesSP.getChildren().remove(this);
+            Platform.runLater(() -> {
+                messageTA.requestFocus();
+                messageTA.positionCaret(messageTA.getText().length());
             });
+        });
 
+        if (isCurrentUserMessage) {
             if(speechBaseController.getSelectedChannelUser().getChannel().isDisable_sharing())
                 rootVB.getChildren().addAll(reply, change, pin, copy, delete, select);
             else
@@ -261,6 +261,9 @@ public class WorkingWithAMessageListController extends Pane {
             else
                 rootVB.getChildren().addAll(reply, pin, copy, forward, delete, select);
         }
+
+        if(message.getChannelInvitations() != null)
+            rootVB.getChildren().removeAll(reply, change, copy);
 
         this.getChildren().add(rootVB);
 

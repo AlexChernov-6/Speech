@@ -49,6 +49,10 @@
                 </GridPane.margin>
             </Button>
 
+            <HBox fx:id="invitationHB" visible="false" managed="false">
+                <Button fx:id="invitationBtn" HBox.hgrow="ALWAYS" styleClass="login-button"/>
+            </HBox>
+
             <GridPane fx:id="contentGP">
                 <rowConstraints>
                     <RowConstraints/>

@@ -55,7 +55,7 @@
                               maxHeight="40" visible="false" managed="false">
                             <VBox HBox.hgrow="ALWAYS" prefWidth="40" alignment="CENTER_LEFT">
                                 <Label text="Закреплённое сообщение" styleClass="pinned-label"/>
-                                <Label styleClass="pinned-text" fx:id="contentPinnedMessageLB"/>
+                                <Label styleClass="pinned-text" fx:id="contentPinnedMessageLB" text="Содержимое"/>
                                 <HBox.margin>
                                     <Insets left="5"/>
                                 </HBox.margin>

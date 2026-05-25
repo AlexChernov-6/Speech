@@ -55,6 +55,8 @@ public class ChannelCellController {
             if(lastMessage.getChannelUser().getUser().equals(speechBaseController.getCurrentUser())) {
                 if (lastMessage.getMessageString() != null && !lastMessage.getMessageString().isEmpty()) {
                     resultStr = "Вы: " + lastMessage.getMessageString();
+                } else if (lastMessage.getChannelInvitations() != null) {
+                    resultStr = "Вы: Приглашение";
                 } else {
                     int countMessageContent = lastMessage.getMessageContent().size();
                     if(countMessageContent == 1)
@@ -68,6 +70,8 @@ public class ChannelCellController {
                 String senderName = lastMessage.getChannelUser().getUser().getNameUser();
                 if (lastMessage.getMessageString() != null && !lastMessage.getMessageString().isEmpty()) {
                     resultStr = senderName + ": " + lastMessage.getMessageString();
+                } else if (lastMessage.getChannelInvitations() != null) {
+                    resultStr = senderName + ": Приглашение";
                 } else {
                     int countMessageContent = lastMessage.getMessageContent().size();
                     if(countMessageContent == 1)

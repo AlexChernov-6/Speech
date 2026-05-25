@@ -236,25 +236,25 @@ public class SearchChannelWindow extends VBox {
                     joinChannelBtn.setText("Добавить " + ((User) selectedObject).getNameUser());
                     joinChannelBtn.setOnAction(e -> {
                         ChannelService channelService = new ChannelService();
-                        if (!channelService.chatsWithThatName(speechBaseController.getCurrentUser().getNameUser() + "_" + ((User) selectedObject).getNameUser()) &&
-                                !channelService.chatsWithThatName(((User) selectedObject).getNameUser() + "_" + speechBaseController.getCurrentUser().getNameUser())) {
-                            Channel channel = new Channel();
-                            channel.setChannelName(((User) selectedObject).getVisibleNameUser());
-                            channel.setChannelLogo(((User) selectedObject).getPhotoUser());
-                            channel.setChannelType(new ChannelTypeService().getRowById(3L));
-                            channel.setChannel_name_unique(speechBaseController.getCurrentUser().getNameUser() + "_" + ((User) selectedObject).getNameUser());
-                            channel.setDisable_sharing(false);
+                        Channel oldChannel = channelService.getChannelByTwoUser(speechBaseController.getCurrentUser(), ((User) selectedObject));
+                        if (oldChannel == null) {
+                            oldChannel = new Channel();
+                            oldChannel.setChannelName(((User) selectedObject).getVisibleNameUser());
+                            oldChannel.setChannelLogo(((User) selectedObject).getPhotoUser());
+                            oldChannel.setChannelType(new ChannelTypeService().getRowById(3L));
+                            oldChannel.setChannel_name_unique(speechBaseController.getCurrentUser().getNameUser() + "_" + ((User) selectedObject).getNameUser());
+                            oldChannel.setDisable_sharing(false);
 
-                            channelService.save(channel);
+                            channelService.save(oldChannel);
 
                             ChannelUser newChannelUser1 = new ChannelUser();
                             newChannelUser1.setUser(speechBaseController.getCurrentUser());
-                            newChannelUser1.setChannel(channel);
+                            newChannelUser1.setChannel(oldChannel);
                             speechBaseController.getMessageListener().addChannelAsync(newChannelUser1);
 
                             ChannelUser newChannelUser2 = new ChannelUser();
                             newChannelUser2.setUser(((User) selectedObject));
-                            newChannelUser2.setChannel(channel);
+                            newChannelUser2.setChannel(oldChannel);
 
                             newChannelUser1.setVisibleLogoChat(((User) selectedObject).getPhotoUser());
                             newChannelUser1.setVisibleNameChat(((User) selectedObject).getVisibleNameUser());
@@ -273,12 +273,6 @@ public class SearchChannelWindow extends VBox {
                             searchTF.setText("");
                             hide();
                         } else {
-                            Channel oldChannel;
-                            if (channelService.chatsWithThatName(speechBaseController.getCurrentUser().getNameUser() + "_" + ((User) selectedObject).getNameUser()))
-                                oldChannel = channelService.getChatWithName(speechBaseController.getCurrentUser().getNameUser() + "_" + ((User) selectedObject).getNameUser());
-                            else
-                                oldChannel = channelService.getChatWithName(((User) selectedObject).getNameUser() + "_" + speechBaseController.getCurrentUser().getNameUser());
-
                             ChannelUser oldChannelUser1 = channelUserService.getChannelUserByUserIdAndChannelId(
                                     speechBaseController.getCurrentUser().getIdUser(), oldChannel.getChannelID());
 

@@ -1,5 +1,9 @@
 package com.example.speech.control;
 
+import com.example.speech.model.Channel;
+import com.example.speech.model.ChannelUser;
+import com.example.speech.service.ChannelUserService;
+import com.example.speech.service.UserService;
 import com.example.speech.util.HelpfulClass;
 import javafx.animation.PauseTransition;
 import javafx.application.Platform;
@@ -9,7 +13,10 @@ import javafx.scene.layout.GridPane;
 import javafx.stage.Stage;
 import javafx.util.Duration;
 
+import java.util.List;
+
 import static com.example.speech.control.EntranceController.CONFIG_MANAGER;
+import static com.example.speech.control.SpeechBaseController.currentUser;
 
 public class WindowControlsController {
 
@@ -32,6 +39,25 @@ public class WindowControlsController {
 
     @FXML
     private void onCloseBtn() {
+        Thread updateStatusThread = new Thread(() -> {
+            currentUser.setStatusUser("в сети");
+            ChannelUserService channelUserService = new ChannelUserService();
+            new UserService().update(currentUser);
+
+            List<Channel> channels = channelUserService.getAllChatsByUser(currentUser).stream()
+                    .map(cU -> cU.getChannel())
+                    .filter(channel -> channel.getChannelType().getChannelTypeId() == 3)
+                    .toList();
+            for (Channel channel : channels) {
+                ChannelUser channelUser = channelUserService
+                        .getInterlocutorUserChannelInChannel(channel.getChannelID(), currentUser.getIdUser());
+                channelUser.setVisibleNameChat(currentUser.getVisibleNameUser());
+                channelUserService.update(channelUser);
+            }
+        });
+        updateStatusThread.setDaemon(true);
+        updateStatusThread.start();
+
         stage.close();
     }
 

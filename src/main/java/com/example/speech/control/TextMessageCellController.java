@@ -1,8 +1,10 @@
 package com.example.speech.control;
 
+import com.example.speech.model.ChannelUser;
 import com.example.speech.model.Message;
 import com.example.speech.model.MessageContent;
 import com.example.speech.model.User;
+import com.example.speech.service.ChannelUserService;
 import com.example.speech.service.MessageContentService;
 import com.example.speech.service.UserService;
 import com.example.speech.util.FileUtils;
@@ -76,6 +78,10 @@ public class TextMessageCellController {
     private StackPane selectSP;
     @FXML
     private ImageView selectIV;
+    @FXML
+    private HBox invitationHB;
+    @FXML
+    private Button invitationBtn;
 
     private SpeechBaseController speechBaseController;
     private Message message;
@@ -90,6 +96,8 @@ public class TextMessageCellController {
             (TextMessageCellController.class.getResourceAsStream("/com/example/speech/image/preview.gif")));
 
     private final List<Image> imagesFromMessage = new ArrayList<>();
+
+    private final ChannelUserService channelUserService = new ChannelUserService();
 
     public GridPane initializeMessage(SpeechBaseController speechBaseController, Message message, boolean drawUserPhoto) {
         this.speechBaseController = speechBaseController;
@@ -220,8 +228,53 @@ public class TextMessageCellController {
             User user = userService.getRowById(message.getForwardedFrom());
             forwardHB.setVisible(true);
             forwardHB.setManaged(true);
-            setCircularImage(userLogo, user.getPhotoImage(), 45);
+            setCircularImage(userLogo, user.getPhotoImage(), 15);
             userInfoBtn.setText(user.getNameUser());
+            userInfoBtn.setOnAction(e -> {
+                if(speechBaseController.getCurrentUser().equals(user)) {
+                    if(speechBaseController.getProfileWindow() != null)
+                        speechBaseController.getProfileWindow().showProfileWidow();
+                    else {
+                        speechBaseController.setProfileWindow(new ProfileWindow(speechBaseController));
+                        speechBaseController.getProfileWindow().showProfileWidow();
+                    }
+                } else {
+                    if(speechBaseController.getOtherProfileWindow() != null)
+                        speechBaseController.getOtherProfileWindow().showOtherProfileWindow(user);
+                    else {
+                        speechBaseController.setOtherProfileWindow(new OtherProfileWindow(speechBaseController));
+                        speechBaseController.getOtherProfileWindow().showOtherProfileWindow(user);
+                    }
+                }
+            });
+            //Добавить обработку нажатия на имя переславшего
+        }
+
+        if(message.getChannelInvitations() != null) {
+            invitationHB.setVisible(true);
+            invitationHB.setManaged(true);
+            this.messageLabel.setText("Присоединяйся к " + message.getChannelInvitations().getChannel_name_unique() + "!\n" +
+                    "С нами жизнь будет интересней)");
+            invitationBtn.setText("Вступить в " + message.getChannelInvitations().getChannel_name_unique());
+            invitationBtn.setOnAction(e -> {
+                ChannelUser channelUser = channelUserService
+                        .getChannelUserByUserIdAndChannelId(speechBaseController.getCurrentUser().getIdUser()
+                                , message.getChannelInvitations().getChannelID());
+
+                if(channelUser == null) {
+                    channelUser = new ChannelUser();
+                    channelUser.setUser(speechBaseController.getCurrentUser());
+                    channelUser.setChannel(message.getChannelInvitations());
+                    channelUser.setVisibleNameChat(message.getChannelInvitations().getChannelName());
+                    channelUser.setVisibleLogoChat(message.getChannelInvitations().getChannelLogo());
+                    channelUserService.save(channelUser);
+                }
+
+                ChannelUser finalChannelUser = channelUser;
+                Platform.runLater(() -> {
+                    speechBaseController.chatsView.getSelectionModel().select(finalChannelUser);
+                });
+            });
         }
 
         boolean isSelected = speechBaseController.isMessageSelected(message);

@@ -60,7 +60,7 @@ public class HelpfulStylingClass {
         textField.focusedProperty().addListener((ob, oldV, newV) -> {
             if(newV) {
                 if (promptText != null && !promptText.isEmpty()) {
-                    if (textField.getText().isEmpty()) {
+                    if (textField.getText() == null || textField.getText().isEmpty()) {
                         textField.setText(textField.getPromptText());
                     } else {
                         if (textField.getText().contains(promptText))

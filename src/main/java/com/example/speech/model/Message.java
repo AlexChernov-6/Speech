@@ -36,10 +36,12 @@ public class Message {
     private List<MessageContent> messageContent = new ArrayList<>();
     @Column(name = "message_string")
     private String messageString;
+    @ManyToOne @JoinColumn(name = "id_channel_invitations")
+    private Channel channelInvitations;
 
     public Message() { }
 
-    public Message(long messageId, LocalDateTime messageDatetime, ChannelUser channelUser, String messageStatus, List<Long> deletedByUsers, Boolean modifiedMessage, Long messageIdReplyTo, Boolean pinMessage, Long forwardedFrom, List<MessageContent> messageContent) {
+    public Message(long messageId, LocalDateTime messageDatetime, ChannelUser channelUser, String messageStatus, List<Long> deletedByUsers, Boolean modifiedMessage, Long messageIdReplyTo, Boolean pinMessage, Long forwardedFrom, List<MessageContent> messageContent, String messageString, Channel channelInvitations) {
         this.messageId = messageId;
         this.messageDatetime = messageDatetime;
         this.channelUser = channelUser;
@@ -50,6 +52,8 @@ public class Message {
         this.pinMessage = pinMessage;
         this.forwardedFrom = forwardedFrom;
         this.messageContent = messageContent;
+        this.messageString = messageString;
+        this.channelInvitations = channelInvitations;
     }
 
     public long getMessageId() {
@@ -148,6 +152,14 @@ public class Message {
 
     public void setMessageString(String messageString) {
         this.messageString = messageString;
+    }
+
+    public Channel getChannelInvitations() {
+        return channelInvitations;
+    }
+
+    public void setChannelInvitations(Channel channelInvitations) {
+        this.channelInvitations = channelInvitations;
     }
 
     @Override

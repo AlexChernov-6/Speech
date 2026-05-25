@@ -39,4 +39,17 @@ public class ChannelService extends BaseService<Channel> {
                     .setParameter("CHANNEL_ID", channelID).list();
         }
     }
+
+    public Channel getChannelByTwoUser(User user1, User user2) {
+        String channelName1 = user1.getNameUser() + "_" + user2.getNameUser();
+        String channelName2 = user2.getNameUser() + "_" + user1.getNameUser();
+        String queryHQL = "from Channel where channel_name_unique = :CHANNEL_NAME_ONE or channel_name_unique = :CHANNEL_NAME_TWO";
+
+        try (Session session = HibernateSessionFactory.getSessionFactory().openSession()) {
+            return session.createQuery(queryHQL, Channel.class)
+                    .setParameter("CHANNEL_NAME_ONE", channelName1)
+                    .setParameter("CHANNEL_NAME_TWO", channelName2)
+                    .uniqueResult();
+        }
+    }
 }

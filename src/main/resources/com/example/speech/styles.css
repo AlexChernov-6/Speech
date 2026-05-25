@@ -348,8 +348,8 @@
 
 .messages-list {
      -fx-background-image: url('image/messages-list-view-background-default.jpg');
-     -fx-background-size: cover;
-     -fx-background-repeat: no-repeat;
+     -fx-background-size: auto;
+     -fx-background-repeat: repeat;
      -fx-background-position: top;
      -fx-border-width: 0;
 }
