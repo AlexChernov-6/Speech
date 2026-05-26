@@ -69,6 +69,7 @@ public class OtherProfileWindow extends VBox {
 
     public void showOtherProfileWindow(User user) {
         if(user != null) {
+            toFront();
             if (lastViewingUser == null) {
                 lastViewingUser = user;
                 updateState(user);

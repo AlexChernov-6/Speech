@@ -50,6 +50,7 @@ import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 import javafx.scene.control.IndexedCell;
 
@@ -202,15 +203,11 @@ public class SpeechBaseController {
 
     private final UsersInSilentModeService usersInSilentModeService = new UsersInSilentModeService();
 
-    private VBox controlsWindowRootVB;
-
     private final MessageContentService messageContentService = new MessageContentService();
 
     private SortedList<File> fileSortedList;
 
     public final List<File> delFiles = new ArrayList<>();
-
-    private CustomButton setDefaultBackgroundListViewBtn;
 
     @FXML
     private StackPane leftSP;
@@ -224,6 +221,20 @@ public class SpeechBaseController {
     private ChannelGroupWindow channelGroupWindow;
 
     private final ChannelService channelService = new ChannelService();
+
+    private final HiddenChannelUserService hiddenChannelUserService = new HiddenChannelUserService();
+
+    private VBox controlsWindowRootVB;
+    private CustomButton searchBtn;
+    private CustomButton editBtn;
+    private CustomButton muteBtn;
+    private CustomButton enableNotificationsBtn;
+    private CustomButton selectMessagesBtn;
+    private CustomButton selectBackgroundListViewBtn;
+    private CustomButton setDefaultBackgroundListViewBtn;
+    private CustomButton addSharingBtn;
+    private CustomButton disableSharingBtn;
+    private CustomButton deleteChatBtn;
 
     public void initializeData(Stage stage, User currentUser) {
         this.stage = stage;
@@ -256,6 +267,7 @@ public class SpeechBaseController {
                             messagesLV.scrollTo(messagesLV.getItems().size());
                         }
                     });
+                    refreshVisibleMessageCells();
                 }
             }
         });
@@ -298,7 +310,8 @@ public class SpeechBaseController {
                 , currentUser.getNameUser(), currentUser.getPasswordUser(),
                 messageID -> {
                     Platform.runLater(() -> messagesListViewRefresh(messageID));
-                }, userChats, this);
+                }, userChats,
+                this);
 
         Thread listenerThread = new Thread(messageListener, "pg-listener");
         listenerThread.setDaemon(true);
@@ -511,16 +524,16 @@ public class SpeechBaseController {
         createLeftUserPane();
 
         channelStateAP.setOnMouseClicked(e -> {
-            if(e.getButton() == MouseButton.PRIMARY) {
+            if (e.getButton() == MouseButton.PRIMARY) {
                 List<User> allUserInSelectedChat = channelService.getAllUserInChannel(selectedChannelUser.getChannel().getChannelID());
-                if(selectedChannelUser.getChannel().getChannelType().getChannelTypeId() == 3) {
+                if (selectedChannelUser.getChannel().getChannelType().getChannelTypeId() == 3) {
                     if (otherProfileWindow == null)
                         otherProfileWindow = new OtherProfileWindow(this);
 
                     otherProfileWindow.showOtherProfileWindow(
                             allUserInSelectedChat.stream().filter(u -> !u.equals(currentUser)).toList().getFirst());
                 } else {
-                    if(channelGroupWindow == null)
+                    if (channelGroupWindow == null)
                         channelGroupWindow = new ChannelGroupWindow(this);
 
                     channelGroupWindow.showChannelGroupWidow(allUserInSelectedChat);
@@ -532,7 +545,8 @@ public class SpeechBaseController {
     public void initializeListViewChats() {
         chatsView.setFixedCellSize(60);
         chatsView.setCellFactory(lv -> new ListChannelsCellController(this));
-        userChats = FXCollections.observableArrayList(channelUserService.getAllChatsByUser(currentUser));
+        userChats = FXCollections.observableArrayList(channelUserService.getAllChatsByUser(currentUser)
+                .stream().filter(cU -> hiddenChannelUserService.isHiddenUserFromChannel(cU.getChannel(), currentUser) == null).toList());
         chatsView.setItems(userChats);
 
         chatsView.getSelectionModel().selectedItemProperty().addListener(
@@ -550,7 +564,7 @@ public class SpeechBaseController {
             selectedChatVB.setVisible(true);
             channelName.setText(selectedChat.getVisibleNameChat());
             messageTA.setText("");
-            if(selectedChat.getChannel().getChannelType().getChannelTypeId() == 3)
+            if (selectedChat.getChannel().getChannelType().getChannelTypeId() == 3)
                 channelStatus.setText(selectedChat.getStatusOfTheInterlocutor());
             else
                 channelStatus.setText(String.format("Число участников: %d", selectedChat.getChannel().getChannelCountUser()));
@@ -735,6 +749,8 @@ public class SpeechBaseController {
         String text = messageTA.getText().trim();
         messageTA.setText("");
         messageTA.requestFocus();
+        sendMessageBtn.setManaged(false);
+        sendMessageBtn.setVisible(false);
 
         // ----------------------- ОБЫЧНАЯ ОТПРАВКА -----------------------
         if (((!text.isEmpty() && !text.equals("Сообщение...")) || (selectedFile != null && !selectedFile.isEmpty()))
@@ -767,9 +783,6 @@ public class SpeechBaseController {
                     if (saved) {
                         messageToSave.setMessageStatus("отправлено");
                         messageService.update(messageToSave);
-                        Platform.runLater(() -> {
-                            chatsView.refresh();
-                        });
                     }
                 } catch (Exception e) {
                     messageToSave.setMessageStatus("ошибка отправки");
@@ -830,9 +843,6 @@ public class SpeechBaseController {
                     }
 
                     messageService.update(messageToUpdate);
-                    Platform.runLater(() -> {
-                        chatsView.refresh();
-                    });
                 });
                 sendThread.setDaemon(true);
                 sendThread.start();
@@ -861,7 +871,22 @@ public class SpeechBaseController {
                 tempMessages.add(temp);
             }
 
+            boolean addNewMessage = ((!text.isEmpty() && !text.equals("Сообщение...")) || (selectedFile != null && !selectedFile.isEmpty()))
+                    && chatsView.getSelectionModel().getSelectedItem() != null;
+            Message messageToSave = new Message();
+            if(addNewMessage) {
+                ChannelUser selectedChat = chatsView.getSelectionModel().getSelectedItem();
+                addContentsForMessage(messageToSave, text);
+                messageToSave.setChannelUser(selectedChat);
+                messageToSave.setMessageDatetime(LocalDateTime.now());
+                boolean replyMessage = updateMessageHB.isVisible() && contextPopUpBar == ContextPopUpBar.REPLY_MESSAGE;
+                if (replyMessage)
+                    messageToSave.setMessageIdReplyTo(messageIdReplyTo);
+            }
+
             Platform.runLater(() -> {
+                if(addNewMessage)
+                    messages.add(messageToSave);
                 messages.addAll(tempMessages);
                 messagesLV.scrollTo(messagesLV.getItems().size());
             });
@@ -872,6 +897,18 @@ public class SpeechBaseController {
                     Thread.sleep(150);
                 } catch (InterruptedException ignore) {
                 }
+                if(addNewMessage) {
+                    try {
+                        boolean saved = messageService.save(messageToSave);
+                        if (saved) {
+                            messageToSave.setMessageStatus("отправлено");
+                            messageService.update(messageToSave);
+                        }
+                    } catch (Exception e) {
+                        messageToSave.setMessageStatus("ошибка отправки");
+                    }
+                }
+
                 for (Message newMsg : tempMessages) {
                     List<MessageContent> newContents = null;
                     if (newMsg.getMessageContent() != null) {
@@ -908,9 +945,6 @@ public class SpeechBaseController {
                     } else
                         Platform.runLater(() -> newMsg.setMessageStatus("ошибка отправки"));
                 }
-                Platform.runLater(() -> {
-                    chatsView.refresh();
-                });
             });
             sendThread.setDaemon(true);
             sendThread.start();
@@ -935,6 +969,7 @@ public class SpeechBaseController {
     }
 
     public void setPinnedMessagesHBVisible(int firstVisibleIndex) {
+        if (messagesLV.getItems().isEmpty()) return;
         // Получаем ВСЕ закрепленные сообщения
         List<Message> allPinnedMessages = messagesLV.getItems().stream()
                 .filter(mes -> mes != null && mes.getPinMessage())
@@ -991,9 +1026,10 @@ public class SpeechBaseController {
     private void scrollToMessage(Message message) {
         messagesLV.scrollTo(message);
         PauseTransition pause = new PauseTransition(Duration.millis(100));
-        pause.setOnFinished(e ->
-                messageCellCreator.getControllerCache(message).highlightMessageTemporarily()
-        );
+        pause.setOnFinished(e -> {
+            if (messageCellCreator.getControllerCache(message) != null)
+                messageCellCreator.getControllerCache(message).highlightMessageTemporarily();
+        });
         pause.play();
     }
 
@@ -1641,16 +1677,35 @@ public class SpeechBaseController {
                 countResult.setText("Всего записей: " + resultList.size());
                 buttonsVB.setVisible(false);
             } else {
+                resultList = messages.stream().filter(message ->
+                        message.getMessageString() != null &&
+                                message.getMessageString().toLowerCase().contains(
+                                        searchFromChatTF.getText().trim().toLowerCase())).toList();
                 filteredList.setPredicate(message -> true);
                 listOfBtn.setText("Списком");
                 scrollToMessage(resultList.getLast());
                 currInd = 1;
+                if (currInd == resultList.size()) {
+                    upBtn.setVisible(false);
+                    upBtn.setManaged(false);
+                } else {
+                    upBtn.setVisible(true);
+                    upBtn.setManaged(true);
+                }
+                if (currInd == 1) {
+                    downBtn.setVisible(false);
+                    downBtn.setManaged(false);
+                } else {
+                    downBtn.setVisible(true);
+                    downBtn.setManaged(true);
+                }
                 countResult.setText(currInd + "/" + resultList.size());
                 buttonsVB.setVisible(true);
                 Platform.runLater(() -> {
-                    PauseTransition pauseTransition = new PauseTransition(Duration.millis(100));
+                    PauseTransition pauseTransition = new PauseTransition(Duration.millis(150));
                     pauseTransition.setOnFinished(e1 -> {
-                        messageCellCreator.getControllerCache().get(resultList.getLast()).highlightText(searchFromChatTF.getText());
+                        if(messageCellCreator.getControllerCache().get(resultList.getLast()) != null)
+                            messageCellCreator.getControllerCache().get(resultList.getLast()).highlightText(searchFromChatTF.getText());
                     });
                     pauseTransition.playFromStart();
                 });
@@ -1694,7 +1749,6 @@ public class SpeechBaseController {
                     Platform.runLater(() -> {
                         PauseTransition pauseTransition = new PauseTransition(Duration.millis(100));
                         pauseTransition.setOnFinished(e1 -> {
-                            System.out.println("Показываем выделение");
                             messageCellCreator.getControllerCache().get(resultList.getLast()).highlightText(searchFromChatTF.getText());
                         });
                         pauseTransition.playFromStart();
@@ -1715,6 +1769,10 @@ public class SpeechBaseController {
             if (messages != null && !messages.isEmpty())
                 messagesLV.scrollTo(messages.getLast());
         });
+    }
+
+    public boolean isSearchModeActive() {
+        return searchModeActive;
     }
 
     public String getCurrentSearchText() {
@@ -1830,6 +1888,7 @@ public class SpeechBaseController {
                     messageTA.setText(emojiChar);
                 else
                     messageTA.setText(messageTA.getText() + emojiChar);
+                messageTA.positionCaret(messageTA.getText().length());
                 messageTA.requestFocus();
             });
             pane.getChildren().add(emojiBtn);
@@ -1837,7 +1896,6 @@ public class SpeechBaseController {
 
         rightSP.getChildren().add(emojiSP);
 
-        // Слушатели для обновления позиции
         messageHB.heightProperty().addListener((obs, o, n) -> {
             if (emojiSP.isVisible()) updateEmojiWindowPosition();
         });
@@ -1881,306 +1939,78 @@ public class SpeechBaseController {
     }
 
     private void messagesListViewRefresh(Long messageID) {
-        Message message = messageService.getRowById(messageID);
-        if (message == null)
-            messages.removeIf(m -> m.getMessageId() == messageID);
-        else {
-            if (selectedChannelUser != null && message.getChannelUser().getChannel().equals(selectedChannelUser.getChannel())) {
-                if (messages.contains(message)) {
-                    messages.set(messages.indexOf(message), message);
-                    setPinnedMessagesHBVisible(messages.size());
-                } else {
-                    if (message.getForwardedFrom() == null || (message.getForwardedFrom() != null && !message.getChannelUser().getUser().equals(currentUser)) &&
-                            message.getDeletedByUsers() == null || (message.getDeletedByUsers() != null && !message.getDeletedByUsers().contains(Long.valueOf(currentUser.getIdUser())))) {
+        // Загружаем сообщение в фоне
+        CompletableFuture.supplyAsync(() -> messageService.getRowById(messageID))
+                .thenAccept(message -> {
+                    Platform.runLater(() -> {
+                        if (message == null) {
+                            messages.removeIf(m -> m.getMessageId() == messageID);
+                            if (!messages.isEmpty())
+                                updateChatsViewLastMessage(messages.getLast());
+                            else chatsView.refresh();
+                        } else {
+                            boolean isCurrentChat = selectedChannelUser != null &&
+                                    message.getChannelUser().getChannel().equals(selectedChannelUser.getChannel());
+                            if (!isCurrentChat) {
+                                if (!messages.isEmpty())
+                                    updateChatsViewLastMessage(message);
+                                else chatsView.refresh();
+                                return;
+                            }
 
-                        messages.add(message);
-                    }
-                    if (!message.getChannelUser().getUser().equals(currentUser)
-                            && !usersInSilentModeService.isUserSetSilentMode(
-                            message.getChannelUser().getChannel().getChannelID(), currentUser.getIdUser()))
-                        Toolkit.getDefaultToolkit().beep();
-                }
-            }
+                            int idx = messages.indexOf(message);
+                            if (idx >= 0) {
+                                messages.set(idx, message);
+                                if (message.getPinMessage()) setPinnedMessagesHBVisible(messages.size());
+                            } else {
+                                if ((message.getForwardedFrom() == null ||
+                                        (message.getForwardedFrom() != null && !message.getChannelUser().getUser().equals(currentUser))) &&
+                                        (message.getDeletedByUsers() == null ||
+                                                !message.getDeletedByUsers().contains((long) currentUser.getIdUser()))) {
+                                    messages.add(message);
+                                    messagesLV.scrollTo(message);
+
+                                    if (!message.getChannelUser().getUser().equals(currentUser) &&
+                                            !usersInSilentModeService.isUserSetSilentMode(
+                                                    message.getChannelUser().getChannel().getChannelID(), currentUser.getIdUser()) &&
+                                            (hiddenChannelUserService.isHiddenUserFromChannel(message.getChannelUser().getChannel(), currentUser) == null)) {
+                                        Toolkit.getDefaultToolkit().beep();
+                                    }
+                                }
+                            }
+                            updateChatsViewLastMessage(message);
+                        }
+                    });
+                })
+                .exceptionally(ex -> {
+                    ex.printStackTrace();
+                    return null;
+                });
+    }
+
+    private void updateChatsViewLastMessage(Message message) {
+        if (message == null) return;
+        ChannelUser relatedChat = message.getChannelUser();
+        int chatIndex = userChats.indexOf(relatedChat);
+        if (chatIndex >= 0) {
+            userChats.set(chatIndex, relatedChat);
+        } else {
+            chatsView.refresh();
         }
-        messagesLV.refresh();
-        chatsView.refresh();
     }
 
     @FXML
     private void createControlsWidow() {
-        double vBoxWidth = 200;
-
         if (controlsWindowRootVB == null) {
-            controlsWindowRootVB = new VBox();
-            controlsWindowRootVB.setMaxWidth(vBoxWidth);
-            controlsWindowRootVB.setMaxHeight(Region.USE_PREF_SIZE);
-            controlsWindowRootVB.setUserData("controlsWindowRootVB");
-            StackPane.setAlignment(controlsWindowRootVB, Pos.TOP_RIGHT);
-            StackPane.setMargin(controlsWindowRootVB, new Insets(41, 10, 0, 0));
-            controlsWindowRootVB.getStyleClass().add("working-with-a-message-root-pane");
-            rightSP.getChildren().add(controlsWindowRootVB);
-
-            CustomButton searchBtn = new CustomButton(
-                    new Image(Objects.requireNonNull(getClass().getResourceAsStream("/com/example/speech/image/imageSearchButton.png")))
-                    , "Поиск");
-            searchBtn.setPrefWidth(vBoxWidth);
-            searchBtn.setPrefHeight(40);
-            VBox.setMargin(searchBtn, new Insets(5, 0, 0, 0));
-            searchBtn.setOnAction(e -> {
-                actionSearchBtn();
-            });
-            controlsWindowRootVB.getChildren().add(searchBtn);
-
-            CustomButton editBtn = new CustomButton(
-                    new Image(Objects.requireNonNull(getClass().getResourceAsStream("/com/example/speech/image/change.png")))
-                    , "Ввод");
-            editBtn.setPrefWidth(vBoxWidth);
-            editBtn.setPrefHeight(40);
-            editBtn.setOnAction(e -> {
-                messageTA.requestFocus();
-                messageTA.positionCaret(messageTA.getText().length());
-            });
-            controlsWindowRootVB.getChildren().add(editBtn);
-
-            CustomButton muteBtn = new CustomButton(
-                    new Image(Objects.requireNonNull(getClass().getResourceAsStream("/com/example/speech/image/mute.png")))
-                    , "Отключить звук");
-            muteBtn.setPrefWidth(vBoxWidth);
-            muteBtn.setPrefHeight(40);
-            controlsWindowRootVB.getChildren().add(muteBtn);
-
-            CustomButton enableNotificationsBtn = new CustomButton(
-                    new Image(Objects.requireNonNull(getClass().getResourceAsStream("/com/example/speech/image/notification-bell.png")))
-                    , "Включить уведомления");
-            enableNotificationsBtn.setPrefWidth(vBoxWidth);
-            enableNotificationsBtn.setPrefHeight(40);
-            enableNotificationsBtn.setOnAction(e -> {
-                usersInSilentModeService.deleteUserSetSilentMode(selectedChannelUser.getChannel().getChannelID(), currentUser.getIdUser());
-
-                Platform.runLater(() -> {
-                    enableNotificationsBtn.setVisible(false);
-                    enableNotificationsBtn.setManaged(false);
-
-                    muteBtn.setVisible(true);
-                    muteBtn.setManaged(true);
-                });
-            });
-            muteBtn.setOnAction(e -> {
-                UsersInSilentMode newUserSilentMode = new UsersInSilentMode();
-                newUserSilentMode.setChannelID(selectedChannelUser.getChannel().getChannelID());
-                newUserSilentMode.setUserID(currentUser.getIdUser());
-                usersInSilentModeService.save(newUserSilentMode);
-
-                Platform.runLater(() -> {
-                    enableNotificationsBtn.setVisible(true);
-                    enableNotificationsBtn.setManaged(true);
-
-                    muteBtn.setVisible(false);
-                    muteBtn.setManaged(false);
-                });
-            });
-            controlsWindowRootVB.getChildren().add(enableNotificationsBtn);
-
-            if (usersInSilentModeService.isUserSetSilentMode(selectedChannelUser.getChannel().getChannelID(), currentUser.getIdUser())) {
-                enableNotificationsBtn.setVisible(true);
-                enableNotificationsBtn.setManaged(true);
-
-                muteBtn.setVisible(false);
-                muteBtn.setManaged(false);
-            }
-
-            CustomButton selectMessagesBtn = new CustomButton(
-                    new Image(Objects.requireNonNull(getClass().getResourceAsStream("/com/example/speech/image/select.png")))
-                    , "Выбрать сообщения");
-            selectMessagesBtn.setPrefWidth(vBoxWidth);
-            selectMessagesBtn.setPrefHeight(40);
-            selectMessagesBtn.setOnAction(e -> {
-                setSelectionModeActive(true);
-            });
-            controlsWindowRootVB.getChildren().add(selectMessagesBtn);
-
-            CustomButton selectBackgroundListViewBtn = new CustomButton(
-                    new Image(Objects.requireNonNull(getClass().getResourceAsStream("/com/example/speech/image/background-btn.png")))
-                    , "Выбрать обои");
-            selectBackgroundListViewBtn.setPrefWidth(vBoxWidth);
-            selectBackgroundListViewBtn.setPrefHeight(40);
-
-            setDefaultBackgroundListViewBtn = new CustomButton(
-                    new Image(Objects.requireNonNull(getClass().getResourceAsStream("/com/example/speech/image/delete-backgorund.png")))
-                    , "Обои по умолчанию");
-            setDefaultBackgroundListViewBtn.setPrefWidth(vBoxWidth);
-            setDefaultBackgroundListViewBtn.setPrefHeight(40);
-            if (selectedChannelUser.getBackgroundImageBytes() == null || selectedChannelUser.getBackgroundImageBytes().length < 1) {
-                setDefaultBackgroundListViewBtn.setVisible(false);
-                setDefaultBackgroundListViewBtn.setManaged(false);
-            }
-            setDefaultBackgroundListViewBtn.setOnAction(e -> {
-                messagesLV.setBackground(new Background(new BackgroundImage(
-                        defaultBackgroundImage,
-                        BackgroundRepeat.NO_REPEAT,
-                        BackgroundRepeat.NO_REPEAT,
-                        BackgroundPosition.CENTER,
-                        BackgroundSize.DEFAULT)));
-
-                selectedChannelUser.setBackgroundImageBytes(null);
-                channelUserService.update(selectedChannelUser);
-
-                setDefaultBackgroundListViewBtn.setVisible(false);
-                setDefaultBackgroundListViewBtn.setManaged(false);
-            });
-            controlsWindowRootVB.getChildren().add(setDefaultBackgroundListViewBtn);
-
-            selectBackgroundListViewBtn.setOnAction(e -> {
-                FileChooser fileChooser = new FileChooser();
-                fileChooser.setTitle("Выбор изображение для фона");
-                fileChooser.getExtensionFilters().addAll(
-                        new FileChooser.ExtensionFilter("Image Files", "*.png", "*.jpg", "*.gif"));
-
-                File chosenFile = fileChooser.showOpenDialog(rootAnchorPane.getScene().getWindow());
-                if (chosenFile == null) return;
-
-                setDefaultBackgroundListViewBtn.setVisible(true);
-                setDefaultBackgroundListViewBtn.setManaged(true);
-
-                try {
-                    selectedChannelUser.setBackgroundImageBytes(Files.readAllBytes(chosenFile.toPath()));
-                    channelUserService.update(selectedChannelUser);
-                    selectedChannelUser.setBackgroundImage(null);
-                } catch (IOException ex) {
-                    throw new RuntimeException(ex);
-                }
-
-                messagesLV.setBackground(new Background(new BackgroundImage(
-                        selectedChannelUser.getBackgroundImage(),
-                        BackgroundRepeat.NO_REPEAT,
-                        BackgroundRepeat.NO_REPEAT,
-                        BackgroundPosition.CENTER,
-                        BackgroundSize.DEFAULT)));
-            });
-            controlsWindowRootVB.getChildren().add(selectBackgroundListViewBtn);
-
-
-            CustomButton addSharingBtn = new CustomButton(
-                    new Image(Objects.requireNonNull(getClass().getResourceAsStream("/com/example/speech/image/forward.png")))
-                    , "Разрешить пересылку");
-            addSharingBtn.setPrefWidth(vBoxWidth);
-            addSharingBtn.setPrefHeight(40);
-
-            CustomButton disableSharingBtn = new CustomButton(
-                    new Image(Objects.requireNonNull(getClass().getResourceAsStream("/com/example/speech/image/disable_sharing.png")))
-                    , "Запретить пересылку");
-            disableSharingBtn.setPrefWidth(vBoxWidth);
-            disableSharingBtn.setPrefHeight(40);
-            addSharingBtn.setOnAction(e -> {
-                Channel channel = selectedChannelUser.getChannel();
-                channel.setDisable_sharing(false);
-                new ChannelService().update(channel);
-
-                addSharingBtn.setVisible(false);
-                addSharingBtn.setManaged(false);
-
-                disableSharingBtn.setVisible(true);
-                disableSharingBtn.setManaged(true);
-            });
-            controlsWindowRootVB.getChildren().add(addSharingBtn);
-            disableSharingBtn.setOnAction(e -> {
-                Channel channel = selectedChannelUser.getChannel();
-                channel.setDisable_sharing(true);
-                new ChannelService().update(channel);
-
-                addSharingBtn.setVisible(true);
-                addSharingBtn.setManaged(true);
-
-                disableSharingBtn.setVisible(false);
-                disableSharingBtn.setManaged(false);
-            });
-            controlsWindowRootVB.getChildren().add(disableSharingBtn);
-
-            if(selectedChannelUser.getChannel().getChannelType().getChannelTypeId() == 3) {
-                if (selectedChannelUser.getChannel().isDisable_sharing()) {
-                    addSharingBtn.setVisible(true);
-                    addSharingBtn.setManaged(true);
-
-                    disableSharingBtn.setVisible(false);
-                    disableSharingBtn.setManaged(false);
-                } else {
-                    addSharingBtn.setVisible(false);
-                    addSharingBtn.setManaged(false);
-
-                    disableSharingBtn.setVisible(true);
-                    disableSharingBtn.setManaged(true);
-                }
-            } else {
-                if(selectedChannelUser.getChannel().getOwnerUser() != null
-                        && selectedChannelUser.getChannel().getOwnerUser().equals(currentUser)) {
-                    if (selectedChannelUser.getChannel().isDisable_sharing()) {
-                        addSharingBtn.setVisible(true);
-                        addSharingBtn.setManaged(true);
-
-                        disableSharingBtn.setVisible(false);
-                        disableSharingBtn.setManaged(false);
-                    } else {
-                        addSharingBtn.setVisible(false);
-                        addSharingBtn.setManaged(false);
-
-                        disableSharingBtn.setVisible(true);
-                        disableSharingBtn.setManaged(true);
-                    }
-                } else {
-                    addSharingBtn.setVisible(false);
-                    addSharingBtn.setManaged(false);
-                    disableSharingBtn.setVisible(false);
-                    disableSharingBtn.setManaged(false);
-                }
-            }
-
-
-            CustomButton deleteChatBtn = new CustomButton(
-                    new Image(Objects.requireNonNull(getClass().getResourceAsStream("/com/example/speech/image/delete-red.png")))
-                    , "Отчистить переписку");
-            deleteChatBtn.addStyleText("clear-all-message");
-            deleteChatBtn.setPrefWidth(vBoxWidth);
-            deleteChatBtn.setPrefHeight(40);
-            VBox.setMargin(deleteChatBtn, new Insets(0, 0, 5, 0));
-            deleteChatBtn.setOnAction(e -> {
-                List<Message> allMessage = messageService.getAllMessageInChannel(
-                        selectedChannelUser.getChannel().getChannelID());
-                if (allMessage != null && !allMessage.isEmpty())
-                    new ConfirmationOfMessageDeletion().initializeShape(this, allMessage);
-            });
-            controlsWindowRootVB.getChildren().add(deleteChatBtn);
-
-            if (removeControlsWindow == null) {
-                removeControlsWindow = e -> {
-                    Point2D point = createControlsWindowBtn.screenToLocal(e.getScreenX(), e.getScreenY());
-                    if (point != null && createControlsWindowBtn.contains(point)) return;
-                    else {
-                        PauseTransition pause = new PauseTransition(Duration.millis(100));
-                        pause.playFromStart();
-                        pause.setOnFinished(ev -> {
-                            controlsWindowRootVB.setVisible(false);
-                            controlsWindowRootVB.setManaged(false);
-                        });
-                    }
-                };
-
-                messagesSP.addEventFilter(MouseEvent.MOUSE_PRESSED, removeControlsWindow);
-            }
+            initControlsWindow();
+        }
+        if (controlsWindowRootVB.isVisible()) {
+            controlsWindowRootVB.setVisible(false);
+            controlsWindowRootVB.setManaged(false);
         } else {
-            if (controlsWindowRootVB.isVisible()) {
-                controlsWindowRootVB.setVisible(false);
-                controlsWindowRootVB.setManaged(false);
-            } else {
-                if (selectedChannelUser.getBackgroundImageBytes() == null || selectedChannelUser.getBackgroundImageBytes().length < 1) {
-                    setDefaultBackgroundListViewBtn.setVisible(false);
-                    setDefaultBackgroundListViewBtn.setManaged(false);
-                } else {
-                    setDefaultBackgroundListViewBtn.setVisible(true);
-                    setDefaultBackgroundListViewBtn.setManaged(true);
-                }
-                controlsWindowRootVB.setVisible(true);
-                controlsWindowRootVB.setManaged(true);
-            }
+            updateControlsWindowState();
+            controlsWindowRootVB.setVisible(true);
+            controlsWindowRootVB.setManaged(true);
         }
     }
 
@@ -2358,14 +2188,234 @@ public class SpeechBaseController {
     }
 
     public void updateNameAndStatusChannel(ChannelUser channelUser) {
-        if(selectedChannelUser != null && selectedChannelUser.equals(channelUser)) {
+        if (selectedChannelUser != null && selectedChannelUser.equals(channelUser)) {
             channelName.setText(channelUser.getVisibleNameChat());
             if (selectedChannelUser.getChannel().getChannelType().getChannelTypeId() == 3)
                 channelStatus.setText(channelUser.getStatusOfTheInterlocutor());
             else
                 channelStatus.setText(String.format("Число участников: %d", channelUser.getChannel().getChannelCountUser()));
-
-            System.out.println("Обновляем шапку");
         }
+    }
+
+    private void refreshVisibleMessageCells() {
+        if (currentFlow == null) return;
+        ObservableList<Message> items = messagesLV.getItems();
+        if (items.isEmpty()) return;
+        IndexedCell<?> firstCell = currentFlow.getFirstVisibleCell();
+        IndexedCell<?> lastCell = currentFlow.getLastVisibleCell();
+        if (firstCell == null || lastCell == null) return;
+        int first = firstCell.getIndex();
+        int last = lastCell.getIndex();
+        if (first < 0 || last < 0) return;
+        if (first >= items.size()) return;
+        try {
+            for (int i = first; i <= last && i < items.size(); i++) {
+                Message msg = items.get(i);
+                TextMessageCellController ctrl = messageCellCreator.getControllerCache(msg);
+                if (ctrl != null) {
+                    ctrl.updateAvatarVisibility();
+                }
+            }
+        } catch (IndexOutOfBoundsException ignore) {
+        }
+    }
+
+    private void initControlsWindow() {
+        double vBoxWidth = 200;
+        controlsWindowRootVB = new VBox();
+        controlsWindowRootVB.setMaxWidth(vBoxWidth);
+        controlsWindowRootVB.setMaxHeight(Region.USE_PREF_SIZE);
+        controlsWindowRootVB.setUserData("controlsWindowRootVB");
+        controlsWindowRootVB.getStyleClass().add("working-with-a-message-root-pane");
+        StackPane.setAlignment(controlsWindowRootVB, Pos.TOP_RIGHT);
+        StackPane.setMargin(controlsWindowRootVB, new Insets(41, 10, 0, 0));
+        rightSP.getChildren().add(controlsWindowRootVB);
+        controlsWindowRootVB.setVisible(false);
+        controlsWindowRootVB.setManaged(false);
+
+        // Поиск
+        searchBtn = createCustomButton("imageSearchButton.png", "Поиск");
+        searchBtn.setOnAction(e -> actionSearchBtn());
+        controlsWindowRootVB.getChildren().add(searchBtn);
+
+        // Ввод
+        editBtn = createCustomButton("change.png", "Ввод");
+        editBtn.setOnAction(e -> {
+            messageTA.requestFocus();
+            messageTA.positionCaret(messageTA.getText().length());
+        });
+        controlsWindowRootVB.getChildren().add(editBtn);
+
+        // Уведомления
+        muteBtn = createCustomButton("mute.png", "Отключить звук");
+        enableNotificationsBtn = createCustomButton("notification-bell.png", "Включить уведомления");
+        muteBtn.setOnAction(e -> {
+            UsersInSilentMode newMode = new UsersInSilentMode();
+            newMode.setChannelID(selectedChannelUser.getChannel().getChannelID());
+            newMode.setUserID(currentUser.getIdUser());
+            usersInSilentModeService.save(newMode);
+            updateMuteButtonsState();
+        });
+        enableNotificationsBtn.setOnAction(e -> {
+            usersInSilentModeService.deleteUserSetSilentMode(
+                    selectedChannelUser.getChannel().getChannelID(),
+                    currentUser.getIdUser()
+            );
+            updateMuteButtonsState();
+        });
+        controlsWindowRootVB.getChildren().addAll(enableNotificationsBtn, muteBtn);
+
+        // Выбор сообщений
+        selectMessagesBtn = createCustomButton("select.png", "Выбрать сообщения");
+        selectMessagesBtn.setOnAction(e -> setSelectionModeActive(true));
+        controlsWindowRootVB.getChildren().add(selectMessagesBtn);
+
+        // Обои
+        selectBackgroundListViewBtn = createCustomButton("background-btn.png", "Выбрать обои");
+        setDefaultBackgroundListViewBtn = createCustomButton("delete-backgorund.png", "Обои по умолчанию");
+        selectBackgroundListViewBtn.setOnAction(e -> chooseBackgroundImage());
+        setDefaultBackgroundListViewBtn.setOnAction(e -> resetBackgroundToDefault());
+        controlsWindowRootVB.getChildren().addAll(selectBackgroundListViewBtn, setDefaultBackgroundListViewBtn);
+
+        // Управление пересылкой и очистка чата
+        addSharingBtn = createCustomButton("forward.png", "Разрешить пересылку");
+        disableSharingBtn = createCustomButton("disable_sharing.png", "Запретить пересылку");
+        deleteChatBtn = createCustomButton("delete-red.png", "Отчистить переписку");
+        deleteChatBtn.addStyleText("clear-all-message");
+        deleteChatBtn.setOnAction(e -> {
+            List<Message> allMessage = messageService.getAllMessageInChannel(
+                    selectedChannelUser.getChannel().getChannelID()
+            );
+            if (allMessage != null && !allMessage.isEmpty()) {
+                new ConfirmationOfMessageDeletion().initializeShape(this, allMessage);
+            }
+        });
+        addSharingBtn.setOnAction(e -> {
+            Channel channel = selectedChannelUser.getChannel();
+            channel.setDisable_sharing(false);
+            new ChannelService().update(channel);
+            updateSharingButtonsState();
+        });
+        disableSharingBtn.setOnAction(e -> {
+            Channel channel = selectedChannelUser.getChannel();
+            channel.setDisable_sharing(true);
+            new ChannelService().update(channel);
+            updateSharingButtonsState();
+        });
+        controlsWindowRootVB.getChildren().addAll(addSharingBtn, disableSharingBtn, deleteChatBtn);
+
+        // Слушатель закрытия панели при клике вне кнопки
+        if (removeControlsWindow == null) {
+            removeControlsWindow = e -> {
+                Point2D point = createControlsWindowBtn.screenToLocal(e.getScreenX(), e.getScreenY());
+                if (point != null && createControlsWindowBtn.contains(point)) return;
+                PauseTransition pause = new PauseTransition(Duration.millis(300));
+                pause.playFromStart();
+                pause.setOnFinished(ev -> {
+                    controlsWindowRootVB.setVisible(false);
+                    controlsWindowRootVB.setManaged(false);
+                });
+            };
+            messagesSP.addEventFilter(MouseEvent.MOUSE_PRESSED, removeControlsWindow);
+        }
+    }
+
+    private CustomButton createCustomButton(String imageName, String text) {
+        Image image = new Image(Objects.requireNonNull(
+                getClass().getResourceAsStream("/com/example/speech/image/" + imageName)
+        ));
+        CustomButton btn = new CustomButton(image, text);
+        btn.setPrefWidth(200);
+        btn.setPrefHeight(40);
+        return btn;
+    }
+
+    private void updateMuteButtonsState() {
+        if (selectedChannelUser == null) return;
+        boolean isMuted = usersInSilentModeService.isUserSetSilentMode(
+                selectedChannelUser.getChannel().getChannelID(),
+                currentUser.getIdUser()
+        );
+        enableNotificationsBtn.setVisible(isMuted);
+        enableNotificationsBtn.setManaged(isMuted);
+        muteBtn.setVisible(!isMuted);
+        muteBtn.setManaged(!isMuted);
+    }
+
+    private void updateSharingButtonsState() {
+        if (selectedChannelUser == null) return;
+        boolean sharingDisabled = selectedChannelUser.getChannel().isDisable_sharing();
+        addSharingBtn.setVisible(sharingDisabled);
+        addSharingBtn.setManaged(sharingDisabled);
+        disableSharingBtn.setVisible(!sharingDisabled);
+        disableSharingBtn.setManaged(!sharingDisabled);
+    }
+
+    private void updateBackgroundButtonState() {
+        if (selectedChannelUser == null) return;
+        boolean hasBackground = selectedChannelUser.getBackgroundImageBytes() != null &&
+                selectedChannelUser.getBackgroundImageBytes().length > 0;
+        setDefaultBackgroundListViewBtn.setVisible(hasBackground);
+        setDefaultBackgroundListViewBtn.setManaged(hasBackground);
+    }
+
+    private void updateControlsWindowState() {
+        if (selectedChannelUser == null) return;
+        updateMuteButtonsState();
+        updateBackgroundButtonState();
+
+        boolean isDialog = selectedChannelUser.getChannel().getChannelType().getChannelTypeId() == 3;
+        boolean isOwner = selectedChannelUser.getChannel().getOwnerUser() != null &&
+                selectedChannelUser.getChannel().getOwnerUser().equals(currentUser);
+        boolean showChannelControls = isDialog || isOwner;
+
+        addSharingBtn.setVisible(showChannelControls);
+        addSharingBtn.setManaged(showChannelControls);
+        disableSharingBtn.setVisible(showChannelControls);
+        disableSharingBtn.setManaged(showChannelControls);
+        deleteChatBtn.setVisible(showChannelControls);
+        deleteChatBtn.setManaged(showChannelControls);
+
+        if (showChannelControls) {
+            updateSharingButtonsState();
+        }
+    }
+
+    private void chooseBackgroundImage() {
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Выбор изображение для фона");
+        fileChooser.getExtensionFilters().addAll(
+                new FileChooser.ExtensionFilter("Image Files", "*.png", "*.jpg", "*.gif")
+        );
+        File chosenFile = fileChooser.showOpenDialog(rootAnchorPane.getScene().getWindow());
+        if (chosenFile == null) return;
+        try {
+            selectedChannelUser.setBackgroundImageBytes(Files.readAllBytes(chosenFile.toPath()));
+            channelUserService.update(selectedChannelUser);
+            selectedChannelUser.setBackgroundImage(null);
+            messagesLV.setBackground(new Background(new BackgroundImage(
+                    selectedChannelUser.getBackgroundImage(),
+                    BackgroundRepeat.NO_REPEAT,
+                    BackgroundRepeat.NO_REPEAT,
+                    BackgroundPosition.CENTER,
+                    BackgroundSize.DEFAULT
+            )));
+            updateBackgroundButtonState();
+        } catch (IOException ex) {
+            throw new RuntimeException(ex);
+        }
+    }
+
+    private void resetBackgroundToDefault() {
+        messagesLV.setBackground(new Background(new BackgroundImage(
+                defaultBackgroundImage,
+                BackgroundRepeat.NO_REPEAT,
+                BackgroundRepeat.NO_REPEAT,
+                BackgroundPosition.CENTER,
+                BackgroundSize.DEFAULT
+        )));
+        selectedChannelUser.setBackgroundImageBytes(null);
+        channelUserService.update(selectedChannelUser);
+        updateBackgroundButtonState();
     }
 }

@@ -137,7 +137,8 @@ public class ChatSelectionController extends StackPane {
         searchTF.textProperty().addListener((ob, oldV, newV) -> {
             if(newV != null && !newV.isEmpty()) {
                 filteredList.setPredicate(channelUser ->
-                        channelUser.getChannel().getChannelName().toLowerCase().contains(newV.toLowerCase()));
+                        (channelUser.getChannel().getChannelName() != null && channelUser.getChannel().getChannelName().toLowerCase().contains(newV.toLowerCase()))
+                                || channelUser.getChannel().getChannel_name_unique().toLowerCase().contains(newV.toLowerCase()));
             } else filteredList.setPredicate(channelUser -> true);
         });
 

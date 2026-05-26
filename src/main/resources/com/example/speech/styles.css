@@ -182,10 +182,13 @@
 }
 
 .check-box:selected > .box > .mark {
-    -fx-background-color: rgba(255, 255, 255, 0.95) !important;
-    -fx-shape: "M 5.5,8.5 L 2.5,5.5 L 3.5,4.5 L 5.5,6.5 M 5,6.8 L 8.5,3.5 L 9.5,4.5 L 5.5,8.5";
+    -fx-background-color: rgba(255, 255, 255, 0.95);
+    -fx-shape: "M 3.5,7.5 L 5.5,9.5 L 9.5,4.5 L 8.5,3.5 L 5.5,7.5 L 4.5,6.5 Z";
     -fx-alignment: center;
     -fx-translate-y: -1;
+    -fx-scale-shape: true;
+    -fx-scale-x: 0.8;
+    -fx-scale-y: 0.8;
 }
 
 .reply-button {
@@ -767,4 +770,32 @@
 
 .button-chose-logo:hover {
     -fx-background-color: #00290E;
+}
+
+.combo-box-date .list-view {
+    -fx-background-color: white;
+    -fx-background-radius: 0 0 8 8;
+    -fx-border-width: 0;
+    -fx-padding: 0 4 4 4;
+}
+
+.combo-box-date .list-view .list-cell {
+    -fx-border-width: 0;
+    -fx-border-color: transparent;
+    -fx-background-insets: 0;
+    -fx-background-radius: 0;
+    -fx-padding: 5px 8px;
+    -fx-text-fill: #2D3748;
+}
+
+.combo-box-date .list-view .list-cell:hover {
+    -fx-background-color: rgba(245, 245, 245);
+}
+
+.combo-box-date .list-view .list-cell:selected {
+    -fx-background-color: rgba(230, 245, 230);
+}
+
+.combo-box-date .list-view .list-cell:last {
+    -fx-background-radius: 0 0 8 8;
 }

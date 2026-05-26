@@ -53,7 +53,11 @@ public class HelpfulValidationClass {
     //Статичный метод, в качестве возвращаемого типа будет тип String(сообщение о валидации)
     //В качестве аргумента может принимать любой объект, который наследуется от TextInputControl(TextField, PasswordField и т.д.)
     public static String validationField(TextInputControl inputField) {
-        String text = inputField.getText().trim();
+        String text;
+        if(inputField.getText() == null)
+            text = "";
+        else
+            text = inputField.getText().trim();
 
         // Определяем логику только по ID
         if (inputField.getId() != null) {
@@ -271,18 +275,16 @@ public class HelpfulValidationClass {
             return "Все поля даты должны быть заполнены";
 
         try {
-            selectedMonth = MONTHS.indexOf(month.getValue()) + 1;//Так к списке счёт начинается с 0, а в LocalDate с 1
-            // Пытаемся создать LocalDate
-            LocalDate birthDate = LocalDate.of(year.getValue(), selectedMonth, day.getValue());
-
+            selectedMonth = MONTHS.indexOf(month.getValue()) + 1;
+            LocalDate.of(year.getValue(), selectedMonth, day.getValue());
             return null;
         } catch (DateTimeException e) {
             YearMonth yearMonth = YearMonth.of(year.getValue(), selectedMonth);
             int maxDaysInMonth = yearMonth.lengthOfMonth();
 
             if (day.getValue() > maxDaysInMonth)
-                return "В месяце " + month.getValue() + ", " + year.getValue() + " года может быть не более "
-                        + day.getValue() + "дней/дня";
+                return "В месяце " + month.getValue() + ", " + year.getValue() + " года не более "
+                        + maxDaysInMonth + " дней";
 
             return "Некорректно указанная дата";
         }
@@ -352,11 +354,19 @@ public class HelpfulValidationClass {
                 label.setStyle(originalLabelStyle + " -fx-text-fill: rgba(115,0,0);");
                 if (parent instanceof TextInputControl)
                     parent.setStyle(originalInputStyle + " -fx-border-color: rgba(115,0,0);");
+                else {
+                    for(Node node : ((HBox) parent).getChildren())
+                        node.setStyle("-fx-border-color: rgba(115,0,0);");
+                }
             } else {
                 //Валидация пройдена - восстанавливаем оригинальные стили
                 label.setText(originalText);
                 label.setStyle(originalLabelStyle);
                 parent.setStyle(originalInputStyle);
+                if(parent instanceof HBox) {
+                    for(Node node : ((HBox) parent).getChildren())
+                        node.setStyle("");
+                }
             }
         }
     }

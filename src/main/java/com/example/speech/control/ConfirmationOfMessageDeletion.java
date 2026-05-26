@@ -282,6 +282,11 @@ public class ConfirmationOfMessageDeletion extends Pane {
                 try (Session entityManager = HibernateSessionFactory.getSessionFactory().openSession()) {
                     Transaction transaction = entityManager.beginTransaction();
 
+                    entityManager.createQuery(
+                                    "DELETE FROM Message m WHERE m.channelInvitations.channelID = :channelId")
+                            .setParameter("channelId", channelId)
+                            .executeUpdate();
+
                     List<Long> channelUserIds = entityManager.createQuery(
                                     "SELECT cu.channelUserId FROM ChannelUser cu WHERE cu.channel.channelID = :channelId", Long.class)
                             .setParameter("channelId", channelId)

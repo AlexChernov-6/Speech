@@ -39,27 +39,37 @@ public class WindowControlsController {
 
     @FXML
     private void onCloseBtn() {
+        stage.hide();
+
         Thread updateStatusThread = new Thread(() -> {
-            ChannelUserService channelUserService = new ChannelUserService();
+            try {
+                ChannelUserService channelUserService = new ChannelUserService();
 
-            currentUser.setStatusUser("не в сети");
-            new UserService().update(currentUser);
+                if(currentUser != null) {
+                    currentUser.setStatusUser("не в сети");
+                    new UserService().update(currentUser);
 
-            List<Channel> channels = channelUserService.getAllChatsByUser(currentUser).stream()
-                    .map(cU -> cU.getChannel())
-                    .filter(channel -> channel.getChannelType().getChannelTypeId() == 3)
-                    .toList();
-            for (Channel channel : channels) {
-                ChannelUser channelUser = channelUserService
-                        .getInterlocutorUserChannelInChannel(channel.getChannelID(), currentUser.getIdUser());
-                channelUser.setStatusOfTheInterlocutor(currentUser.getStatusUser());
-                channelUserService.update(channelUser);
+                    List<Channel> channels = channelUserService.getAllChatsByUser(currentUser).stream()
+                            .map(ChannelUser::getChannel)
+                            .filter(channel -> channel.getChannelType().getChannelTypeId() == 3)
+                            .toList();
+                    for (Channel channel : channels) {
+                        ChannelUser channelUser = channelUserService
+                                .getInterlocutorUserChannelInChannel(channel.getChannelID(), currentUser.getIdUser());
+                        if (channelUser != null) {
+                            channelUser.setStatusOfTheInterlocutor(currentUser.getStatusUser());
+                            channelUserService.update(channelUser);
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            } finally {
+                Platform.runLater(() -> stage.close());
             }
         });
-        updateStatusThread.setDaemon(true);
+        updateStatusThread.setDaemon(false);
         updateStatusThread.start();
-
-        stage.close();
     }
 
     @FXML

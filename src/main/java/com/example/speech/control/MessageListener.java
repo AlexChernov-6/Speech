@@ -163,32 +163,27 @@ public class MessageListener implements Runnable {
                             boolean isDelete = (channelUserId < 0);
                             long absId = Math.abs(channelUserId);
 
+                            ChannelUser existing = speechBaseController.userChats.stream()
+                                    .filter(cu -> cu.getChannelUserId() == absId)
+                                    .findFirst()
+                                    .orElse(null);
+
                             if (isDelete) {
-                                // Удаление: ищем ChannelUser в локальном списке и убираем
-                                ChannelUser toRemove = speechBaseController.userChats.stream()
-                                        .filter(cu -> cu.getChannelUserId() == absId)
-                                        .findFirst()
-                                        .orElse(null);
-                                if (toRemove != null) {
-                                    removeChannel(toRemove);
-                                    Platform.runLater(() -> {
-                                        speechBaseController.userChats.remove(toRemove);
-                                    });
+                                if (existing != null) {
+                                    removeChannel(existing);
+                                    Platform.runLater(() -> speechBaseController.userChats.remove(existing));
                                 }
                             } else {
-                                // Добавление: загружаем свежий ChannelUser
                                 ChannelUser newCu = new ChannelUserService().getRowById(channelUserId);
-                                if (newCu != null && !speechBaseController.userChats.contains(newCu)) {
+                                if (newCu == null) return;
+
+                                if (existing == null) {
                                     addChannelAsync(newCu);
-                                    Platform.runLater(() -> {
-                                        speechBaseController.userChats.add(newCu);
-                                    });
+                                    Platform.runLater(() -> speechBaseController.userChats.add(newCu));
                                 } else {
+                                    int index = speechBaseController.userChats.indexOf(existing);
                                     Platform.runLater(() -> {
-                                        ObservableList<ChannelUser> userChats = speechBaseController.userChats;
-                                        userChats.set(userChats.indexOf(userChats.stream()
-                                                .filter(uC -> uC.getChannelUserId() == channelUserId)
-                                                        .findFirst().orElse(newCu)), newCu);
+                                        speechBaseController.userChats.set(index, newCu);
                                         speechBaseController.updateNameAndStatusChannel(newCu);
                                     });
                                 }

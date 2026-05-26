@@ -150,8 +150,6 @@ public class EntranceController extends Application {
         if (startValuePassword == null)
             startValuePassword = passwordLb.getText();
 
-        System.out.println(userService.getAllRow());
-
         FXMLLoader fxmlLoader = new FXMLLoader(EntranceController.class.getResource(
                 "/com/example/speech/shape/SpeechBaseShape.fxml"
         ));
@@ -165,17 +163,24 @@ public class EntranceController extends Application {
         if(mailLb.getText().equals(startValueEmail) && passwordLb.getText().equals(startValuePassword)) {
             //Меняем разметку окна авторизации на разметку основного окна
             User currUser = userService.getUserByEmail(mailTF.getText());
-            currUser.setUniqueIdentityComputer(HARDWARE_ABSTRACTION_LAYER.getComputerSystem().getHardwareUUID());
-            userService.update(currUser);
 
-            CONFIG_MANAGER.setUserEmail(currUser.getEmailUser());
-            CONFIG_MANAGER.setUserPassword(currUser.getPasswordUser());
-            CONFIG_MANAGER.save();
+            if(currUser.getPasswordUser().equals(passwordF.getText())) {
+                currUser.setUniqueIdentityComputer(HARDWARE_ABSTRACTION_LAYER.getComputerSystem().getHardwareUUID());
+                userService.update(currUser);
 
-            Platform.runLater(() -> {
-                controller.initializeData(stage, currUser);
-                stage.getScene().setRoot(speechBaseRoot);
-            });
+                CONFIG_MANAGER.setUserEmail(currUser.getEmailUser());
+                CONFIG_MANAGER.setUserPassword(currUser.getPasswordUser());
+                CONFIG_MANAGER.save();
+
+                Platform.runLater(() -> {
+                    controller.initializeData(stage, currUser);
+                    stage.getScene().setRoot(speechBaseRoot);
+                });
+            } else {
+                mailLb.setText("Неверная пара логин и пароль");
+                mailLb.setStyle("-fx-text-fill: rgba(115,0,0);");
+                mailTF.setStyle("-fx-border-color: rgba(115,0,0);");
+            }
         }
     }
 

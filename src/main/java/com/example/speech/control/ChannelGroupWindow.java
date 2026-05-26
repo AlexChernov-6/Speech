@@ -277,7 +277,6 @@ public class ChannelGroupWindow extends StackPane {
                                 Channel channel = channelService.getChannelByTwoUser(currentUser, user);
 
                                 if (channel == null) {
-                                    System.out.println("1");
                                     channel = new Channel();
                                     channel.setChannelType(new ChannelTypeService().getRowById(3L));
                                     channel.setChannel_name_unique(speechBaseController.getCurrentUser().getNameUser() + "_" + user.getNameUser());
@@ -298,7 +297,7 @@ public class ChannelGroupWindow extends StackPane {
                                     channelUser2.setVisibleLogoChat(user.getPhotoUser());
                                     channelUserService.save(channelUser2);
 
-                                    Message messageInvitation = new Message();//Простестировать
+                                    Message messageInvitation = new Message();
                                     messageInvitation.setMessageDatetime(LocalDateTime.now());
                                     messageInvitation.setChannelUser(channelUser2);
                                     messageInvitation.setChannelInvitations(currentChannel);

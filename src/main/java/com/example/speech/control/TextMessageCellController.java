@@ -11,13 +11,15 @@ import com.example.speech.util.FileUtils;
 import com.example.speech.util.ImageUtils;
 import javafx.animation.*;
 import javafx.application.Platform;
+import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableValue;
 import javafx.fxml.FXML;
 import javafx.geometry.Insets;
 import javafx.geometry.Point2D;
 import javafx.geometry.Pos;
 import javafx.scene.control.Button;
-import javafx.scene.control.ContentDisplay;
 import javafx.scene.control.Label;
+import javafx.scene.control.ListView;
 import javafx.scene.control.ProgressIndicator;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
@@ -39,7 +41,6 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static com.example.speech.control.WorkingWithAMessageListController.replyI;
 import static com.example.speech.util.ImageUtils.setCircularImage;
 
 
@@ -99,7 +100,13 @@ public class TextMessageCellController {
 
     private final ChannelUserService channelUserService = new ChannelUserService();
 
-    public GridPane initializeMessage(SpeechBaseController speechBaseController, Message message, boolean drawUserPhoto) {
+    private final List<HBox> fileContainers = new ArrayList<>();
+    private final List<ProgressIndicator> progressIndicators = new ArrayList<>();
+    private final List<Runnable> fileCleanupTasks = new ArrayList<>();
+
+    private ListView<Message> messagesLV;
+
+    public void initializeMessage(SpeechBaseController speechBaseController, Message message) {
         this.speechBaseController = speechBaseController;
         this.message = message;
         rootMessageAP.widthProperty().addListener((ob, oldV, newV) -> {
@@ -113,7 +120,7 @@ public class TextMessageCellController {
             messageLabel.setText(message.getMessageString());
         else messageLabel.setManaged(false);
 
-        if (speechBaseController.getCurrentSearchText() != null &&
+        if (speechBaseController.isSearchModeActive() && speechBaseController.getCurrentSearchText() != null &&
                 message.getMessageString() != null &&
                 message.getMessageString().toLowerCase().contains(speechBaseController.getCurrentSearchText().toLowerCase())) {
             highlightText(speechBaseController.getCurrentSearchText());
@@ -137,15 +144,6 @@ public class TextMessageCellController {
         }
 
         timeStatusHB.minWidthProperty().bind(contentGP.widthProperty());
-
-        if (!drawUserPhoto) {
-            userPhotoIV.setVisible(false);
-            contentVB.setStyle("-fx-background-radius: 15px 15px 15px 15px; -fx-border-radius: 15px 15px 15px 15px;");
-        } else {
-            setCircularImage(userPhotoIV, message.getChannelUser().getUser().getPhotoImage(), 45);
-            userPhotoIV.setVisible(true);
-            contentVB.setStyle("");
-        }
 
         setMouseListener();
 
@@ -231,15 +229,15 @@ public class TextMessageCellController {
             setCircularImage(userLogo, user.getPhotoImage(), 15);
             userInfoBtn.setText(user.getNameUser());
             userInfoBtn.setOnAction(e -> {
-                if(speechBaseController.getCurrentUser().equals(user)) {
-                    if(speechBaseController.getProfileWindow() != null)
+                if (speechBaseController.getCurrentUser().equals(user)) {
+                    if (speechBaseController.getProfileWindow() != null)
                         speechBaseController.getProfileWindow().showProfileWidow();
                     else {
                         speechBaseController.setProfileWindow(new ProfileWindow(speechBaseController));
                         speechBaseController.getProfileWindow().showProfileWidow();
                     }
                 } else {
-                    if(speechBaseController.getOtherProfileWindow() != null)
+                    if (speechBaseController.getOtherProfileWindow() != null)
                         speechBaseController.getOtherProfileWindow().showOtherProfileWindow(user);
                     else {
                         speechBaseController.setOtherProfileWindow(new OtherProfileWindow(speechBaseController));
@@ -247,12 +245,19 @@ public class TextMessageCellController {
                     }
                 }
             });
-            //Добавить обработку нажатия на имя переславшего
         }
 
-        if(message.getChannelInvitations() != null) {
+        if (message.getMessageContent() != null && !message.getMessageContent().isEmpty()) {
+            clearFiles();
+            for (MessageContent mC : message.getMessageContent())
+                addFile(mC);
+        }
+
+        if (message.getChannelInvitations() != null) {
             invitationHB.setVisible(true);
             invitationHB.setManaged(true);
+            message.setMessageString("Присоединяйся к " + message.getChannelInvitations().getChannel_name_unique() + "!\n" +
+                    "С нами жизнь будет интересней)");
             this.messageLabel.setText("Присоединяйся к " + message.getChannelInvitations().getChannel_name_unique() + "!\n" +
                     "С нами жизнь будет интересней)");
             invitationBtn.setText("Вступить в " + message.getChannelInvitations().getChannel_name_unique());
@@ -261,7 +266,7 @@ public class TextMessageCellController {
                         .getChannelUserByUserIdAndChannelId(speechBaseController.getCurrentUser().getIdUser()
                                 , message.getChannelInvitations().getChannelID());
 
-                if(channelUser == null) {
+                if (channelUser == null) {
                     channelUser = new ChannelUser();
                     channelUser.setUser(speechBaseController.getCurrentUser());
                     channelUser.setChannel(message.getChannelInvitations());
@@ -280,11 +285,9 @@ public class TextMessageCellController {
         boolean isSelected = speechBaseController.isMessageSelected(message);
         setSelected(isSelected);
 
-        return contentGP;
-    }
+        updateAvatarVisibility();
 
-    public void setMaxWidthGP(double v) {
-        contentVB.setMaxWidth(v - 50);
+        contentGP.maxWidthProperty().bind(speechBaseController.getMessagesLV().widthProperty().subtract(150));
     }
 
     public void setMouseListener() {
@@ -408,12 +411,13 @@ public class TextMessageCellController {
         return label;
     }
 
-    public void addFile(MessageContent mC) {
+    private void addFile(MessageContent mC) {
         // Контейнер для строки файла
         HBox fileHB = new HBox();
         fileHB.setAlignment(Pos.CENTER_LEFT);
         fileHB.setPickOnBounds(true);
         contentVB.getChildren().add(2, fileHB);
+        fileContainers.add(fileHB);
 
         fileHB.setOnMouseEntered(e -> {
             fileHB.setStyle("-fx-background-color: rgba(150, 150, 170, 0.3); -fx-background-radius: 10;");
@@ -464,8 +468,8 @@ public class TextMessageCellController {
         progressIndicator.setPrefWidth(40);
         progressIndicator.setPrefHeight(40);
         stackPane.getChildren().add(progressIndicator);
-        progressIndicator.setVisible(true);
         progressIndicator.setMouseTransparent(true);
+        progressIndicators.add(progressIndicator);
 
         // Правая часть: имя файла и статус
         VBox rightVB = new VBox(3);
@@ -483,14 +487,11 @@ public class TextMessageCellController {
         rightVB.getChildren().add(statusLabel);
         statusLabel.setMouseTransparent(true);
 
-        // Проверяем, существует ли файл локально
         Path localFile = FileUtils.DEFAULT_STORAGE_DIR.resolve(fileName);
         if (Files.exists(localFile)) {
-            // Файл уже на диске – не обращаемся к БД
             progressIndicator.setVisible(false);
             statusLabel.setText("файл на устройстве");
 
-            // Для картинок сразу показываем превью
             if (fileType.equals("png") || fileType.equals("jpg") || fileType.equals("gif")) {
                 fileNameLB.setVisible(false);
                 try {
@@ -531,74 +532,82 @@ public class TextMessageCellController {
                     e.consume();
                 }
             });
+
+            fileCleanupTasks.add(() -> {
+            });
         } else {
             // Файла нет – запускаем асинхронную загрузку из БД
             MessageContentService contentService = new MessageContentService();
             FileUtils.SaveResult result = FileUtils.saveToDefaultDirAsync(
                     fileName,
-                    () -> contentService.getContentBytes(mC.getMessageContentId()) // ленивая загрузка байтов
+                    () -> contentService.getContentBytes(mC.getMessageContentId())
             );
 
             progressIndicator.progressProperty().bind(result.progressProperty());
 
-            // Отслеживаем прогресс
-            result.progressProperty().addListener((obs, oldV, newV) -> {
-                if (newV.doubleValue() >= 1.0) {
-                    // Завершено
-                    Platform.runLater(() -> {
-                        progressIndicator.setVisible(false);
-                        statusLabel.setText("загрузка завершена");
-                        // Показываем превью, если картинка
-                        if (fileType.equals("png") || fileType.equals("jpg") || fileType.equals("gif")) {
-                            fileNameLB.setVisible(false);
-                            try {
-                                Image image = new Image(new FileInputStream(localFile.toFile()));
-                                imagesFromMessage.add(image);
-                                fileImage.setImage(image);
-                            } catch (FileNotFoundException e) {
-                                fileNameLB.setVisible(true);
-                                fileNameLB.setText(fileType);
-                                System.err.println(e.getMessage());
-                            }
-                        }
+            ChangeListener<Number> progressListener = new ChangeListener<>() {
+                @Override
+                public void changed(ObservableValue<? extends Number> obs, Number oldV, Number newV) {
+                    if (newV.doubleValue() >= 1.0) {
+                        Platform.runLater(() -> {
+                            progressIndicator.setVisible(false);
+                            statusLabel.setText("загрузка завершена");
 
-                        fileHB.setOnMousePressed(e -> {
-                            if (e.getButton() == MouseButton.PRIMARY) {
-                                String fileType2;
-                                File file = result.getResultNow().toFile();
-                                int dotIndex2 = file.getName().lastIndexOf('.');
-                                if (dotIndex2 > 0 && dotIndex2 < file.getName().length() - 1) {
-                                    fileType2 = file.getName().substring(dotIndex2 + 1).toLowerCase();
-                                } else {
-                                    fileType2 = "";
+                            if (fileType.equals("png") || fileType.equals("jpg") || fileType.equals("gif")) {
+                                fileNameLB.setVisible(false);
+                                try {
+                                    Image image = new Image(new FileInputStream(localFile.toFile()));
+                                    imagesFromMessage.add(image);
+                                    fileImage.setImage(image);
+                                } catch (FileNotFoundException e) {
+                                    fileNameLB.setVisible(true);
+                                    fileNameLB.setText(fileType);
+                                    System.err.println(e.getMessage());
                                 }
+                            }
 
-                                if (fileType2.equals("png") || fileType2.equals("jpg") || fileType2.equals("gif")) {
-                                    ImageUtils.viewingImages(speechBaseController.getMessagesSP(), imagesFromMessage);
-                                } else {
-                                    if (Desktop.isDesktopSupported()) {
-                                        Desktop desktop = Desktop.getDesktop();
-                                        if (file.exists()) {
-                                            try {
-                                                desktop.open(file);
-                                            } catch (IOException e1) {
-
+                            fileHB.setOnMousePressed(e -> {
+                                if (e.getButton() == MouseButton.PRIMARY) {
+                                    String fileType2;
+                                    File file = localFile.toFile();
+                                    int dotIndex2 = file.getName().lastIndexOf('.');
+                                    if (dotIndex2 > 0 && dotIndex2 < file.getName().length() - 1) {
+                                        fileType2 = file.getName().substring(dotIndex2 + 1).toLowerCase();
+                                    } else {
+                                        fileType2 = "";
+                                    }
+                                    if (fileType2.equals("png") || fileType2.equals("jpg") || fileType2.equals("gif")) {
+                                        ImageUtils.viewingImages(speechBaseController.getMessagesSP(), imagesFromMessage);
+                                    } else {
+                                        if (Desktop.isDesktopSupported()) {
+                                            Desktop desktop = Desktop.getDesktop();
+                                            if (file.exists()) {
+                                                try {
+                                                    desktop.open(file);
+                                                } catch (IOException ignore) { }
                                             }
                                         }
                                     }
+                                    e.consume();
                                 }
-                                e.consume();
-                            }
+                            });
                         });
-                    });
-                } else {
-                    // Обновляем процент
-                    Platform.runLater(() ->
-                            statusLabel.setText(String.format("Загрузка: %.0f%%", newV.doubleValue() * 100))
-                    );
+                        result.progressProperty().removeListener(this);
+                    } else {
+                        Platform.runLater(() ->
+                                statusLabel.setText(String.format("Загрузка: %.0f%%", newV.doubleValue() * 100))
+                        );
+                    }
                 }
+            };
+            result.progressProperty().addListener(progressListener);
+
+            // Сохраняем задачу очистки: отмена загрузки, отвязка слушателя и unbind прогресса
+            fileCleanupTasks.add(() -> {
+                result.cancel();            // если метод cancel() существует
+                progressIndicator.progressProperty().unbind();
+                result.progressProperty().removeListener(progressListener);
             });
-            // Запускаем запись (start уже вызывается в saveToDefaultDirAsync)
         }
     }
 
@@ -606,5 +615,55 @@ public class TextMessageCellController {
         selectIV.setVisible(selected);
         highlightMessageTemporarilySP.setStyle(
                 selected ? "-fx-background-color: rgba(100, 149, 237, 0.3); -fx-background-radius: 12;" : "");
+    }
+
+    private void clearFiles() {
+        for (HBox hb : fileContainers) contentVB.getChildren().remove(hb);
+        for (ProgressIndicator pi : progressIndicators) pi.progressProperty().unbind();
+        for (Runnable task : fileCleanupTasks) task.run();
+        fileContainers.clear();
+        progressIndicators.clear();
+        fileCleanupTasks.clear();
+        imagesFromMessage.clear();
+    }
+
+    public void updateAvatarVisibility() {
+        if (messagesLV == null || message == null) return;
+        int idx = messagesLV.getItems().indexOf(message);
+        if (idx == -1) {
+            // Сообщение не найдено — показываем аватар по умолчанию (на всякий случай)
+            userPhotoIV.setVisible(true);
+            setCircularImage(userPhotoIV, message.getChannelUser().getUser().getPhotoImage(), 45);
+            contentVB.setStyle("");
+            return;
+        }
+        boolean shouldShow = shouldShowAvatarForMessage(idx);
+        if (shouldShow) {
+            userPhotoIV.setVisible(true);
+            setCircularImage(userPhotoIV, message.getChannelUser().getUser().getPhotoImage(), 45);
+            contentVB.setStyle("");
+        } else {
+            userPhotoIV.setVisible(false);
+            contentVB.setStyle("-fx-background-radius: 15px 15px 15px 15px; -fx-border-radius: 15px 15px 15px 15px;");
+        }
+    }
+
+    private boolean shouldShowAvatarForMessage(int idx) {
+        int total = messagesLV.getItems().size();
+        if (idx == total - 1) return true;
+        Message next = messagesLV.getItems().get(idx + 1);
+        if (!Objects.equals(next.getChannelUser().getUser().getIdUser(),
+                message.getChannelUser().getUser().getIdUser())) {
+            return true;
+        }
+        long minutesBetween = java.time.Duration.between(
+                message.getMessageDatetime(),
+                next.getMessageDatetime()
+        ).toMinutes();
+        return minutesBetween >= 15;
+    }
+
+    public void setMessagesListView(ListView<Message> lv) {
+        this.messagesLV = lv;
     }
 }

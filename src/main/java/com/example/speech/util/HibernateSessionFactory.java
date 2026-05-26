@@ -24,6 +24,7 @@ public class HibernateSessionFactory {
                         .addAnnotatedClass(Message.class)
                         .addAnnotatedClass(MessageContent.class)
                         .addAnnotatedClass(UsersInSilentMode.class)
+                        .addAnnotatedClass(HiddenChannelUser.class)
                         .buildSessionFactory();
             } catch (IOException e) {
                 System.err.println(e.getMessage());

@@ -1,8 +1,10 @@
 package com.example.speech.control;
 
 import com.example.speech.model.ChannelUser;
+import com.example.speech.model.HiddenChannelUser;
 import com.example.speech.model.Message;
 import com.example.speech.service.ChannelUserService;
+import com.example.speech.service.HiddenChannelUserService;
 import com.example.speech.service.MessageService;
 import com.example.speech.util.HelpfulClass;
 import javafx.fxml.FXML;
@@ -42,9 +44,20 @@ public class ChannelCellController {
             String stateLBText;
             if(channelUser.getChannel().getChannelType().getChannelTypeId() == 3) {
                 stateLBText = channelUser.getStatusOfTheInterlocutor();
+                if(stateLBText == null) {
+                    stateLBText = channelUser.getUser().getStatusUser();
+                    String finalStateLBText = stateLBText;
+                    Thread updateThread = new Thread(() -> {
+                        channelUser.setStatusOfTheInterlocutor(finalStateLBText);
+                        channelUserService.update(channelUser);
+                    });
+                    updateThread.setDaemon(true);
+                    updateThread.start();
+                }
                 if(stateLBText.equals("в сети"))
                     stateLb.setStyle("-fx-text-fill: #00C49A;");
-                else stateLb.setStyle("");
+                else
+                    stateLb.setStyle("");
             } else stateLBText = String.format("Число участников: %d", channelUser.getChannel().getChannelCountUser());
             stateLb.setText(stateLBText);
 
@@ -118,9 +131,18 @@ public class ChannelCellController {
 
     @FXML
     private void onDeleteChanelBtn() {
-        new ChannelUserService().delete(channelUser);
         speechBaseController.userChats.remove(channelUser);
-        speechBaseController.getMessageListener().removeChannel(channelUser);
+
+        ChannelUser finalChannelUser = channelUser;
+        Thread deleteChannelUserThread = new Thread(() -> {
+            HiddenChannelUser hiddenChannelUser = new HiddenChannelUser();
+            hiddenChannelUser.setUser(speechBaseController.getCurrentUser());
+            hiddenChannelUser.setChannel(finalChannelUser.getChannel());
+            new HiddenChannelUserService().save(hiddenChannelUser);
+            speechBaseController.getMessageListener().removeChannel(finalChannelUser);
+        });
+        deleteChannelUserThread.setDaemon(true);
+        deleteChannelUserThread.start();
     }
 
     public void notVisibleDelBtn() {

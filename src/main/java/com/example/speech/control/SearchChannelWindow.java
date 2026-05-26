@@ -1,13 +1,7 @@
 package com.example.speech.control;
 
-import com.example.speech.model.Channel;
-import com.example.speech.model.ChannelType;
-import com.example.speech.model.ChannelUser;
-import com.example.speech.model.User;
-import com.example.speech.service.BaseService;
-import com.example.speech.service.ChannelService;
-import com.example.speech.service.ChannelTypeService;
-import com.example.speech.service.ChannelUserService;
+import com.example.speech.model.*;
+import com.example.speech.service.*;
 import com.example.speech.util.HelpfulStylingClass;
 import javafx.animation.FadeTransition;
 import javafx.application.Platform;
@@ -45,6 +39,8 @@ public class SearchChannelWindow extends VBox {
     private Button joinChannelBtn;
 
     private final ChannelUserService channelUserService = new ChannelUserService();
+
+    private final HiddenChannelUserService hiddenChannelUserService = new HiddenChannelUserService();
 
     public SearchChannelWindow(SpeechBaseController speechBaseController) {
         this.speechBaseController = speechBaseController;
@@ -227,6 +223,8 @@ public class SearchChannelWindow extends VBox {
                             speechBaseController.getMessageListener().addChannelAsync(oldChannelUser);
 
                             speechBaseController.chatsView.getSelectionModel().select(oldChannelUser);
+
+                            hiddenChannelUserService.delete(hiddenChannelUserService.isHiddenUserFromChannel(oldChannelUser.getChannel(), speechBaseController.getCurrentUser()));
                         }
 
                         searchTF.setText("");
@@ -283,6 +281,8 @@ public class SearchChannelWindow extends VBox {
                                 speechBaseController.getMessageListener().addChannelAsync(oldChannelUser1);
 
                                 speechBaseController.chatsView.getSelectionModel().select(oldChannelUser1);
+
+                                hiddenChannelUserService.delete(hiddenChannelUserService.isHiddenUserFromChannel(oldChannelUser1.getChannel(), speechBaseController.getCurrentUser()));
                             } else {
                                 ChannelUser newChannelUser = new ChannelUser();
                                 newChannelUser.setUser(speechBaseController.getCurrentUser());

@@ -120,20 +120,14 @@
                 </GridPane.margin>
             </Label>
 
-            <!--Создадим HBox, для трёх ComboBox и растягиваем на все столбцы GridPane-->
-            <HBox fx:id="birthdayHBox" GridPane.columnSpan="3" GridPane.rowIndex="10" GridPane.valignment="TOP">
-
+            <HBox fx:id="birthdayHBox" GridPane.columnSpan="3" GridPane.rowIndex="10" GridPane.valignment="TOP" spacing="15">
                 <GridPane.margin>
                     <Insets left="20" right="20"/>
                 </GridPane.margin>
 
-                <ComboBox fx:id="dayBirthdayCB"  promptText="День" styleClass="text-field"/>
-                <ComboBox fx:id="monthBirthdayCB" promptText="Месяц" styleClass="text-field">
-                    <HBox.margin>
-                        <Insets left="15" right="15"/>
-                    </HBox.margin>
-                </ComboBox>
-                <ComboBox fx:id="yearBirthdayCB" promptText="Год" styleClass="text-field"/>
+                <ComboBox fx:id="dayBirthdayCB"  promptText="День" styleClass="text-field, combo-box-date"/>
+                <ComboBox fx:id="monthBirthdayCB" promptText="Месяц" styleClass="text-field, combo-box-date"/>
+                <ComboBox fx:id="yearBirthdayCB" promptText="Год" styleClass="text-field, combo-box-date"/>
             </HBox>
 
             <!--Кнопка регистрации аккаунта-->
