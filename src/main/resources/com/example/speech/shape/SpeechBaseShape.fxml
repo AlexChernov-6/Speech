@@ -29,7 +29,11 @@
                         </StackPane.margin>
                         <Button text="Найти или начать беседу" prefWidth="300" prefHeight="40" styleClass="find-or-start-chat-btn"
                                 onAction="#showSearchChannelWindow"/>
-                        <ListView fx:id="chatsView" prefWidth="300" VBox.vgrow="ALWAYS"/>
+                        <ListView fx:id="chatsView" prefWidth="300" VBox.vgrow="ALWAYS">
+                            <placeholder>
+                                <Label text="Пока что здесь пусто..." styleClass="empty-list-view-placeholder"/>
+                            </placeholder>
+                        </ListView>
                     </VBox>
                 </StackPane>
 
@@ -64,7 +68,11 @@
                             <Button fx:id="showAllPinnedMessagesBtn" onAction="#showPinnedContent"/>
                         </HBox>
 
-                        <ListView fx:id="messagesLV" VBox.vgrow="ALWAYS" styleClass="messages-list"/>
+                        <ListView fx:id="messagesLV" VBox.vgrow="ALWAYS" styleClass="messages-list">
+                            <placeholder>
+                                <Label text="Пока что здесь пусто..." styleClass="empty-list-view-placeholder"/>
+                            </placeholder>
+                        </ListView>
 
                         <HBox fx:id="updateMessageHB" styleClass="edit-forward-or-update-box" prefHeight="40"
                               minHeight="40"

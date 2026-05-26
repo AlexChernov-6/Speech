@@ -51,7 +51,6 @@ public class ProfileWindow extends VBox {
 
     private byte[] newUserLogo;
     private String newVisibleName;
-    private String newUserName;
     private String newUserBirthday;
 
     private final UserService userService = new UserService();
@@ -80,13 +79,15 @@ public class ProfileWindow extends VBox {
 
         newUserLogo = currentUser.getPhotoUser();
         newVisibleName = currentUser.getVisibleNameUser();
-        newUserName = currentUser.getNameUser();
         newUserBirthday = currentUser.getBirthdayUser();
 
         createButtonLogo();
 
         TextField emailTF = createTextFields("E-MAIL", currentUser.getEmailUser());
         emailTF.setDisable(true);
+
+        userNameTF = createTextFields("ИМЯ ПОЛЬЗОВАТЕЛЯ", currentUser.getNameUser());
+        userNameTF.setDisable(true);
 
         visibleNameTF = createTextFields("ОТОБРАЖАЕМОЕ ИМЯ", currentUser.getVisibleNameUser());
         visibleNameTF.textProperty().addListener((ob, oldV, newV) -> {
@@ -97,22 +98,6 @@ public class ProfileWindow extends VBox {
                 if(visibleNameTF.getUserData() != null && visibleNameTF.getUserData() instanceof Label)
                     ((Label) visibleNameTF.getUserData()).setText("ОТОБРАЖАЕМОЕ ИМЯ");
                 newVisibleName = newV;
-            }
-        });
-
-        userNameTF = createTextFields("ИМЯ ПОЛЬЗОВАТЕЛЯ", currentUser.getNameUser());
-        userNameTF.textProperty().addListener((ob, oldV, newV) -> {
-            if(newV.equals("ИМЯ ПОЛЬЗОВАТЕЛЯ")) {
-                if(userNameTF.getUserData() != null && userNameTF.getUserData() instanceof Label)
-                    ((Label) userNameTF.getUserData()).setText("Поле не может быть пустым");
-            } else {
-                if (userNameTF.getUserData() != null && userNameTF.getUserData() instanceof Label) {
-                    String valid = validateUserNameShort(newV);
-                    if (valid == null) {
-                        ((Label) userNameTF.getUserData()).setText("ИМЯ ПОЛЬЗОВАТЕЛЯ");
-                        newUserName = newV;
-                    } else ((Label) userNameTF.getUserData()).setText(valid);
-                }
             }
         });
 
@@ -314,11 +299,6 @@ public class ProfileWindow extends VBox {
                 }
             }
 
-            if(!currentUser.getNameUser().equals(newUserName) && userService.getUserByUserName(newUserName) != null) {
-                ((Label) userNameTF.getUserData()).setText("Пользователь с таким именем уже существует");
-                isValid = false;
-            }
-
             if(isValid) {
                 boolean isNewData = false;
                 if(!Arrays.equals(currentUser.getPhotoUser(), newUserLogo)) {
@@ -328,10 +308,6 @@ public class ProfileWindow extends VBox {
                 if(!currentUser.getVisibleNameUser().equals(newVisibleName)) {
                     isNewData = true;
                     currentUser.setVisibleNameUser(newVisibleName);
-                }
-                if(!currentUser.getNameUser().equals(newUserName)) {
-                    isNewData = true;
-                    currentUser.setNameUser(newUserName);
                 }
                 if(!currentUser.getBirthdayUser().equals(newUserBirthday)) {
                     isNewData = true;
@@ -368,12 +344,10 @@ public class ProfileWindow extends VBox {
         resetBtn.setOnAction(e -> {
             newUserLogo = currentUser.getPhotoUser();
             newVisibleName = currentUser.getVisibleNameUser();
-            newUserName = currentUser.getNameUser();
             newUserBirthday = currentUser.getBirthdayUser();
 
             logoUser.setImage(currentUser.getPhotoImage());
             visibleNameTF.setText(currentUser.getVisibleNameUser());
-            userNameTF.setText(currentUser.getNameUser());
             birthdayTF.setText(currentUser.getBirthdayUser());
             ((Label) birthdayTF.getUserData()).setText("ДАТА РОЖДЕНИЯ");
 

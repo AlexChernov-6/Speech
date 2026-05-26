@@ -222,29 +222,30 @@ public class TextMessageCellController {
         }
 
         if (message.getForwardedFrom() != null) {
-            UserService userService = new UserService();
-            User user = userService.getRowById(message.getForwardedFrom());
-            forwardHB.setVisible(true);
-            forwardHB.setManaged(true);
-            setCircularImage(userLogo, user.getPhotoImage(), 15);
-            userInfoBtn.setText(user.getNameUser());
-            userInfoBtn.setOnAction(e -> {
-                if (speechBaseController.getCurrentUser().equals(user)) {
-                    if (speechBaseController.getProfileWindow() != null)
-                        speechBaseController.getProfileWindow().showProfileWidow();
-                    else {
-                        speechBaseController.setProfileWindow(new ProfileWindow(speechBaseController));
-                        speechBaseController.getProfileWindow().showProfileWidow();
+            User user = new UserService().getRowById(message.getForwardedFrom());
+            if(user != null) {
+                forwardHB.setVisible(true);
+                forwardHB.setManaged(true);
+                setCircularImage(userLogo, user.getPhotoImage(), 15);
+                userInfoBtn.setText(user.getNameUser());
+                userInfoBtn.setOnAction(e -> {
+                    if (speechBaseController.getCurrentUser().equals(user)) {
+                        if (speechBaseController.getProfileWindow() != null)
+                            speechBaseController.getProfileWindow().showProfileWidow();
+                        else {
+                            speechBaseController.setProfileWindow(new ProfileWindow(speechBaseController));
+                            speechBaseController.getProfileWindow().showProfileWidow();
+                        }
+                    } else {
+                        if (speechBaseController.getOtherProfileWindow() != null)
+                            speechBaseController.getOtherProfileWindow().showOtherProfileWindow(user);
+                        else {
+                            speechBaseController.setOtherProfileWindow(new OtherProfileWindow(speechBaseController));
+                            speechBaseController.getOtherProfileWindow().showOtherProfileWindow(user);
+                        }
                     }
-                } else {
-                    if (speechBaseController.getOtherProfileWindow() != null)
-                        speechBaseController.getOtherProfileWindow().showOtherProfileWindow(user);
-                    else {
-                        speechBaseController.setOtherProfileWindow(new OtherProfileWindow(speechBaseController));
-                        speechBaseController.getOtherProfileWindow().showOtherProfileWindow(user);
-                    }
-                }
-            });
+                });
+            }
         }
 
         if (message.getMessageContent() != null && !message.getMessageContent().isEmpty()) {

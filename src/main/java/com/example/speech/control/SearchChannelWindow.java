@@ -282,7 +282,9 @@ public class SearchChannelWindow extends VBox {
 
                                 speechBaseController.chatsView.getSelectionModel().select(oldChannelUser1);
 
-                                hiddenChannelUserService.delete(hiddenChannelUserService.isHiddenUserFromChannel(oldChannelUser1.getChannel(), speechBaseController.getCurrentUser()));
+                                HiddenChannelUser hiddenChannelUser = hiddenChannelUserService.isHiddenUserFromChannel(oldChannelUser1.getChannel(), speechBaseController.getCurrentUser());
+                                if(hiddenChannelUser != null)
+                                    hiddenChannelUserService.delete(hiddenChannelUser);
                             } else {
                                 ChannelUser newChannelUser = new ChannelUser();
                                 newChannelUser.setUser(speechBaseController.getCurrentUser());

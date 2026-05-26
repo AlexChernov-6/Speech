@@ -799,3 +799,12 @@
 .combo-box-date .list-view .list-cell:last {
     -fx-background-radius: 0 0 8 8;
 }
+
+.empty-list-view-placeholder {
+    -fx-background-color: rgba(0, 0, 0, 0.8);
+    -fx-background-radius: 8px;
+    -fx-text-fill: white;
+    -fx-padding: 3 10;
+    -fx-font-weight: bold;
+    -fx-font-size: 10px;
+}

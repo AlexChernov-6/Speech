@@ -251,8 +251,10 @@ public class SpeechBaseController {
             for (Channel channel : channels) {
                 ChannelUser channelUser = channelUserService
                         .getInterlocutorUserChannelInChannel(channel.getChannelID(), currentUser.getIdUser());
-                channelUser.setStatusOfTheInterlocutor(currentUser.getStatusUser());
-                channelUserService.update(channelUser);
+                if(channelUser != null) {
+                    channelUser.setStatusOfTheInterlocutor(currentUser.getStatusUser());
+                    channelUserService.update(channelUser);
+                }
             }
         });
         updateStatusThread.setDaemon(true);
@@ -2144,8 +2146,10 @@ public class SpeechBaseController {
                 for (Channel channel : channels) {
                     ChannelUser channelUser = channelUserService
                             .getInterlocutorUserChannelInChannel(channel.getChannelID(), currentUser.getIdUser());
-                    channelUser.setStatusOfTheInterlocutor(currentUser.getStatusUser());
-                    channelUserService.update(channelUser);
+                    if(channelUser != null) {
+                        channelUser.setStatusOfTheInterlocutor(currentUser.getStatusUser());
+                        channelUserService.update(channelUser);
+                    }
                 }
             });
             updateStatusThread.setDaemon(true);
