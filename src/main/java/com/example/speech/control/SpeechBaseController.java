@@ -2413,11 +2413,10 @@ public class SpeechBaseController {
     private void resetBackgroundToDefault() {
         messagesLV.setBackground(new Background(new BackgroundImage(
                 defaultBackgroundImage,
-                BackgroundRepeat.NO_REPEAT,
-                BackgroundRepeat.NO_REPEAT,
+                BackgroundRepeat.REPEAT,
+                BackgroundRepeat.REPEAT,
                 BackgroundPosition.CENTER,
-                BackgroundSize.DEFAULT
-        )));
+                BackgroundSize.DEFAULT)));
         selectedChannelUser.setBackgroundImageBytes(null);
         channelUserService.update(selectedChannelUser);
         updateBackgroundButtonState();

@@ -54,7 +54,7 @@ public class RegistrationController {
     @FXML
     private Button registrationBtn;
 
-    private String startValueEmail, startValueVisibleName, startValueUserName, startValuePassword;
+    private String startValueEmail, startValueVisibleName, startValueUserName, startValuePassword, startValueBirthday;
 
     public void initializeData(Stage stage) {
         this.stage = stage;
@@ -80,13 +80,17 @@ public class RegistrationController {
         if (startValuePassword == null)
             startValuePassword = passwordLb.getText();
 
+        if(startValueBirthday == null)
+            startValueBirthday = birthdayLb.getText();
+
         //При нажатии на кнопку проводим валидацию данных в TextField
         updateStyleValidation(Map.of(mailTF, mailLb, visibleNameTF, visibleNameLb,
                 userNameTF, userNameLb, passwordF, passwordLb, birthdayHBox, birthdayLb));
 
         //Если данные заполнены корректно
         if(mailLb.getText().equals(startValueEmail) && visibleNameLb.getText().equals(startValueVisibleName)
-                && userNameLb.getText().equals(startValueUserName) && passwordLb.getText().equals(startValuePassword)) {
+                && userNameLb.getText().equals(startValueUserName) && passwordLb.getText().equals(startValuePassword)
+                && birthdayLb.getText().equals(startValueBirthday)) {
             User newUser = new User(null, mailTF.getText(), visibleNameTF.getText(), userNameTF.getText(), passwordF.getText(),
                     HelpfulClass.getLocalDate(dayBirthdayCB.getValue(), monthBirthdayCB.getValue(), yearBirthdayCB.getValue()),
                     null, null, passwordF.getText(), HARDWARE_ABSTRACTION_LAYER.getComputerSystem().getHardwareUUID());
