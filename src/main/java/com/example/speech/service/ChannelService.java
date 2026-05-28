@@ -52,4 +52,13 @@ public class ChannelService extends BaseService<Channel> {
                     .uniqueResult();
         }
     }
+
+    public boolean isDisableSharing(Channel channel) {
+        String queryHQL = "select disable_sharing from Channel where channelID = :CHANNEL_ID";
+        try (Session session = HibernateSessionFactory.getSessionFactory().openSession()) {
+            return session.createQuery(queryHQL, Boolean.class)
+                    .setParameter("CHANNEL_ID", channel.getChannelID())
+                    .uniqueResult();
+        }
+    }
 }

@@ -2,6 +2,7 @@ package com.example.speech.control;
 
 import com.example.speech.model.Message;
 import com.example.speech.model.MessageContent;
+import com.example.speech.service.ChannelService;
 import com.example.speech.service.MessageContentService;
 import com.example.speech.service.MessageService;
 import com.example.speech.util.FileUtils;
@@ -250,13 +251,14 @@ public class WorkingWithAMessageListController extends Pane {
             });
         });
 
+        boolean isDisableSharing = new ChannelService().isDisableSharing(speechBaseController.getSelectedChannelUser().getChannel());
         if (isCurrentUserMessage) {
-            if(speechBaseController.getSelectedChannelUser().getChannel().isDisable_sharing())
+            if(isDisableSharing)
                 rootVB.getChildren().addAll(reply, change, pin, copy, delete, select);
             else
                 rootVB.getChildren().addAll(reply, change, pin, copy, forward, delete, select);
         } else {
-            if(speechBaseController.getSelectedChannelUser().getChannel().isDisable_sharing())
+            if(isDisableSharing)
                 rootVB.getChildren().addAll(reply, pin, copy, delete, select);
             else
                 rootVB.getChildren().addAll(reply, pin, copy, forward, delete, select);

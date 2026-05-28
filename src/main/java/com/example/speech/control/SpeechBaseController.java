@@ -1410,7 +1410,8 @@ public class SpeechBaseController {
             AnchorPane.setRightAnchor(selectionCancelBtn, 10.0);
             AnchorPane.setTopAnchor(selectionCancelBtn, 5.0);
             AnchorPane.setBottomAnchor(selectionCancelBtn, 5.0);
-            if (selectedChannelUser.getChannel().isDisable_sharing()) {
+            boolean isDisableSharing = new ChannelService().isDisableSharing(selectedChannelUser.getChannel());
+            if (isDisableSharing) {
                 AnchorPane.setLeftAnchor(selectionDeleteBtn, 10.0);
                 AnchorPane.setTopAnchor(selectionDeleteBtn, 5.0);
                 AnchorPane.setBottomAnchor(selectionDeleteBtn, 5.0);
