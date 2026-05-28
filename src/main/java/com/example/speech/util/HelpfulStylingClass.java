@@ -29,6 +29,7 @@ public class HelpfulStylingClass {
 
     public static void setRedEndChar(Label... labels) {
         for(Label label : labels) {
+            if(label == null) return;
             String text = label.getText();
             if (text == null || text.isEmpty()) return;
 
@@ -96,6 +97,7 @@ public class HelpfulStylingClass {
     }
 
     public static void scrollPaneAnimation(Node node) {
+        if(node ==null) return;
         Platform.runLater(() -> {
             ScrollBar vBar = (ScrollBar) node.lookup(".scroll-bar:vertical");
             if(vBar != null) {

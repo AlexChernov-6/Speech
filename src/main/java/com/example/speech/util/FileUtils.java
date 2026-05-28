@@ -5,6 +5,8 @@ import javafx.beans.property.DoubleProperty;
 import javafx.beans.property.SimpleDoubleProperty;
 
 import java.io.*;
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 import java.nio.file.*;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -17,7 +19,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Supplier;
 
 public final class FileUtils {
-    public static final Path DEFAULT_STORAGE_DIR = Paths.get(System.getProperty("user.dir"), "files");
+    public static Path DEFAULT_STORAGE_DIR = Paths.get(System.getProperty("user.dir"), "files");
     private static final AtomicLong totalBytes = new AtomicLong(0);
 
     private static final ScheduledExecutorService scheduler =
@@ -107,10 +109,9 @@ public final class FileUtils {
 
             writerThread = new Thread(() -> {
                 try {
-                    // ✅ Получаем данные ВНУТРИ фонового потока
                     byte[] data = dataSupplier.get();
                     if (cancelled) {
-                        future.cancel(true);
+                        future.completeExceptionally(new IOException("Operation cancelled"));
                         return;
                     }
 
@@ -136,7 +137,7 @@ public final class FileUtils {
                             bytesWritten.addAndGet(len);
                         }
                         if (cancelled) {
-                            throw new IOException("Canceled");
+                            throw new IOException("Operation cancelled");
                         }
                     }
 
@@ -148,7 +149,7 @@ public final class FileUtils {
                         try {
                             Files.deleteIfExists(filePath);
                         } catch (IOException ignored) {}
-                        future.cancel(true);
+                        future.completeExceptionally(new IOException("Operation cancelled", e));
                     } else {
                         future.completeExceptionally(e);
                     }
@@ -193,6 +194,20 @@ public final class FileUtils {
 
         public DoubleProperty progressProperty() {
             return progress;
+        }
+
+        /** Используйте ТОЛЬКО в тестах для подмены корневой директории */
+        static void setDefaultStorageDirForTest(Path newDir) {
+            try {
+                Field field = FileUtils.class.getDeclaredField("DEFAULT_STORAGE_DIR");
+                field.setAccessible(true);
+                Field modifiersField = Field.class.getDeclaredField("modifiers");
+                modifiersField.setAccessible(true);
+                modifiersField.setInt(field, field.getModifiers() & ~Modifier.FINAL);
+                field.set(null, newDir);
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
         }
     }
 }

@@ -7,13 +7,13 @@ import org.hibernate.SessionFactory;
 
 public class UserService extends BaseService<User> {
 
-    private SessionFactory sessionFactory = HibernateSessionFactory.getSessionFactory();
+    private static SessionFactory sessionFactory = HibernateSessionFactory.getSessionFactory();
 
     public UserService() {
         super(User.class);
     }
 
-    public User getUserByEmail(String email) {
+    public static User getUserByEmail(String email) {
         String queryHQL = "from User where emailUser = :EMAIL_USER";
 
         try (Session session = sessionFactory.openSession()){

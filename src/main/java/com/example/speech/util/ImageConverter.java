@@ -96,7 +96,7 @@ public class ImageConverter {
         return null;
     }
 
-    private static String detectImageFormat(byte[] bytes) {
+    static String detectImageFormat(byte[] bytes) {
         if (bytes == null || bytes.length < 2) {
             return "Недостаточно данных";
         }
@@ -134,7 +134,7 @@ public class ImageConverter {
         return "Неизвестный формат";
     }
 
-    private static byte[] hexStringToByteArray(String hex) {
+    static byte[] hexStringToByteArray(String hex) {
         try {
             int len = hex.length();
 
