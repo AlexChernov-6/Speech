@@ -14,6 +14,8 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.paint.Color;
@@ -105,6 +107,21 @@ public class EntranceController extends Application {
         //В качестве фона будем использовать прозрачный фон, это нужно будет для создания прозрачной рамки окна
         //Что при самом изменении была видимость, что мы растягиваем его за пределами окна(немного дальше границ)
         scene.setFill(Color.TRANSPARENT);
+
+        scene.addEventFilter(KeyEvent.KEY_PRESSED, e -> {
+            if(e.isControlDown() && e.isShiftDown() && e.getCode() == KeyCode.L) {
+                stage.setIconified(true);
+                System.out.println("Открывает админский интерфейс, прежнее открытое окно: ");
+                Scene adminScene = new Scene(new AnchorPane(), CONFIG_MANAGER.getWindowWidth(), CONFIG_MANAGER.getWindowHeight());
+                Stage adminStage = new Stage();
+                adminStage.setX(CONFIG_MANAGER.getWindowX());
+                adminStage.setY(CONFIG_MANAGER.getWindowY());
+                adminStage.setFullScreen(CONFIG_MANAGER.getIsFullScreen());
+                adminStage.setScene(adminScene);
+                adminStage.setTitle("Админское окно");
+                adminStage.showAndWait();
+            }
+        });
         //Удаляет стандартное оформление окна(нужно, что бы настроить своё оформление окна)
         stage.initStyle(StageStyle.TRANSPARENT);
         //Помещаем созданную сцену в окно, теперь окно знает что ему показывать

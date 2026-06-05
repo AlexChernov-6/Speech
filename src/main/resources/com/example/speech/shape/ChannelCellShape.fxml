@@ -8,7 +8,7 @@
 <?import javafx.scene.shape.Circle?>
 
 <HBox xmlns:fx="http://javafx.com/fxml" fx:controller="com.example.speech.control.ChannelCellController"
-      prefHeight="60" prefWidth="295" alignment="CENTER_LEFT" fx:id="rootContainer">
+      prefHeight="70" prefWidth="295" alignment="CENTER_LEFT" fx:id="rootContainer">
     <padding>
         <Insets left="5" top="5" right="10" bottom="5"/>
     </padding>
@@ -27,12 +27,17 @@
         </ImageView>
     </StackPane>
 
-    <VBox spacing="5" HBox.hgrow="ALWAYS">
+    <VBox HBox.hgrow="ALWAYS">
         <HBox.margin>
-            <Insets left="10" right="10"/>
+            <Insets left="10" right="10" top="3" bottom="3"/>
         </HBox.margin>
         <Label fx:id="channelNameLb" styleClass="chat-name"/>
-        <Label fx:id="stateLb" styleClass="chat-state"/>
+        <Label fx:id="channelNameUniqueLb" styleClass="channel-user-unique-name"/>
+        <Label fx:id="stateLb" styleClass="chat-state">
+            <VBox.margin>
+                <Insets top="4"/>
+            </VBox.margin>
+        </Label>
     </VBox>
 
     <VBox>

@@ -96,7 +96,10 @@ public class ChannelUser {
     }
 
     public void setVisibleNameChat(String visibleNameChat) {
-        this.visibleNameChat = visibleNameChat;
+        if(visibleNameChat.length() > 50)
+            this.visibleNameChat = visibleNameChat.substring(0, 50);
+        else
+            this.visibleNameChat = visibleNameChat;
     }
 
     public byte[] getVisibleLogoChat() {

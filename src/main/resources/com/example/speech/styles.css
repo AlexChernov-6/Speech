@@ -808,3 +808,9 @@
     -fx-font-weight: bold;
     -fx-font-size: 10px;
 }
+
+.channel-user-unique-name {
+    -fx-font-size: 9px;
+    -fx-font-weight: bold;
+    -fx-text-fill: rgba(200, 200, 200);
+}

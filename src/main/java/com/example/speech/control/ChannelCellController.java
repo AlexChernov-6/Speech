@@ -24,7 +24,7 @@ public class ChannelCellController {
     @FXML
     private ImageView channelPhotoIV;
     @FXML
-    private Label channelNameLb, stateLb, timeLastMessageLB;
+    private Label channelNameLb, stateLb, timeLastMessageLB, channelNameUniqueLb;
     @FXML
     private Button deleteChanelBtn;
     private ChannelUserService channelUserService = new ChannelUserService();
@@ -38,7 +38,16 @@ public class ChannelCellController {
 
         if (channelUser.getChannel().getChannelLogo() != null && channelUser.getChannel().getChannelLogo().length > 0)
             setCircularImage(channelPhotoIV, channelUser.getPhotoImage(), 45);
-        channelNameLb.setText(channelUser.getVisibleNameChat());
+        if(channelUser.getVisibleNameChat().length() > 17)
+            channelNameLb.setText(channelUser.getVisibleNameChat().substring(0, 17));
+        else
+            channelNameLb.setText(channelUser.getVisibleNameChat());
+
+        if(channelUser.getChannel().getChannelType().getChannelTypeId() == 3)
+            channelNameUniqueLb.setText(channelUser.getUser().getNameUser());
+        else
+            channelNameUniqueLb.setText(channelUser.getChannel().getChannel_name_unique());
+
         List<Message> listMessage = new MessageService().getAllMessageInChannel(channelUser.getChannel().getChannelID());
         if(listMessage == null || listMessage.isEmpty()) {
             String stateLBText;

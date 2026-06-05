@@ -70,7 +70,10 @@ public class Channel {
     }
 
     public void setChannelName(String channelName) {
-        this.channelName = channelName;
+        if(channelName.length() > 50)
+            this.channelName = channelName.substring(0, 50);
+        else
+            this.channelName = channelName;
     }
 
     public byte[] getChannelLogo() {

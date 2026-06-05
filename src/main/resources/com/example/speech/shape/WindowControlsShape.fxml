@@ -20,6 +20,7 @@
     "/>
 
     <HBox GridPane.columnIndex="1" alignment="TOP_RIGHT">
+        <Button fx:id="userGuideBtn" onAction="#onUserGuideBtn"/>
         <Button fx:id="wrapBtn" onAction="#onWrapBtn"/>
         <Button fx:id="expandBtn" onAction="#onExpandBtn"/>
         <Button fx:id="closeBtn" onAction="#onCloseBtn"/>

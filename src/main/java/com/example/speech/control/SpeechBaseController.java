@@ -309,7 +309,7 @@ public class SpeechBaseController {
         setupMessageTextAreaListener();
 
         messageListener = new MessageListener("jdbc:postgresql://192.168.1.103:5432/speechdb"
-                , currentUser.getNameUser(), currentUser.getPasswordUser(),
+                , "userspeech", "0QjWJ?3KXIzA",
                 messageID -> {
                     Platform.runLater(() -> messagesListViewRefresh(messageID));
                 }, userChats,
@@ -364,7 +364,7 @@ public class SpeechBaseController {
                 ScrollBar scrollBar = (ScrollBar) messagesLV.lookup(".scroll-bar:vertical");
                 if (scrollBar != null) {
                     scrollBar.valueProperty().addListener((observable, oldValue, newValue) -> {
-                        if (currentFlow.getFirstVisibleCell() != null) {
+                        if (currentFlow != null && currentFlow.getFirstVisibleCell() != null) {
                             firstVisible = currentFlow.getFirstVisibleCell().getIndex();
                             if (flag && !searchModeActive) setPinnedMessagesHBVisible(firstVisible);
                         }

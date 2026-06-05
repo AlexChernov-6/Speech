@@ -58,7 +58,8 @@ public class ConfirmationOfMessageDeletion extends Pane {
 
         TextFlow informationTextFlow = new TextFlow();
         Label startLabel = new Label("Также удалить для «");
-        Label centralLabel = new Label(nameOfTheInterlocutor);
+        Label centralLabel = new Label(nameOfTheInterlocutor.length() > 10
+                ? nameOfTheInterlocutor.substring(0, 10) + "..." : nameOfTheInterlocutor);
         centralLabel.setStyle("-fx-font-weight: bold;");
         Label endLabel = new Label("»");
         informationTextFlow.getChildren().addAll(startLabel, centralLabel, endLabel);

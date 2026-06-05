@@ -9,10 +9,15 @@ import javafx.animation.PauseTransition;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
+import javafx.scene.control.Tooltip;
 import javafx.scene.layout.GridPane;
 import javafx.stage.Stage;
 import javafx.util.Duration;
 
+import java.awt.*;
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Paths;
 import java.util.List;
 
 import static com.example.speech.control.EntranceController.CONFIG_MANAGER;
@@ -24,7 +29,7 @@ public class WindowControlsController {
     private Stage stage;
 
     @FXML
-    private Button wrapBtn, expandBtn, closeBtn;
+    private Button wrapBtn, expandBtn, closeBtn, userGuideBtn;
 
     @FXML
     private void onWrapBtn() {
@@ -74,7 +79,11 @@ public class WindowControlsController {
 
     @FXML
     private void initialize() {
+        userGuideBtn.setTooltip(new Tooltip("Открыть руководство пользователя"));
+        HelpfulClass.setImageWithButton(userGuideBtn, "questions.png", "window-control-button", 25, 40);
+        wrapBtn.setTooltip(new Tooltip("Свернуть"));
         HelpfulClass.setImageWithButton(wrapBtn, "wrap-window.png", "window-control-button", 25, 40);
+        closeBtn.setTooltip(new Tooltip("Закрыть"));
         HelpfulClass.setImageWithButton(closeBtn, "close-application.png", "window-control-button", 25, 40);
         closeBtn.getStyleClass().add("close-button");
         Platform.runLater(() -> {
@@ -118,10 +127,28 @@ public class WindowControlsController {
         });
     }
 
+    @FXML
+    private void onUserGuideBtn() {
+        if (Desktop.isDesktopSupported()) {
+            Desktop desktop = Desktop.getDesktop();
+            File file = Paths.get("Документы/РУКОВОДСТВО ПОЛЬЗОВАТЕЛЯ.docx").toFile();
+            if (file.exists()) {
+                try {
+                    desktop.open(file);
+                } catch (IOException ignore) {
+                }
+            }
+        } else
+            HelpfulClass.openWebPage("https://metanit.com/java/javafx/3.2.php");
+    }
+
     private void updateBackgroundExpandBtn() {
-        if (isFullScreen)
+        if (isFullScreen) {
+            expandBtn.setTooltip(new Tooltip("Свернуть в окно"));
             HelpfulClass.setImageWithButton(expandBtn, "fit-screen.png", "window-control-button", 25, 40);
-        else
+        } else {
+            expandBtn.setTooltip(new Tooltip("Развернуть"));
             HelpfulClass.setImageWithButton(expandBtn, "full-screen-image.png", "window-control-button", 25, 40);
+        }
     }
 }

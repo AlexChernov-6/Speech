@@ -5,6 +5,7 @@ import org.hibernate.annotations.ColumnDefault;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.GenerationTime;
 
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.util.*;
 
@@ -35,13 +36,13 @@ public class Message {
     @OneToMany(mappedBy = "message", cascade = CascadeType.ALL, fetch = FetchType.EAGER, orphanRemoval = true)
     private List<MessageContent> messageContent = new ArrayList<>();
     @Column(name = "message_string")
-    private String messageString;
+    private byte[] messageString;
     @ManyToOne @JoinColumn(name = "id_channel_invitations")
     private Channel channelInvitations;
 
     public Message() { }
 
-    public Message(long messageId, LocalDateTime messageDatetime, ChannelUser channelUser, String messageStatus, List<Long> deletedByUsers, Boolean modifiedMessage, Long messageIdReplyTo, Boolean pinMessage, Long forwardedFrom, List<MessageContent> messageContent, String messageString, Channel channelInvitations) {
+    public Message(long messageId, LocalDateTime messageDatetime, ChannelUser channelUser, String messageStatus, List<Long> deletedByUsers, Boolean modifiedMessage, Long messageIdReplyTo, Boolean pinMessage, Long forwardedFrom, List<MessageContent> messageContent, byte[] messageString, Channel channelInvitations) {
         this.messageId = messageId;
         this.messageDatetime = messageDatetime;
         this.channelUser = channelUser;
@@ -147,11 +148,11 @@ public class Message {
     }
 
     public String getMessageString() {
-        return messageString;
+        return new String(messageString, StandardCharsets.UTF_8);
     }
 
     public void setMessageString(String messageString) {
-        this.messageString = messageString;
+        this.messageString = messageString.getBytes();
     }
 
     public Channel getChannelInvitations() {

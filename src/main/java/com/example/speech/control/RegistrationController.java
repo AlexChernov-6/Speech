@@ -7,13 +7,21 @@ import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.control.*;
+import javafx.scene.control.Button;
+import javafx.scene.control.Label;
+import javafx.scene.control.TextField;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.HBox;
 import javafx.stage.Stage;
 import oshi.SystemInfo;
 import oshi.hardware.HardwareAbstractionLayer;
 
+import java.awt.*;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.nio.file.Paths;
 import java.util.Map;
 
 import static com.example.speech.control.EntranceController.CONFIG_MANAGER;
@@ -80,7 +88,7 @@ public class RegistrationController {
         if (startValuePassword == null)
             startValuePassword = passwordLb.getText();
 
-        if(startValueBirthday == null)
+        if (startValueBirthday == null)
             startValueBirthday = birthdayLb.getText();
 
         //При нажатии на кнопку проводим валидацию данных в TextField
@@ -88,7 +96,7 @@ public class RegistrationController {
                 userNameTF, userNameLb, passwordF, passwordLb, birthdayHBox, birthdayLb));
 
         //Если данные заполнены корректно
-        if(mailLb.getText().equals(startValueEmail) && visibleNameLb.getText().equals(startValueVisibleName)
+        if (mailLb.getText().equals(startValueEmail) && visibleNameLb.getText().equals(startValueVisibleName)
                 && userNameLb.getText().equals(startValueUserName) && passwordLb.getText().equals(startValuePassword)
                 && birthdayLb.getText().equals(startValueBirthday)) {
             User newUser = new User(null, mailTF.getText(), visibleNameTF.getText(), userNameTF.getText(), passwordF.getText(),
@@ -117,12 +125,32 @@ public class RegistrationController {
     @FXML
     private void onTermsOfUse() {
         //Открываем страницу с документацией на тему условия использования
-        HelpfulClass.openWebPage("https://metanit.com/java/javafx/3.2.php");
+        if (Desktop.isDesktopSupported()) {
+            Desktop desktop = Desktop.getDesktop();
+            File file = Paths.get("Документы/ПОЛЬЗОВАТЕЛЬСКОЕ СОГЛАШЕНИЕ.docx").toFile();
+            if (file.exists()) {
+                try {
+                    desktop.open(file);
+                } catch (IOException ignore) {
+                }
+            }
+        } else
+            HelpfulClass.openWebPage("https://metanit.com/java/javafx/3.2.php");
     }
 
     @FXML
     private void onSecurityPolicy() {
         //Открываем страницу с документацией на тему политика безопасности
-        HelpfulClass.openWebPage("https://metanit.com/java/javafx/3.2.php");
+        if (Desktop.isDesktopSupported()) {
+            Desktop desktop = Desktop.getDesktop();
+            File file = Paths.get("Документы/ПОЛИТИКА КОНФИДЕНЦИАЛЬНОСТИ.docx").toFile();
+            if (file.exists()) {
+                try {
+                    desktop.open(file);
+                } catch (IOException ignore) {
+                }
+            }
+        } else
+            HelpfulClass.openWebPage("https://metanit.com/java/javafx/3.2.php");
     }
 }
