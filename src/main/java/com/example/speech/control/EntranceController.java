@@ -21,6 +21,12 @@ import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
+import javafx.scene.control.Button;
+import javafx.scene.control.Label;
+import javafx.scene.control.Menu;
+import javafx.scene.control.MenuBar;
+import javafx.scene.control.MenuItem;
+import javafx.scene.control.TextField;
 import javafx.scene.image.Image;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
@@ -34,6 +40,7 @@ import javafx.util.Callback;
 import oshi.SystemInfo;
 import oshi.hardware.HardwareAbstractionLayer;
 
+import java.awt.*;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
@@ -42,6 +49,7 @@ import java.sql.SQLException;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.List;
 
 import static com.example.speech.util.HelpfulStylingClass.setupFullScreenListener;
 import static com.example.speech.util.HelpfulValidationClass.updateStyleValidation;
@@ -338,6 +346,26 @@ public class EntranceController extends Application {
     private StackPane createRootAdminWindowSP() {
         StackPane rootSP = new StackPane();
 
+        Button userGuideBtn = new Button();
+        StackPane.setMargin(userGuideBtn, new Insets(20, 20, 0, 0));
+        StackPane.setAlignment(userGuideBtn, Pos.TOP_RIGHT);
+        rootSP.getChildren().add(userGuideBtn);
+        HelpfulClass.setImageWithButton(userGuideBtn, "questions.png", "user-guide-button", 40, 40);
+        userGuideBtn.setTooltip(new Tooltip("Открыть руководство пользователя"));
+        userGuideBtn.setOnAction(e -> {
+            if (Desktop.isDesktopSupported()) {
+                Desktop desktop = Desktop.getDesktop();
+                File file = Paths.get("Документы/РУКОВОДСТВО АДМИНИСТРАТОРА.docx").toFile();
+                if (file.exists()) {
+                    try {
+                        desktop.open(file);
+                    } catch (IOException ignore) {
+                    }
+                }
+            } else
+                HelpfulClass.openWebPage("https://metanit.com/java/javafx/3.2.php");
+        });
+
         VBox authenticationVB = new VBox(10);
         authenticationVB.setPadding(new Insets(15));
         authenticationVB.setMaxHeight(220);
@@ -407,7 +435,7 @@ public class EntranceController extends Application {
                     loginHintLB.setText("Неверный логин или пароль");
                     loginHintLB.setStyle("-fx-text-fill: rgba(115, 0, 0);");
                 } else {
-                    rootSP.getChildren().remove(authenticationVB);
+                    rootSP.getChildren().removeAll(userGuideBtn, authenticationVB);
                     rootSP.getChildren().add(createBaseAP());
                 }
             }
@@ -562,6 +590,28 @@ public class EntranceController extends Application {
             }
         });
         menuExports.getItems().add(messagesExportTableMenuItem);
+
+        Menu menuUserGuide = new Menu();
+        menuUserGuide.setText("Руководство пользователя");
+        menuUserGuide.setMnemonicParsing(false);
+        menuBar.getMenus().add(menuUserGuide);
+
+        MenuItem userGuideTableMenuItem = new MenuItem();
+        userGuideTableMenuItem.setMnemonicParsing(false);
+        userGuideTableMenuItem.setText("Открыть руководство пользователя");
+        userGuideTableMenuItem.setOnAction(e -> {
+            if (Desktop.isDesktopSupported()) {
+                Desktop desktop = Desktop.getDesktop();
+                File file = Paths.get("Документы/РУКОВОДСТВО АДМИНИСТРАТОРА.docx").toFile();
+                if (file.exists()) {
+                    try {
+                        desktop.open(file);
+                    } catch (IOException ignore) { }
+                }
+            } else
+                HelpfulClass.openWebPage("https://metanit.com/java/javafx/3.2.php");
+        });
+        menuUserGuide.getItems().add(userGuideTableMenuItem);
 
         searchHB = new HBox(10);
         AnchorPane.setTopAnchor(searchHB, 35.0);

@@ -814,3 +814,15 @@
     -fx-font-weight: bold;
     -fx-text-fill: rgba(200, 200, 200);
 }
+
+.user-guide-button {
+    -fx-background-color: rgba(250, 250, 250);
+    -fx-background-radius: 8;
+    -fx-effect: none;
+    -fx-border-width: 0px;
+}
+
+.user-guide-button :hover {
+    -fx-background-color: red;
+    -fx-cursor: hand;
+}
