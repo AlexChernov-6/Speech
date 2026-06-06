@@ -37,9 +37,6 @@ public class User {
     private byte[] photoUser;
     @Column(name = "user_status")
     private String statusUser;
-
-    @Column(name = "plain_password")
-    private String plainPassword;
     @Column(name = "unique_identity_computer")
     private String uniqueIdentityComputer;
 
@@ -61,7 +58,7 @@ public class User {
 
     public User() { }
 
-    public User(Integer idUser, String emailUser, String visibleNameUser, String nameUser, String passwordUser, String birthdayUser, byte[] photoUser, String statusUser, String plainPassword, String uniqueIdentityComputer) {
+    public User(Integer idUser, String emailUser, String visibleNameUser, String nameUser, String passwordUser, String birthdayUser, byte[] photoUser, String statusUser, String uniqueIdentityComputer) {
         this.idUser = idUser;
         this.emailUser = emailUser;
         this.visibleNameUser = visibleNameUser;
@@ -70,7 +67,6 @@ public class User {
         this.birthdayUser = birthdayUser;
         this.photoUser = photoUser;
         this.statusUser = statusUser;
-        this.plainPassword = plainPassword;
         this.uniqueIdentityComputer = uniqueIdentityComputer;
     }
 
@@ -137,14 +133,6 @@ public class User {
 
     public void setStatusUser(String statusUser) {
         this.statusUser = statusUser;
-    }
-
-    public String getPlainPassword() {
-        return plainPassword;
-    }
-
-    public void setPlainPassword(String plainPassword) {
-        this.plainPassword = plainPassword;
     }
 
     public String getUniqueIdentityComputer() {

@@ -1,5 +1,6 @@
 package com.example.speech.service;
 
+import com.example.speech.model.Message;
 import com.example.speech.model.User;
 import com.example.speech.util.HibernateSessionFactory;
 import org.hibernate.Session;
@@ -11,6 +12,10 @@ public class UserService extends BaseService<User> {
 
     public UserService() {
         super(User.class);
+    }
+
+    public UserService(SessionFactory sessionFactory) {
+        super(User.class, sessionFactory);
     }
 
     public static User getUserByEmail(String email) {

@@ -9,11 +9,17 @@ import org.hibernate.Transaction;
 import java.util.List;
 
 public class BaseService<T> {
-    private SessionFactory sessionFactory = HibernateSessionFactory.getSessionFactory();
-    private Class<T> tClass;
+    private final SessionFactory sessionFactory;
+    private final Class<T> tClass;
+
+    public BaseService(Class<T> tClass, SessionFactory sessionFactory) {
+        this.tClass = tClass;
+        this.sessionFactory = sessionFactory;
+    }
 
     public BaseService(Class<T> tClass) {
         this.tClass = tClass;
+        this.sessionFactory = HibernateSessionFactory.getSessionFactory();
     }
 
     public T getRowById(Long id) {

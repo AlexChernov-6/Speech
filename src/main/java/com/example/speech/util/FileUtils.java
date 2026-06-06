@@ -18,7 +18,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Supplier;
 
-public final class FileUtils {
+public class FileUtils {
     public static Path DEFAULT_STORAGE_DIR = Paths.get(System.getProperty("user.dir"), "files");
     private static final AtomicLong totalBytes = new AtomicLong(0);
 

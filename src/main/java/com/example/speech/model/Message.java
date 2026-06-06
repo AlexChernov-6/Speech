@@ -152,7 +152,9 @@ public class Message {
     }
 
     public void setMessageString(String messageString) {
-        this.messageString = messageString.getBytes();
+        if (messageString != null)
+            this.messageString = messageString.getBytes();
+        else this.messageString = new byte[]{};
     }
 
     public Channel getChannelInvitations() {

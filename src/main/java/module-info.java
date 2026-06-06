@@ -15,6 +15,7 @@ module com.example.speech {
     requires javafx.base;
     requires java.rmi;
     requires com.github.oshi;
+    requires org.apache.poi.ooxml;
 
     opens com.example.speech to javafx.fxml;
     exports com.example.speech.control;

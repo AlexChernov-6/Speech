@@ -3,7 +3,6 @@ package com.example.speech.control;
 import com.example.speech.model.Message;
 import com.example.speech.model.MessageContent;
 import com.example.speech.service.ChannelService;
-import com.example.speech.service.MessageContentService;
 import com.example.speech.service.MessageService;
 import com.example.speech.util.FileUtils;
 import javafx.application.Platform;
@@ -23,13 +22,11 @@ import javafx.scene.layout.VBox;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-import java.util.Set;
 
 import com.example.speech.control.SpeechBaseController.ContextPopUpBar;
 
@@ -212,7 +209,7 @@ public class WorkingWithAMessageListController extends Pane {
         delete.setPrefHeight(40);
         delete.setOnAction(e -> {
             messagesSP.getChildren().remove(this);
-            new ConfirmationOfMessageDeletion().initializeShape(channelName, speechBaseController, List.of(message));
+            new ConfirmationOfDeletion().initializeShape(channelName, speechBaseController, List.of(message));
         });
 
 

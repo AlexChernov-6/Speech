@@ -7,8 +7,6 @@ import com.example.speech.util.HelpfulClass;
 import com.example.speech.util.HelpfulStylingClass;
 import javafx.animation.PauseTransition;
 import javafx.application.Platform;
-import javafx.beans.binding.Bindings;
-import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
@@ -176,17 +174,15 @@ public class SpeechBaseController {
     private Button selectionDeleteBtn;
     private Button selectionCancelBtn;
 
-    private boolean dragSelecting = false;
-    private int dragStartIndex = -1;
     private double dragStartX, dragStartY;
-    private static final double DRAG_DISTANCE_THRESHOLD = 5.0; // пикселей
-
+    private int dragStartIndex = -1;
+    private boolean dragStartSelected;
+    private boolean dragSelecting = false;
+    private int lastProcessedDragIndex = -1;
     private List<Message> baseSelection = new ArrayList<>();
+    private static final double DRAG_DISTANCE_THRESHOLD = 5; // пикселей
 
     private VirtualFlow<?> currentFlow;
-
-    private int lastProcessedDragIndex = -1;
-    private boolean dragStartSelected = false;
 
     private ObservableList<Message> messages = FXCollections.observableArrayList();
 
@@ -461,11 +457,14 @@ public class SpeechBaseController {
                 Message clickedMsg = findMessageAt(event.getScreenX(), event.getScreenY());
                 if (clickedMsg != null) {
                     dragStartIndex = messagesLV.getItems().indexOf(clickedMsg);
-                    dragStartSelected = selectedMessages.contains(messagesLV.getItems().get(dragStartIndex));
+                    dragStartSelected = selectedMessages.contains(clickedMsg);
                     dragStartX = event.getScreenX();
                     dragStartY = event.getScreenY();
                     dragSelecting = false;
                     lastProcessedDragIndex = -1;
+                    // Сохраняем копию текущего выделения как базовое
+                    baseSelection.clear();
+                    baseSelection.addAll(selectedMessages);
                 } else {
                     dragStartIndex = -1;
                 }
@@ -478,18 +477,16 @@ public class SpeechBaseController {
                 double distance = Math.hypot(event.getScreenX() - dragStartX, event.getScreenY() - dragStartY);
                 if (!dragSelecting && distance > DRAG_DISTANCE_THRESHOLD) {
                     dragSelecting = true;
-                    // Сохраняем текущее выделение как базовое
-                    baseSelection = new ArrayList<>(selectedMessages);
-                    // Устанавливаем начальный диапазон (только стартовый элемент)
-                    updateDragSelection(dragStartIndex, dragStartIndex);
                     if (!selectionModeActive) {
                         setSelectionModeActive(true);
                     }
+                    // Начальный диапазон – только стартовая позиция
+                    updateDragSelection(dragStartIndex, dragStartIndex);
                 }
                 if (dragSelecting) {
-                    IndexedCell<Message> cell = findCellAt(event.getScreenX(), event.getScreenY());
-                    if (cell != null) {
-                        int currentIndex = cell.getIndex();
+                    Message currentMsg = findMessageAt(event.getScreenX(), event.getScreenY());
+                    if (currentMsg != null) {
+                        int currentIndex = messagesLV.getItems().indexOf(currentMsg);
                         if (currentIndex != lastProcessedDragIndex) {
                             updateDragSelection(dragStartIndex, currentIndex);
                             lastProcessedDragIndex = currentIndex;
@@ -503,16 +500,22 @@ public class SpeechBaseController {
         messagesLV.setOnMouseReleased(event -> {
             if (event.getButton() == MouseButton.PRIMARY) {
                 if (!dragSelecting && dragStartIndex != -1) {
+                    // Обычный клик (без перетаскивания)
                     Message clickedMsg = messagesLV.getItems().get(dragStartIndex);
-                    if (!selectionModeActive)
+                    if (!selectionModeActive) {
                         activateSelectionModeWithMessage(clickedMsg);
+                    } else {
+                        toggleMessageSelection(clickedMsg);
+                    }
                 }
+                // Сброс состояния drag
                 dragSelecting = false;
                 dragStartIndex = -1;
                 lastProcessedDragIndex = -1;
                 baseSelection.clear();
-                if (selectedMessages.isEmpty())
+                if (selectedMessages.isEmpty()) {
                     setSelectionModeActive(false);
+                }
                 event.consume();
             }
         });
@@ -1108,7 +1111,7 @@ public class SpeechBaseController {
             unpinnedAllMessagesBtn.getStyleClass().add("unpin-all-btn");
             HBox.setHgrow(unpinnedAllMessagesBtn, Priority.ALWAYS);
             unpinnedAllMessagesBtn.setOnAction(e -> {
-                new ConfirmationOfMessageDeletion().initializeShape(this);
+                new ConfirmationOfDeletion().initializeShape(this);
             });
             messageHB.getChildren().add(unpinnedAllMessagesBtn);
         } else if (!unpinnedAllMessagesBtn.isVisible()) {
@@ -1393,7 +1396,7 @@ public class SpeechBaseController {
             selectionDeleteBtn = new Button("УДАЛИТЬ");
             selectionDeleteBtn.getStyleClass().add("selected-message-mode-buttons");
             selectionDeleteBtn.setOnAction(e -> {
-                new ConfirmationOfMessageDeletion().initializeShape(channelName.getText(), this
+                new ConfirmationOfDeletion().initializeShape(channelName.getText(), this
                         , selectedMessages);
             });
             selectionDeleteBtn.setPrefWidth(120);
@@ -1485,36 +1488,20 @@ public class SpeechBaseController {
     }
 
     private void updateDragSelection(int start, int end) {
-        if (start == end) {
-            Set<Message> newSelection = new HashSet<>(baseSelection);
-            Set<Message> currentSet = new HashSet<>(selectedMessages);
-            if (!newSelection.equals(currentSet)) {
-                selectedMessages.clear();
-                selectedMessages.addAll(newSelection);
-                updateVisibleCellsSelection();
-            }
-            return;
-        }
         int low = Math.min(start, end);
         int high = Math.max(start, end);
-        List<Message> items = messagesLV.getItems();
-
         Set<Message> newSelection = new HashSet<>(baseSelection);
         for (int i = low; i <= high; i++) {
-            Message msg = items.get(i);
+            Message msg = messagesLV.getItems().get(i);
             if (dragStartSelected) {
-                newSelection.remove(msg);
+                newSelection.remove(msg);   // снимаем выделение
             } else {
-                newSelection.add(msg);
+                newSelection.add(msg);      // добавляем выделение
             }
         }
-
-        Set<Message> currentSet = new HashSet<>(selectedMessages);
-        if (!newSelection.equals(currentSet)) {
-            selectedMessages.clear();
-            selectedMessages.addAll(newSelection);
-            updateVisibleCellsSelection();
-        }
+        selectedMessages.clear();
+        selectedMessages.addAll(new ArrayList<>(newSelection));
+        updateAllMessageCellsSelection(); // или messagesLV.refresh()
     }
 
     @FXML
@@ -2292,7 +2279,7 @@ public class SpeechBaseController {
                     selectedChannelUser.getChannel().getChannelID()
             );
             if (allMessage != null && !allMessage.isEmpty()) {
-                new ConfirmationOfMessageDeletion().initializeShape(this, allMessage);
+                new ConfirmationOfDeletion().initializeShape(this, allMessage);
             }
         });
         addSharingBtn.setOnAction(e -> {

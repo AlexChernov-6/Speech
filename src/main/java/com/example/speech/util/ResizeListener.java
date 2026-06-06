@@ -34,8 +34,8 @@ public class ResizeListener implements EventHandler<MouseEvent> {
     //Задаём отступы, где будет доступно изменение размеров(13px окна приложения)
     private static final double BORDER = 13;
     //Задаём минимальные и максимальные размеры окна размеры окна
-    private static final double MIN_WIDTH = 600;
-    private static final double MIN_HEIGHT = 600;
+    public static final double MIN_WIDTH = 600;
+    public static final double MIN_HEIGHT = 600;
     private static final double MAX_WIDTH = initializeMaxWidth();
     private static final double MAX_HEIGHT = initializeMaxHeight();
 

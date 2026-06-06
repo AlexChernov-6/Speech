@@ -2,8 +2,6 @@ package com.example.speech.control;
 
 import com.example.speech.model.Channel;
 import com.example.speech.model.Message;
-import com.example.speech.service.ChannelService;
-import com.example.speech.service.ChannelTypeService;
 import com.example.speech.service.MessageService;
 import com.example.speech.util.HibernateSessionFactory;
 import javafx.application.Platform;
@@ -11,7 +9,7 @@ import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.Button;
 import javafx.scene.control.CheckBox;
-import javafx.scene.control.ListView;
+import javafx.scene.input.MouseButton;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.StackPane;
@@ -22,9 +20,8 @@ import org.hibernate.Session;
 import org.hibernate.Transaction;
 
 import java.util.List;
-import java.util.Set;
 
-public class ConfirmationOfMessageDeletion extends Pane {
+public class ConfirmationOfDeletion extends Pane {
     private static final MessageService MESSAGE_SERVICE = new MessageService();
 
     public void initializeShape(String nameOfTheInterlocutor, SpeechBaseController speechBaseController
@@ -64,6 +61,10 @@ public class ConfirmationOfMessageDeletion extends Pane {
         Label endLabel = new Label("»");
         informationTextFlow.getChildren().addAll(startLabel, centralLabel, endLabel);
         informationTextFlow.setStyle("-fx-font-size: 14px");
+        informationTextFlow.setOnMouseClicked(e -> {
+            if(e.getButton() == MouseButton.PRIMARY)
+                checkBox.fire();
+        });
 
         centralHB.getChildren().addAll(checkBox, informationTextFlow);
 

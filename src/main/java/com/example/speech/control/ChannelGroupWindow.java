@@ -12,14 +12,12 @@ import javafx.application.Platform;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.collections.FXCollections;
-import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
 import javafx.geometry.Insets;
 import javafx.geometry.Point2D;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
-import javafx.scene.Parent;
 import javafx.scene.control.*;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
@@ -36,7 +34,6 @@ import java.nio.file.Files;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 
 import static com.example.speech.util.HelpfulValidationClass.validateChannelNameShort;
@@ -482,7 +479,7 @@ public class ChannelGroupWindow extends StackPane {
         deleteGroupBtn.getStyleClass().add("button-chose-logo");
         buttonsHB.getChildren().add(deleteGroupBtn);
         deleteGroupBtn.setOnAction(e -> {
-            new ConfirmationOfMessageDeletion().initializeShapeDeletionGroup(speechBaseController, currentChannel, this);
+            new ConfirmationOfDeletion().initializeShapeDeletionGroup(speechBaseController, currentChannel, this);
         });
 
         cancelBtn = new Button("Отмена");

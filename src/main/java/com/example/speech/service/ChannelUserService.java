@@ -1,6 +1,7 @@
 package com.example.speech.service;
 
 import com.example.speech.model.Channel;
+import com.example.speech.model.ChannelType;
 import com.example.speech.model.ChannelUser;
 import com.example.speech.model.User;
 import com.example.speech.util.HibernateSessionFactory;
@@ -14,6 +15,10 @@ public class ChannelUserService extends BaseService<ChannelUser> {
 
     public ChannelUserService() {
         super(ChannelUser.class);
+    }
+
+    public ChannelUserService(SessionFactory sessionFactory) {
+        super(ChannelUser.class, sessionFactory);
     }
 
     public List<ChannelUser> getAllChatsByUser(User user) {

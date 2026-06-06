@@ -27,4 +27,9 @@ public class ChannelType {
     public void setChannelTypeName(String channelTypeName) {
         this.channelTypeName = channelTypeName;
     }
+
+    @Override
+    public String toString() {
+        return channelTypeName;
+    }
 }

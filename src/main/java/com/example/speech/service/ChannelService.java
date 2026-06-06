@@ -4,12 +4,17 @@ import com.example.speech.model.Channel;
 import com.example.speech.model.User;
 import com.example.speech.util.HibernateSessionFactory;
 import org.hibernate.Session;
+import org.hibernate.SessionFactory;
 
 import java.util.List;
 
 public class ChannelService extends BaseService<Channel> {
     public ChannelService() {
         super(Channel.class);
+    }
+
+    public ChannelService(SessionFactory sessionFactory) {
+        super(Channel.class, sessionFactory);
     }
 
     public boolean chatsWithThatName(String name) {

@@ -1,13 +1,19 @@
 package com.example.speech.service;
 
+import com.example.speech.model.User;
 import com.example.speech.model.UsersInSilentMode;
 import com.example.speech.util.HibernateSessionFactory;
 import org.hibernate.Session;
+import org.hibernate.SessionFactory;
 import org.hibernate.Transaction;
 
 public class UsersInSilentModeService extends BaseService<UsersInSilentMode> {
     public UsersInSilentModeService() {
         super(UsersInSilentMode.class);
+    }
+
+    public UsersInSilentModeService(SessionFactory sessionFactory) {
+        super(UsersInSilentMode.class, sessionFactory);
     }
 
     public boolean isUserSetSilentMode(int channelID, int userID) {

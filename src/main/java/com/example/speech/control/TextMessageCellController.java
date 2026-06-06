@@ -13,10 +13,12 @@ import javafx.animation.*;
 import javafx.application.Platform;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
+import javafx.event.Event;
 import javafx.fxml.FXML;
 import javafx.geometry.Insets;
 import javafx.geometry.Point2D;
 import javafx.geometry.Pos;
+import javafx.scene.Node;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
@@ -24,6 +26,7 @@ import javafx.scene.control.ProgressIndicator;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.MouseButton;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.*;
 import javafx.scene.text.TextFlow;
 import javafx.util.Duration;
@@ -293,6 +296,22 @@ public class TextMessageCellController {
 
     public void setMouseListener() {
         highlightMessageTemporarilySP.setOnMouseClicked(event -> {
+            Node target = (Node) event.getTarget();
+            boolean isFileClick = false;
+            Node current = target;
+            while (current != null) {
+                if (current.getUserData() != null && "file_container".equals(current.getUserData())) {
+                    isFileClick = true;
+                    break;
+                }
+                current = current.getParent();
+            }
+
+            if (isFileClick) {
+                event.consume();
+                return;
+            }
+
             if (event.getButton() == MouseButton.SECONDARY) {
                 WorkingWithAMessageListController controller = new WorkingWithAMessageListController();
                 controller.initializeShape(event.getSceneX(), event.getSceneY(), speechBaseController, message);
@@ -416,7 +435,7 @@ public class TextMessageCellController {
         // Контейнер для строки файла
         HBox fileHB = new HBox();
         fileHB.setAlignment(Pos.CENTER_LEFT);
-        fileHB.setPickOnBounds(true);
+        fileHB.setUserData("file_container");
         contentVB.getChildren().add(2, fileHB);
         fileContainers.add(fileHB);
 
@@ -432,7 +451,6 @@ public class TextMessageCellController {
         stackPane.setMaxWidth(45);
         stackPane.setMaxHeight(45);
         fileHB.getChildren().add(stackPane);
-        stackPane.setMouseTransparent(true);
 
         // Иконка файла по умолчанию
         ImageView fileImage = new ImageView(
@@ -441,7 +459,6 @@ public class TextMessageCellController {
         fileImage.setFitWidth(40);
         StackPane.setMargin(fileImage, new Insets(0, 0, 0, 5));
         stackPane.getChildren().add(fileImage);
-        fileImage.setMouseTransparent(true);
 
         // Расширение файла для отображения на иконке
         String fileName = mC.getMessageContentFileName();
@@ -458,7 +475,6 @@ public class TextMessageCellController {
         fileNameLB.setPrefWidth(40);
         fileNameLB.setStyle("-fx-text-fill: white; -fx-font-size: 14; -fx-font-weight: bold;");
         fileNameLB.setAlignment(Pos.CENTER);
-        fileNameLB.setMouseTransparent(true);
         StackPane.setAlignment(fileNameLB, Pos.TOP_CENTER);
         StackPane.setMargin(fileNameLB, new Insets(20, 0, 0, 0));
         stackPane.getChildren().add(fileNameLB);
@@ -469,7 +485,6 @@ public class TextMessageCellController {
         progressIndicator.setPrefWidth(40);
         progressIndicator.setPrefHeight(40);
         stackPane.getChildren().add(progressIndicator);
-        progressIndicator.setMouseTransparent(true);
         progressIndicators.add(progressIndicator);
 
         // Правая часть: имя файла и статус
@@ -477,16 +492,13 @@ public class TextMessageCellController {
         rightVB.setAlignment(Pos.TOP_LEFT);
         rightVB.setPadding(new Insets(10, 10, 10, 20));
         fileHB.getChildren().add(rightVB);
-        rightVB.setMouseTransparent(true);
 
         Label nameLabel = new Label(fileName);
         nameLabel.setStyle("-fx-font-size: 14px;");
         rightVB.getChildren().add(nameLabel);
-        nameLabel.setMouseTransparent(true);
 
         Label statusLabel = new Label();
         rightVB.getChildren().add(statusLabel);
-        statusLabel.setMouseTransparent(true);
 
         Path localFile = FileUtils.DEFAULT_STORAGE_DIR.resolve(fileName);
         if (Files.exists(localFile)) {
@@ -628,11 +640,12 @@ public class TextMessageCellController {
         imagesFromMessage.clear();
     }
 
-    public void updateAvatarVisibility() {
+    // Обновление только своей видимости (без влияния на предыдущее)
+    private void updateAvatarVisibilitySelf() {
         if (messagesLV == null || message == null) return;
         int idx = messagesLV.getItems().indexOf(message);
         if (idx == -1) {
-            // Сообщение не найдено — показываем аватар по умолчанию (на всякий случай)
+            // Сообщение не найдено — показываем аватар по умолчанию
             userPhotoIV.setVisible(true);
             setCircularImage(userPhotoIV, message.getChannelUser().getUser().getPhotoImage(), 45);
             contentVB.setStyle("");
@@ -646,6 +659,20 @@ public class TextMessageCellController {
         } else {
             userPhotoIV.setVisible(false);
             contentVB.setStyle("-fx-background-radius: 15px 15px 15px 15px; -fx-border-radius: 15px 15px 15px 15px;");
+        }
+    }
+
+    // Публичный метод: обновляет себя и предыдущее сообщение (если есть)
+    public void updateAvatarVisibility() {
+        updateAvatarVisibilitySelf();
+        if (messagesLV == null || message == null) return;
+        int idx = messagesLV.getItems().indexOf(message);
+        if (idx > 0) {
+            Message prevMsg = messagesLV.getItems().get(idx - 1);
+            TextMessageCellController prevController = speechBaseController.getMessageCellCreator().getControllerCache(prevMsg);
+            if (prevController != null) {
+                prevController.updateAvatarVisibilitySelf(); // только для предыдущего, без дальнейшего распространения
+            }
         }
     }
 

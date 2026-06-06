@@ -4,6 +4,7 @@ import com.example.speech.model.Message;
 import com.example.speech.model.MessageContent;
 import com.example.speech.util.HibernateSessionFactory;
 import org.hibernate.Session;
+import org.hibernate.SessionFactory;
 import org.hibernate.Transaction;
 
 import java.nio.charset.StandardCharsets;
@@ -12,6 +13,10 @@ import java.util.List;
 public class MessageService extends BaseService<Message> {
     public MessageService() {
         super(Message.class);
+    }
+
+    public MessageService(SessionFactory sessionFactory) {
+        super(Message.class, sessionFactory);
     }
 
     public List<Message> getAllMessageInChannel(int channelId) {
