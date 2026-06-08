@@ -217,14 +217,10 @@ public class EntranceController extends Application {
         EntranceController controller = fxmlLoader.getController();
         controller.initializeData(stage);
 
-        //Создаём сцену-контейнер для всего содержимого окна(Stage может иметь только одну активную сцену)
-        //В качестве аргумента принимает Parent(разметку) и размеры сцены
         Scene scene = new Scene(authorizationRoot, CONFIG_MANAGER.getWindowWidth(), CONFIG_MANAGER.getWindowHeight());
         stage.setX(CONFIG_MANAGER.getWindowX());
         stage.setY(CONFIG_MANAGER.getWindowY());
         stage.setFullScreen(CONFIG_MANAGER.getIsFullScreen());
-        //В качестве фона будем использовать прозрачный фон, это нужно будет для создания прозрачной рамки окна
-        //Что при самом изменении была видимость, что мы растягиваем его за пределами окна(немного дальше границ)
         scene.setFill(Color.TRANSPARENT);
 
         scene.addEventFilter(KeyEvent.KEY_PRESSED, e -> {
@@ -235,24 +231,14 @@ public class EntranceController extends Application {
                     adminStage.show();
             }
         });
-        //Удаляет стандартное оформление окна(нужно, что бы настроить своё оформление окна)
         stage.initStyle(StageStyle.TRANSPARENT);
-        //Помещаем созданную сцену в окно, теперь окно знает что ему показывать
         stage.setScene(scene);
 
-        //Добавляем фильтр событий для нашего окна
-        //Метод addEventFilter принимает два аргумента 1) какое событие, 2) как обработать
-        //Мы указали что у нас будут обрабатываться любые действия мыши(MouseEvent.ANY)
-        //А как это делать, мы указали с помощью экземпляра собственного класса ResizeListener
-        //Который реализовывает интерфейс EventHandler
         stage.addEventFilter(MouseEvent.ANY, new ResizeListener(stage));
         stage.getIcons().setAll(
                 new Image(Objects.requireNonNull(getClass().getResourceAsStream("/com/example/speech/image/icon-app.png"))));
-        //Показываем окно на экране пользователя
         stage.show();
-        //При запуске приложения создаём пул с подключениями(если не создан), что бы у первого запроса был короткий отклик
         HibernateSessionFactory.getSessionFactory();
-        //При запуске приложение так же создаём соединение для отправки писем
         new SendingClass();
     }
 

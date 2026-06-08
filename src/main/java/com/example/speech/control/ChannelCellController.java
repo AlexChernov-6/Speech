@@ -44,7 +44,9 @@ public class ChannelCellController {
             channelNameLb.setText(channelUser.getVisibleNameChat());
 
         if(channelUser.getChannel().getChannelType().getChannelTypeId() == 3)
-            channelNameUniqueLb.setText(channelUser.getUser().getNameUser());
+            channelNameUniqueLb.setText(channelUserService
+                    .getInterlocutorUserChannelInChannel(channelUser.getChannel().getChannelID(), channelUser.getUser().getIdUser())
+                    .getUser().getNameUser());
         else
             channelNameUniqueLb.setText(channelUser.getChannel().getChannel_name_unique());
 

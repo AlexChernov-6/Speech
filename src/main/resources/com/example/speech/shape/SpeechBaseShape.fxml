@@ -6,17 +6,14 @@
 
 <?import javafx.scene.image.ImageView?>
 
-<?import javafx.scene.image.Image?>
-<AnchorPane fx:id="rootAnchorPane" stylesheets="@../styles.css" styleClass="root-pane"
-            xmlns:fx="http://javafx.com/fxml/1"
+<AnchorPane fx:id="rootAnchorPane" stylesheets="@../styles.css" styleClass="root-pane" xmlns:fx="http://javafx.com/fxml/1"
             xmlns="http://javafx.com/javafx/17.0.12" fx:controller="com.example.speech.control.SpeechBaseController">
 
     <AnchorPane style="-fx-background-color: #fafafa;" AnchorPane.bottomAnchor="0" AnchorPane.leftAnchor="0"
                 AnchorPane.rightAnchor="0" AnchorPane.topAnchor="0">
 
         <fx:include prefHeight="40" source="WindowControlsShape.fxml" AnchorPane.leftAnchor="0"
-                    AnchorPane.rightAnchor="0"
-                    AnchorPane.topAnchor="0"/>
+                    AnchorPane.rightAnchor="0" AnchorPane.topAnchor="0"/>
 
         <StackPane fx:id="messagesSP" AnchorPane.bottomAnchor="0" AnchorPane.leftAnchor="0" AnchorPane.rightAnchor="0"
                    AnchorPane.topAnchor="40">

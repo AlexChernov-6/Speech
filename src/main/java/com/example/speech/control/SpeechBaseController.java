@@ -108,7 +108,7 @@ public class SpeechBaseController {
     @FXML
     private TextArea messageTA;
     @FXML
-    private VBox selectedChatVB;
+    public VBox selectedChatVB;
     @FXML
     private Button sendMessageBtn, emojiBtn;
     @FXML

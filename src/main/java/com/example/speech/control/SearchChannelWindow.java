@@ -207,24 +207,18 @@ public class SearchChannelWindow extends VBox {
                             newChannelUser.setVisibleLogoChat(((Channel) selectedObject).getChannelLogo());
                             newChannelUser.setVisibleNameChat(((Channel) selectedObject).getChannelName());
 
+                            channelUserService.save(newChannelUser);
+
                             speechBaseController.getMessageListener().addChannelAsync(newChannelUser);
-
-                            boolean save = channelUserService.save(newChannelUser);
-
-                            if (save)
-                                speechBaseController.userChats.add(newChannelUser);
-
-                            speechBaseController.chatsView.getSelectionModel().select(newChannelUser);
-
                         } else {
                             if(!speechBaseController.userChats.contains(oldChannelUser))
                                 speechBaseController.userChats.add(oldChannelUser);
 
-                            speechBaseController.getMessageListener().addChannelAsync(oldChannelUser);
-
                             speechBaseController.chatsView.getSelectionModel().select(oldChannelUser);
 
                             hiddenChannelUserService.delete(hiddenChannelUserService.isHiddenUserFromChannel(oldChannelUser.getChannel(), speechBaseController.getCurrentUser()));
+
+                            speechBaseController.getMessageListener().addChannelAsync(oldChannelUser);
                         }
 
                         searchTF.setText("");
@@ -248,7 +242,6 @@ public class SearchChannelWindow extends VBox {
                             ChannelUser newChannelUser1 = new ChannelUser();
                             newChannelUser1.setUser(speechBaseController.getCurrentUser());
                             newChannelUser1.setChannel(oldChannel);
-                            speechBaseController.getMessageListener().addChannelAsync(newChannelUser1);
 
                             ChannelUser newChannelUser2 = new ChannelUser();
                             newChannelUser2.setUser(((User) selectedObject));
@@ -260,14 +253,12 @@ public class SearchChannelWindow extends VBox {
                             newChannelUser2.setVisibleLogoChat(speechBaseController.getCurrentUser().getPhotoUser());
                             newChannelUser2.setVisibleNameChat(speechBaseController.getCurrentUser().getVisibleNameUser());
 
-                            boolean save = channelUserService.save(newChannelUser1);
+                            channelUserService.save(newChannelUser1);
 
                             channelUserService.save(newChannelUser2);
 
-                            if (save)
-                                speechBaseController.userChats.add(newChannelUser1);
+                            speechBaseController.getMessageListener().addChannelAsync(newChannelUser1);
 
-                            speechBaseController.chatsView.getSelectionModel().select(newChannelUser1);
                             searchTF.setText("");
                             hide();
                         } else {
@@ -278,9 +269,9 @@ public class SearchChannelWindow extends VBox {
                                 if (!speechBaseController.userChats.contains(oldChannelUser1))
                                     speechBaseController.userChats.add(oldChannelUser1);
 
-                                speechBaseController.getMessageListener().addChannelAsync(oldChannelUser1);
-
                                 speechBaseController.chatsView.getSelectionModel().select(oldChannelUser1);
+
+                                speechBaseController.getMessageListener().addChannelAsync(oldChannelUser1);
 
                                 HiddenChannelUser hiddenChannelUser = hiddenChannelUserService.isHiddenUserFromChannel(oldChannelUser1.getChannel(), speechBaseController.getCurrentUser());
                                 if(hiddenChannelUser != null)
@@ -292,14 +283,9 @@ public class SearchChannelWindow extends VBox {
                                 newChannelUser.setVisibleLogoChat(((User) selectedObject).getPhotoUser());
                                 newChannelUser.setVisibleNameChat(((User) selectedObject).getVisibleNameUser());
 
+                                channelUserService.save(newChannelUser);
+
                                 speechBaseController.getMessageListener().addChannelAsync(newChannelUser);
-
-                                boolean save = channelUserService.save(newChannelUser);
-
-                                if (save)
-                                    speechBaseController.userChats.add(newChannelUser);
-
-                                speechBaseController.chatsView.getSelectionModel().select(newChannelUser);
                             }
 
                             ChannelUser oldChannelUser2 = channelUserService.getChannelUserByUserIdAndChannelId(

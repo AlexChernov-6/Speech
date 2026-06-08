@@ -101,23 +101,31 @@ public class WindowControlsController {
                     updateBackgroundExpandBtn();
 
                     stage.widthProperty().addListener((ob, o, n) -> {
-                        CONFIG_MANAGER.setWindowWidth(n.doubleValue());
-                        CONFIG_MANAGER.save();
+                        if(!stage.isIconified() && n.doubleValue() >= 600) {
+                            CONFIG_MANAGER.setWindowWidth(n.doubleValue());
+                            CONFIG_MANAGER.save();
+                        }
                     });
 
                     stage.heightProperty().addListener((ob, o, n) -> {
-                        CONFIG_MANAGER.setWindowHeight(n.doubleValue());
-                        CONFIG_MANAGER.save();
+                        if(!stage.isIconified() && n.doubleValue() >= 600) {
+                            CONFIG_MANAGER.setWindowHeight(n.doubleValue());
+                            CONFIG_MANAGER.save();
+                        }
                     });
 
                     stage.xProperty().addListener((ob, o, n) -> {
-                        CONFIG_MANAGER.setWindowX(n.doubleValue());
-                        CONFIG_MANAGER.save();
+                        if(!stage.isIconified()) {
+                            CONFIG_MANAGER.setWindowX(n.doubleValue());
+                            CONFIG_MANAGER.save();
+                        }
                     });
 
                     stage.yProperty().addListener((ob, o, n) -> {
-                        CONFIG_MANAGER.setWindowY(n.doubleValue());
-                        CONFIG_MANAGER.save();
+                        if(!stage.isIconified()) {
+                            CONFIG_MANAGER.setWindowY(n.doubleValue());
+                            CONFIG_MANAGER.save();
+                        }
                     });
                 } catch (NullPointerException ignore) {
 

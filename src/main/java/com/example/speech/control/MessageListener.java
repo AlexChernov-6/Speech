@@ -2,8 +2,10 @@ package com.example.speech.control;
 
 import com.example.speech.model.ChannelUser;
 import com.example.speech.service.ChannelUserService;
+import javafx.animation.PauseTransition;
 import javafx.application.Platform;
 import javafx.collections.ObservableList;
+import javafx.util.Duration;
 import org.postgresql.PGConnection;
 import org.postgresql.PGNotification;
 
@@ -31,7 +33,6 @@ public class MessageListener implements Runnable {
 
     private volatile Connection activeConnection;
     private volatile boolean running = true;
-    private final AtomicBoolean reconnecting = new AtomicBoolean(false);
 
     private static final int RECONNECT_DELAY_MS = 5000;  // 5 секунд между попытками
     private static final int NOTIFICATION_TIMEOUT_MS = 5000;
@@ -171,7 +172,11 @@ public class MessageListener implements Runnable {
                             if (isDelete) {
                                 if (existing != null) {
                                     removeChannel(existing);
-                                    Platform.runLater(() -> speechBaseController.userChats.remove(existing));
+                                    Platform.runLater(() -> {
+                                        speechBaseController.userChats.remove(existing);
+                                        if (speechBaseController.userChats.isEmpty())
+                                            speechBaseController.selectedChatVB.setVisible(false);
+                                    });
                                 }
                             } else {
                                 ChannelUser newCu = new ChannelUserService().getRowById(channelUserId);
@@ -179,7 +184,10 @@ public class MessageListener implements Runnable {
 
                                 if (existing == null) {
                                     addChannelAsync(newCu);
-                                    Platform.runLater(() -> speechBaseController.userChats.add(newCu));
+                                    Platform.runLater(() -> {
+                                        speechBaseController.userChats.add(newCu);
+                                        speechBaseController.chatsView.getSelectionModel().select(newCu);
+                                    });
                                 } else {
                                     int index = speechBaseController.userChats.indexOf(existing);
                                     Platform.runLater(() -> {
