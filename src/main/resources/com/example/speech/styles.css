@@ -349,14 +349,6 @@
     -fx-text-fill: #1E293B;
 }
 
-.messages-list {
-     -fx-background-image: url('image/messages-list-view-background-default.jpg');
-     -fx-background-size: auto;
-     -fx-background-repeat: repeat;
-     -fx-background-position: top;
-     -fx-border-width: 0;
-}
-
 .message-text-grid-pane-my {
     -fx-background-color: #D1FAE5;
     -fx-background-radius: 18px 18px 18px 2px;
@@ -385,11 +377,6 @@
     -fx-font-size: 10px;
     -fx-text-fill: #64748B;
     -fx-padding: 4px 0 0 8px;
-}
-
-.list-view {
-    -fx-background-color: transparent;
-    -fx-border-width: 0;
 }
 
 .delete-chat-btn {

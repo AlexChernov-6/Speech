@@ -142,18 +142,11 @@ public class ChannelCellController {
 
     @FXML
     private void onDeleteChanelBtn() {
+        HiddenChannelUser hiddenChannelUser = new HiddenChannelUser();
+        hiddenChannelUser.setUser(speechBaseController.getCurrentUser());
+        hiddenChannelUser.setChannel(channelUser.getChannel());
+        new HiddenChannelUserService().save(hiddenChannelUser);
         speechBaseController.userChats.remove(channelUser);
-
-        ChannelUser finalChannelUser = channelUser;
-        Thread deleteChannelUserThread = new Thread(() -> {
-            HiddenChannelUser hiddenChannelUser = new HiddenChannelUser();
-            hiddenChannelUser.setUser(speechBaseController.getCurrentUser());
-            hiddenChannelUser.setChannel(finalChannelUser.getChannel());
-            new HiddenChannelUserService().save(hiddenChannelUser);
-            speechBaseController.getMessageListener().removeChannel(finalChannelUser);
-        });
-        deleteChannelUserThread.setDaemon(true);
-        deleteChannelUserThread.start();
     }
 
     public void notVisibleDelBtn() {

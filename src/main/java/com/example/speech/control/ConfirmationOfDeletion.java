@@ -55,8 +55,8 @@ public class ConfirmationOfDeletion extends Pane {
 
         TextFlow informationTextFlow = new TextFlow();
         Label startLabel = new Label("Также удалить для «");
-        Label centralLabel = new Label(nameOfTheInterlocutor.length() > 10
-                ? nameOfTheInterlocutor.substring(0, 10) + "..." : nameOfTheInterlocutor);
+        Label centralLabel = new Label(nameOfTheInterlocutor.length() > 15
+                ? nameOfTheInterlocutor.substring(0, 15) + "..." : nameOfTheInterlocutor);
         centralLabel.setStyle("-fx-font-weight: bold;");
         Label endLabel = new Label("»");
         informationTextFlow.getChildren().addAll(startLabel, centralLabel, endLabel);
@@ -102,7 +102,7 @@ public class ConfirmationOfDeletion extends Pane {
             });
         });
         deleteButton.getStyleClass().add("login-button");
-        bottomHB.getChildren().addAll(cancellationButton, deleteButton);
+        bottomHB.getChildren().addAll(deleteButton, cancellationButton);
 
         rootVB.getChildren().addAll(questionLabel, centralHB, bottomHB);
         this.getChildren().add(rootVB);

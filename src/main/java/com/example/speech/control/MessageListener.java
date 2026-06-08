@@ -71,26 +71,6 @@ public class MessageListener implements Runnable {
     }
 
     /**
-     * Удалить канал из прослушивания (если нужно).
-     */
-    public boolean removeChannel(ChannelUser channelUser) {
-        String channelName = "channel_" + channelUser.getChannel().getChannelID();
-        if (subscribedChannels.remove(channelName)) {
-            userChannels.remove(channelUser);
-            Connection conn = activeConnection;
-            if (conn != null && !isConnectionClosed(conn)) {
-                try (Statement st = conn.createStatement()) {
-                    st.execute("UNLISTEN " + channelName);
-                } catch (SQLException e) {
-                    System.err.println("Ошибка при отписке от канала " + channelName + ": " + e.getMessage());
-                }
-            }
-            return true;
-        }
-        return false;
-    }
-
-    /**
      * Остановить слушатель (завершить поток).
      */
     public void stop() {
@@ -171,7 +151,6 @@ public class MessageListener implements Runnable {
 
                             if (isDelete) {
                                 if (existing != null) {
-                                    removeChannel(existing);
                                     Platform.runLater(() -> {
                                         speechBaseController.userChats.remove(existing);
                                         if (speechBaseController.userChats.isEmpty())

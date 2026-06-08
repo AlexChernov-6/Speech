@@ -65,7 +65,7 @@
                             <Button fx:id="showAllPinnedMessagesBtn" onAction="#showPinnedContent"/>
                         </HBox>
 
-                        <ListView fx:id="messagesLV" VBox.vgrow="ALWAYS" styleClass="messages-list">
+                        <ListView fx:id="messagesLV" VBox.vgrow="ALWAYS">
                             <placeholder>
                                 <Label text="Пока что здесь пусто..." styleClass="empty-list-view-placeholder"/>
                             </placeholder>

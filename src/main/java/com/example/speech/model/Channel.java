@@ -4,7 +4,7 @@ import com.example.speech.util.ImageConverter;
 import jakarta.persistence.*;
 import javafx.scene.image.Image;
 
-import java.util.Objects;
+import java.util.*;
 
 @Entity
 @Table(name = "channels", schema = "public")
@@ -27,6 +27,9 @@ public class Channel {
     private boolean disable_sharing;
     @ManyToOne @JoinColumn(name = "owner_id")
     private User ownerUser;
+    @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.EAGER, orphanRemoval = true)
+    @JoinColumn(name = "hidden_channel_id")
+    private Set<HiddenChannelUser> hiddenChannelUserSet = new HashSet<HiddenChannelUser>();
 
     @Transient
     private Image photoChannel;
@@ -123,6 +126,10 @@ public class Channel {
 
     public void setOwnerUser(User ownerUser) {
         this.ownerUser = ownerUser;
+    }
+
+    public Set<HiddenChannelUser> getHiddenChannelUserSet() {
+        return hiddenChannelUserSet;
     }
 
     @Override

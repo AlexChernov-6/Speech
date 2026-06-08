@@ -99,8 +99,10 @@ public class RegistrationController {
         if (mailLb.getText().equals(startValueEmail) && visibleNameLb.getText().equals(startValueVisibleName)
                 && userNameLb.getText().equals(startValueUserName) && passwordLb.getText().equals(startValuePassword)
                 && birthdayLb.getText().equals(startValueBirthday)) {
-            User newUser = new User(null, mailTF.getText(), visibleNameTF.getText(), userNameTF.getText(), passwordF.getText(),
-                    HelpfulClass.getLocalDate(dayBirthdayCB.getValue(), monthBirthdayCB.getValue(), yearBirthdayCB.getValue()),
+            User newUser = new User(null, mailTF.getText(), (visibleNameTF.getText() == null
+                    || visibleNameTF.getText().isEmpty()) ? userNameTF.getText() : visibleNameTF.getText()
+                    , userNameTF.getText(), passwordF.getText(), HelpfulClass.getLocalDate(
+                            dayBirthdayCB.getValue(), monthBirthdayCB.getValue(), yearBirthdayCB.getValue()),
                     null, null, HARDWARE_ABSTRACTION_LAYER.getComputerSystem().getHardwareUUID());
             CONFIG_MANAGER.setUserEmail(mailTF.getText());
             CONFIG_MANAGER.setUserPassword(passwordF.getText());

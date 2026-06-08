@@ -86,7 +86,7 @@ public class ChannelUser {
     }
 
     public void setBackgroundImage(Image imageBackground) {
-        if(imageBackground != null && imageBackground.equals(this.imageBackground))
+        if(imageBackground == null || imageBackground.equals(this.imageBackground))
             return;
         this.imageBackground = imageBackground;
     }

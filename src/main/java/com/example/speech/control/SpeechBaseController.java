@@ -550,12 +550,13 @@ public class SpeechBaseController {
         chatsView.setFixedCellSize(60);
         chatsView.setCellFactory(lv -> new ListChannelsCellController(this));
         userChats = FXCollections.observableArrayList(channelUserService.getAllChatsByUser(currentUser)
-                .stream().filter(cU -> hiddenChannelUserService.isHiddenUserFromChannel(cU.getChannel(), currentUser) == null).toList());
+                .stream().filter(cU -> !cU.getChannel().getHiddenChannelUserSet().stream()
+                        .map(hDCU -> hDCU.getUser()).toList().contains(currentUser)).toList());
         chatsView.setItems(userChats);
 
         chatsView.getSelectionModel().selectedItemProperty().addListener(
                 (observable, oldValue, newValue) -> {
-                    if (newValue != null) {
+                    if (newValue != null && oldValue != newValue) {
                         selectedChannelUser = newValue;
                         loadChannelMessages(newValue);
                     }
@@ -1940,10 +1941,9 @@ public class SpeechBaseController {
                         } else {
                             boolean isCurrentChat = selectedChannelUser != null &&
                                     message.getChannelUser().getChannel().equals(selectedChannelUser.getChannel());
+
                             if (!isCurrentChat) {
-                                if (!messages.isEmpty())
-                                    updateChatsViewLastMessage(message);
-                                else chatsView.refresh();
+                                updateChatsViewLastMessage(message);
                                 return;
                             }
 
@@ -1981,7 +1981,7 @@ public class SpeechBaseController {
         if (message == null) return;
         ChannelUser relatedChat = message.getChannelUser();
         int chatIndex = userChats.indexOf(relatedChat);
-        if (chatIndex >= 0) {
+        if (chatIndex >= 0 && userChats.size() > 1) {
             userChats.set(chatIndex, relatedChat);
         } else {
             chatsView.refresh();
@@ -2383,7 +2383,7 @@ public class SpeechBaseController {
         try {
             selectedChannelUser.setBackgroundImageBytes(Files.readAllBytes(chosenFile.toPath()));
             channelUserService.update(selectedChannelUser);
-            selectedChannelUser.setBackgroundImage(null);
+            selectedChannelUser.setBackgroundImage(selectedChannelUser.getBackgroundImage());
             messagesLV.setBackground(new Background(new BackgroundImage(
                     selectedChannelUser.getBackgroundImage(),
                     BackgroundRepeat.NO_REPEAT,
@@ -2398,14 +2398,15 @@ public class SpeechBaseController {
     }
 
     private void resetBackgroundToDefault() {
+        selectedChannelUser.setBackgroundImageBytes(null);
+        channelUserService.update(selectedChannelUser);
+        selectedChannelUser.setBackgroundImage(defaultBackgroundImage);
         messagesLV.setBackground(new Background(new BackgroundImage(
                 defaultBackgroundImage,
                 BackgroundRepeat.REPEAT,
                 BackgroundRepeat.REPEAT,
                 BackgroundPosition.CENTER,
                 BackgroundSize.DEFAULT)));
-        selectedChannelUser.setBackgroundImageBytes(null);
-        channelUserService.update(selectedChannelUser);
         updateBackgroundButtonState();
     }
 }
