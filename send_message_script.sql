@@ -1,0 +1,1 @@
+insert into messages values(default, now(), 54, 'отправлено', default, false, null, false, null, convert_to('Привет, у меня всё хорошо', 'UTF8'), null)

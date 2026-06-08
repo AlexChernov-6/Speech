@@ -480,7 +480,6 @@ public class SpeechBaseController {
                     if (!selectionModeActive) {
                         setSelectionModeActive(true);
                     }
-                    // Начальный диапазон – только стартовая позиция
                     updateDragSelection(dragStartIndex, dragStartIndex);
                 }
                 if (dragSelecting) {

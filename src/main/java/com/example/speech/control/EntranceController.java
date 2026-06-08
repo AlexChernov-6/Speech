@@ -332,6 +332,8 @@ public class EntranceController extends Application {
     private void createAdminWindow() {
         stage.setIconified(true);
         Scene adminScene = new Scene(createRootAdminWindowSP(), CONFIG_MANAGER.getWindowWidth(), CONFIG_MANAGER.getWindowHeight());
+        String css = getClass().getResource("/com/example/speech/styles.css").toExternalForm();
+        adminScene.getStylesheets().add(css);
         adminStage = new Stage();
         adminStage.setMinHeight(ResizeListener.MIN_HEIGHT);
         adminStage.setMinWidth(ResizeListener.MIN_WIDTH);
@@ -350,7 +352,7 @@ public class EntranceController extends Application {
         StackPane.setMargin(userGuideBtn, new Insets(20, 20, 0, 0));
         StackPane.setAlignment(userGuideBtn, Pos.TOP_RIGHT);
         rootSP.getChildren().add(userGuideBtn);
-        HelpfulClass.setImageWithButton(userGuideBtn, "questions.png", "user-guide-button", 40, 40);
+        HelpfulClass.setImageWithButton(userGuideBtn, "questions.png");
         userGuideBtn.setTooltip(new Tooltip("Открыть руководство пользователя"));
         userGuideBtn.setOnAction(e -> {
             if (Desktop.isDesktopSupported()) {
@@ -393,7 +395,7 @@ public class EntranceController extends Application {
         Label passwordHintLB = new Label("Пароль");
         passwordVB.getChildren().add(passwordHintLB);
 
-        TextField passwordTF = new TextField();
+        PasswordField passwordTF = new PasswordField();
         passwordTF.setPromptText("Пароль");
         passwordTF.setUserData(passwordHintLB);
         passwordTF.setPrefWidth(250 - 15 - 15);
